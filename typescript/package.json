@@ -1,0 +1,13 @@
+{
+  "name": "chicago-roadshow-2026-typescript",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Type-checkable TypeScript siblings of the Chicago Roadshow workshop steps. Reference-only; not executed at workshop runtime.",
+  "scripts": {
+    "check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0"
+  }
+}
