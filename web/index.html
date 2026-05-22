@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignalWire Workshop</title>
+<link rel="icon" type="image/png" href="https://mcdn.signalwire.com/images/v2/loud/LogoLarge.png">
+<style>
+  :root {
+    --sw-blue: #044cf6;
+    --sw-dark: #0a1628;
+    --sw-gray: #1a2540;
+    --sw-light: #e8ecf4;
+    --sw-green: #00c853;
+    --sw-orange: #ff9100;
+    --sw-fuchsia: #F72A72;
+    --card-bg: #111b30;
+    --text: #cdd6e4;
+    --text-bright: #f0f4fa;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--sw-dark);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  a { color: var(--sw-blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    background: rgba(255,255,255,0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, var(--sw-dark) 0%, #0d2252 100%);
+    border-bottom: 1px solid rgba(4,76,246,0.3);
+    padding: 3rem 2rem 2.5rem;
+    text-align: center;
+  }
+  .header h1 {
+    font-size: 2.2rem;
+    color: var(--text-bright);
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+  }
+  .header h1 span { color: var(--sw-blue); }
+  .header p {
+    font-size: 1.1rem;
+    color: var(--text);
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .badge-row {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .badge {
+    display: inline-block;
+    background: rgba(4,76,246,0.15);
+    border: 1px solid rgba(4,76,246,0.3);
+    color: #7da8fc;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  /* Container */
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  /* Section titles */
+  .section-title {
+    font-size: 1.3rem;
+    color: var(--text-bright);
+    margin: 2.5rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  /* Quick Start box */
+  .quick-start {
+    background: linear-gradient(135deg, rgba(4,76,246,0.12) 0%, rgba(247,42,114,0.08) 100%);
+    border: 1px solid rgba(4,76,246,0.3);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .quick-start h2 {
+    font-size: 1.2rem;
+    color: var(--text-bright);
+    margin-bottom: 0.5rem;
+  }
+  .quick-start p {
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+  }
+  .quick-start .url-bar { margin-top: 0; }
+  .quick-start-label {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--sw-green);
+    background: rgba(0,200,83,0.1);
+    border: 1px solid rgba(0,200,83,0.25);
+    padding: 2px 10px;
+    border-radius: 12px;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Setup guide steps */
+  .setup-step {
+    background: var(--card-bg);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+  }
+  .setup-step-number {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(4,76,246,0.15);
+    border: 2px solid var(--sw-blue);
+    color: var(--sw-blue);
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .setup-step-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .setup-step-content h3 {
+    font-size: 1.05rem;
+    color: var(--text-bright);
+    margin-bottom: 0.3rem;
+  }
+  .setup-step-content p {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+  .setup-step-content p:last-child { margin-bottom: 0; }
+  .dashboard-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(4,76,246,0.12);
+    border: 1px solid rgba(4,76,246,0.3);
+    color: #7da8fc;
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s;
+    margin-top: 0.25rem;
+  }
+  .dashboard-link:hover {
+    background: rgba(4,76,246,0.2);
+    border-color: rgba(4,76,246,0.5);
+    text-decoration: none;
+  }
+  .dashboard-link::after {
+    content: "\2197";
+    font-size: 0.9em;
+  }
+
+  /* Overview */
+  .overview {
+    background: var(--card-bg);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .overview p { margin-bottom: 0.75rem; }
+  .overview p:last-child { margin-bottom: 0; }
+  .learn-list {
+    list-style: none;
+    padding: 0;
+  }
+  .learn-list li {
+    padding: 0.4rem 0 0.4rem 1.5rem;
+    position: relative;
+  }
+  .learn-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.75rem;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--sw-blue);
+  }
+  .learn-list li strong { color: var(--text-bright); }
+
+  /* Step cards */
+  .step-card {
+    background: var(--card-bg);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s;
+  }
+  .step-card:hover { border-color: rgba(4,76,246,0.3); }
+  .step-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .step-number {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--sw-blue);
+    background: rgba(4,76,246,0.12);
+    padding: 3px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
+  }
+  .step-name {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-bright);
+  }
+  .step-desc {
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+  }
+  .step-new {
+    font-size: 0.85rem;
+    color: var(--sw-green);
+    margin-bottom: 0.75rem;
+  }
+  .step-new strong { color: var(--sw-green); }
+  .step-capabilities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+  }
+  .cap-badge {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--text);
+  }
+  .cap-badge.new {
+    background: rgba(0,200,83,0.1);
+    border-color: rgba(0,200,83,0.25);
+    color: var(--sw-green);
+  }
+  .key-badge {
+    font-size: 0.7rem;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: rgba(255,145,0,0.1);
+    border: 1px solid rgba(255,145,0,0.25);
+    color: var(--sw-orange);
+  }
+
+  /* URL bar */
+  .url-bar {
+    display: flex;
+    align-items: center;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    margin-top: 0.75rem;
+    overflow: hidden;
+  }
+  .url-label {
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7a94;
+    background: rgba(255,255,255,0.03);
+    border-right: 1px solid rgba(255,255,255,0.08);
+    white-space: nowrap;
+  }
+  .url-text {
+    flex: 1;
+    padding: 8px 12px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.82rem;
+    color: var(--text-bright);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .url-copy {
+    padding: 8px 14px;
+    background: var(--sw-blue);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background 0.2s;
+  }
+  .url-copy:hover { background: #0340d0; }
+  .url-copy.copied { background: var(--sw-green); }
+
+  /* Links row */
+  .step-links {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+  }
+  .step-links a {
+    color: #7da8fc;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Source buttons */
+  .source-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .source-btn {
+    display: inline-block;
+    background: rgba(4,76,246,0.12);
+    border: 1px solid rgba(4,76,246,0.3);
+    color: #7da8fc;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .source-btn:hover {
+    background: rgba(4,76,246,0.2);
+    border-color: rgba(4,76,246,0.5);
+    text-decoration: none;
+  }
+
+  /* Run controls */
+  .run-controls {
+    margin-top: 0.75rem;
+    display: flex;
+    gap: 0.5rem;
+  }
+  .run-btn {
+    background: var(--sw-blue);
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .run-btn:hover {
+    background: #2c64f7;
+  }
+  .run-inputs {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .run-input-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+  }
+  .run-input-label input {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--text-bright);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', monospace;
+    font-size: 0.85rem;
+  }
+  .submit-inputs {
+    background: var(--sw-green);
+    color: black;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .run-log {
+    margin-top: 0.75rem;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    padding: 0.75rem;
+    height: 200px;
+    overflow-y: auto;
+    font-family: 'SF Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+
+  /* Instructions */
+  .instructions {
+    background: var(--card-bg);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+  }
+  .instructions ol {
+    padding-left: 1.5rem;
+    margin-top: 0.5rem;
+  }
+  .instructions li {
+    padding: 0.4rem 0;
+    font-size: 0.95rem;
+  }
+  .instructions li strong { color: var(--text-bright); }
+  .note-box {
+    background: rgba(255,145,0,0.08);
+    border-left: 3px solid var(--sw-orange);
+    padding: 0.75rem 1rem;
+    border-radius: 0 6px 6px 0;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+  }
+  .note-box strong { color: var(--sw-orange); }
+
+  .tip-box {
+    background: rgba(0,200,83,0.06);
+    border-left: 3px solid var(--sw-green);
+    padding: 0.75rem 1rem;
+    border-radius: 0 6px 6px 0;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+  }
+  .tip-box strong { color: var(--sw-green); }
+
+  /* Secrets table */
+  .secrets-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+  }
+  .secrets-table th {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    color: #6b7a94;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .secrets-table td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .secrets-table code { font-size: 0.85rem; }
+
+  /* Approach comparison */
+  .approach-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+  }
+  .approach-table th {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    color: #6b7a94;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .approach-table td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 2rem;
+    font-size: 0.85rem;
+    color: #4a5a74;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    margin-top: 2rem;
+  }
+  .footer a { color: #5a7aac; }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .header { padding: 2rem 1rem 1.5rem; }
+    .header h1 { font-size: 1.6rem; }
+    .container { padding: 1rem; }
+    .step-header { flex-direction: column; gap: 0.25rem; }
+    .url-bar { flex-direction: column; }
+    .url-label { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .setup-step { flex-direction: column; gap: 0.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>SignalWire <span>AI Agent Workshop</span></h1>
+  <p>Not a developer? Not a problem! Follow along with the SignalWire Chicago Roadshow without hosting anything!</p>
+  <div class="badge-row">
+    <span class="badge">~60 minutes</span>
+    <span class="badge">Beginner friendly</span>
+    <span class="badge">Python</span>
+    <span class="badge">SignalWire Agents SDK</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Quick Start -->
+  <div class="quick-start">
+    <span class="quick-start-label">Recommended starting point</span>
+    <h2>Quick Start: Copy Your First SWML URL</h2>
+    <p>This is the URL for <strong>Step 4 - Hello Agent</strong>, the simplest agent. Copy it now, then follow the setup guide below to connect it to a phone number.</p>
+    <div class="url-bar" id="quick-start-url">
+      <span class="url-label">SWML URL</span>
+      <span class="url-text" id="quick-start-url-text">Loading...</span>
+      <button class="url-copy" id="quick-start-copy-btn" onclick="copyUrl(this, getSwmlUrl('/step04'))">Copy</button>
+    </div>
+  </div>
+
+  <!-- Resources -->
+  <h2 class="section-title">Resources</h2>
+  <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem;">
+    <a href="https://github.com/jongray00/Chicago-Roadshow-2026" target="_blank" style="flex: 1; min-width: 200px; padding: 1.2rem; background: var(--sw-card); border: 1px solid var(--sw-border); border-radius: 10px; text-decoration: none; color: inherit; transition: border-color 0.2s, transform 0.2s;">
+      <div style="font-size: 1.4rem; margin-bottom: 0.5rem;">&#128230;</div>
+      <div style="font-weight: 600; color: var(--sw-blue); margin-bottom: 0.3rem;">Chicago Roadshow 2026</div>
+      <div style="font-size: 0.85rem; color: var(--sw-muted);">This repo - Python + TypeScript steps for the Chicago workshop</div>
+    </a>
+    <a href="https://ai.signalwire.com/" target="_blank" style="flex: 1; min-width: 200px; padding: 1.2rem; background: var(--sw-card); border: 1px solid var(--sw-border); border-radius: 10px; text-decoration: none; color: inherit; transition: border-color 0.2s, transform 0.2s;">
+      <div style="font-size: 1.4rem; margin-bottom: 0.5rem;">&#9889;</div>
+      <div style="font-weight: 600; color: var(--sw-blue); margin-bottom: 0.3rem;">SignalWire AI</div>
+      <div style="font-size: 0.85rem; color: var(--sw-muted);">Explore SignalWire's AI-powered communication platform</div>
+    </a>
+    <a href="https://signalwire.com/docs/agents-sdk/python" target="_blank" style="flex: 1; min-width: 200px; padding: 1.2rem; background: var(--sw-card); border: 1px solid var(--sw-border); border-radius: 10px; text-decoration: none; color: inherit; transition: border-color 0.2s, transform 0.2s;">
+      <div style="font-size: 1.4rem; margin-bottom: 0.5rem;">&#128214;</div>
+      <div style="font-weight: 600; color: var(--sw-blue); margin-bottom: 0.3rem;">Agents SDK (Python)</div>
+      <div style="font-size: 0.85rem; color: var(--sw-muted);">Official documentation for the SignalWire Agents SDK</div>
+    </a>
+  </div>
+
+  <!-- SignalWire Setup Guide -->
+  <h2 class="section-title">SignalWire Setup Guide</h2>
+  <p style="margin-bottom: 1rem; font-size: 0.95rem;">Follow these five steps to connect your first AI agent to a real phone number in seconds!</p>
+
+  <div class="setup-step">
+    <div class="setup-step-number">1</div>
+    <div class="setup-step-content">
+      <h3>Create a SignalWire Account</h3>
+      <p>Sign up for a free SignalWire Space. This gives you a dashboard where you'll manage phone numbers and call settings.</p>
+      <a href="https://id.signalwire.com/onboarding" target="_blank" class="dashboard-link">Create a SignalWire Space</a>
+    </div>
+  </div>
+
+  <div class="setup-step">
+    <div class="setup-step-number">2</div>
+    <div class="setup-step-content">
+      <h3>Buy a Phone Number</h3>
+      <p>In your SignalWire Dashboard, go to <strong>Phone Numbers</strong> and click <strong>+ Buy a New Phone Number</strong>. Pick any local number in your area.</p>
+    </div>
+  </div>
+
+  <div class="setup-step">
+    <div class="setup-step-number">3</div>
+    <div class="setup-step-content">
+      <h3>Create a SWML Script Resource</h3>
+      <p>Go to <strong>Resources</strong>, click <strong>+ Add New</strong>, and choose <strong>SWML Script</strong>. Select <strong>"Use an external URL for your SWML Script"</strong> and paste the SWML URL you copied above.</p>
+    </div>
+  </div>
+
+  <div class="setup-step">
+    <div class="setup-step-number">4</div>
+    <div class="setup-step-content">
+      <h3>Assign the Script to Your Phone Number</h3>
+      <p>Go back to <strong>Phone Numbers</strong>, click your number, then <strong>Edit Settings</strong>. Under <strong>"Handle Calls Using"</strong>, select <strong>"a SWML Script"</strong> and pick the script you just created.</p>
+    </div>
+  </div>
+
+  <div class="setup-step">
+    <div class="setup-step-number">5</div>
+    <div class="setup-step-content">
+      <h3>Call Your Number</h3>
+      <p>Dial your SignalWire phone number from any phone. Buddy should answer and start chatting with you.</p>
+      <div class="note-box" style="margin-top: 0.5rem;">
+        <strong>Tip:</strong> To switch between agent steps, just update the SWML Script resource with a different URL from below. No restart needed.
+      </div>
+    </div>
+  </div>
+
+  <!-- Workshop Steps -->
+  <h2 class="section-title">Workshop Steps</h2>
+  <p style="margin-bottom: 1rem; font-size: 0.95rem;">Each step builds on the previous one. Copy any SWML URL and paste it into your SWML Script resource to try that agent.</p>
+  <div id="steps-container">
+    <p style="color: #6b7a94;">Loading agent information...</p>
+  </div>
+
+  <div class="footer">
+    Built with the <a href="https://signalwire.com/docs/agents-sdk" target="_blank">SignalWire Agents SDK</a>
+  </div>
+</div>
+
+<script>
+const REPO = "jongray00/Chicago-Roadshow-2026";
+const BRANCH = "main";
+
+function pySourceUrl(stem) {
+  return `https://github.com/${REPO}/blob/${BRANCH}/python/steps/${stem}.py`;
+}
+function tsSourceUrl(stem) {
+  return `https://github.com/${REPO}/blob/${BRANCH}/typescript/steps/${stem}.ts`;
+}
+
+const STEPS_META = [
+  {
+    route: "/step04",
+    step: "Step 4",
+    name: "Hello Agent",
+    stem: "step04_hello",
+    desc: "The simplest possible agent. Call your number and have a basic conversation with Buddy. Proves everything works end to end.",
+    whatsNew: "Foundation: AgentBase, add_language(), prompt_add_section(), post-prompt summaries",
+    capabilities: ["Chat"],
+    newCapabilities: ["Chat"],
+    concepts: ["AgentBase", "add_language()", "prompt_add_section()", "set_post_prompt()"],
+    requiredKeys: []
+  },
+  {
+    route: "/step06",
+    step: "Step 6",
+    name: "Hardcoded Jokes",
+    stem: "step06_hardcoded_jokes",
+    desc: "Teaches the AI to tell jokes using a SWAIG function. The handler picks a random joke from a hardcoded list.",
+    whatsNew: "First SWAIG function: define_tool() with a custom handler that returns FunctionResult",
+    capabilities: ["Chat", "Jokes (list)"],
+    newCapabilities: ["Jokes (list)"],
+    concepts: ["define_tool()", "FunctionResult", "SWAIG functions"],
+    requiredKeys: []
+  },
+  {
+    route: "/step07",
+    step: "Step 7",
+    name: "Live API Jokes",
+    stem: "step07_api_jokes",
+    desc: "Replaces hardcoded jokes with fresh ones from the API Ninjas Dad Jokes API. Every call gets a different joke.",
+    whatsNew: "Calling an external REST API from a custom function handler",
+    capabilities: ["Chat", "Jokes (API)"],
+    newCapabilities: ["Jokes (API)"],
+    concepts: ["External API calls", "Error handling", "API_NINJAS_KEY"],
+    requiredKeys: ["API_NINJAS_KEY"]
+  },
+  {
+    route: "/step08",
+    step: "Step 8",
+    name: "Weather + Jokes",
+    stem: "step08_weather",
+    desc: "Adds weather lookups using DataMap - a serverless approach where SignalWire calls the weather API directly.",
+    whatsNew: "DataMap: declare an API call and SignalWire executes it. Your server never handles the weather request.",
+    capabilities: ["Chat", "Jokes (API)", "Weather"],
+    newCapabilities: ["Weather"],
+    concepts: ["DataMap", "register_swaig_function()", "WEATHER_API_KEY"],
+    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"]
+  },
+  {
+    route: "/step09",
+    step: "Step 9",
+    name: "Polished Agent",
+    stem: "step09_polish",
+    desc: "Same capabilities as Step 8, but with a much better conversation experience. Better personality, timing, and speech recognition.",
+    whatsNew: "UX tuning: set_params() for timing, add_hints() for speech recognition, richer prompts, varied fillers",
+    capabilities: ["Chat", "Jokes (API)", "Weather"],
+    newCapabilities: [],
+    concepts: ["set_params()", "add_hints()", "end_of_speech_timeout", "attention_timeout"],
+    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"]
+  },
+  {
+    route: "/step10",
+    step: "Step 10",
+    name: "Agent with Skills",
+    stem: "step10_skills",
+    desc: "Adds date/time and math capabilities with just two lines of code. Skills are pre-built capabilities that ship with the SDK.",
+    whatsNew: "Built-in skills: add_skill() for instant capabilities with zero handler code",
+    capabilities: ["Chat", "Jokes (API)", "Weather", "Date/Time", "Math"],
+    newCapabilities: ["Date/Time", "Math"],
+    concepts: ["add_skill(\"datetime\")", "add_skill(\"math\")"],
+    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"]
+  },
+  {
+    route: "/step11",
+    step: "Step 11",
+    name: "Complete Agent",
+    stem: "step11_complete",
+    desc: "Everything polished and organized into clean private methods. The production-ready pattern for building larger agents.",
+    whatsNew: "Production organization: _configure_*() and _register_*() method pattern for clean, maintainable code",
+    capabilities: ["Chat", "Jokes (API)", "Weather", "Date/Time", "Math"],
+    newCapabilities: [],
+    concepts: ["Code organization", "Production patterns"],
+    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"]
+  },
+];
+
+const PILLAR_CARDS = [
+  {
+    pillar: "rest",
+    step: "Step 12",
+    name: "REST pillar - RestClient",
+    stem: "step12_rest_demo",
+    desc: "List phone numbers, send SMS, fetch call history, and point the workshop voice handler at the agent.",
+    runLabel: "Run REST Demo",
+  },
+  {
+    pillar: "relay",
+    step: "Step 13",
+    name: "RELAY pillar - WebSocket client",
+    stem: "step13_relay_demo",
+    desc: "Connect via WebSocket, subscribe to incoming-call events, stream transcripts, and optionally place one outbound call.",
+    runLabel: "Run RELAY Demo",
+  },
+];
+
+/* Config loaded from backend */
+let authUser = "workshop";
+let authPass = "password";
+
+async function loadConfig() {
+  try {
+    const resp = await fetch("/config");
+    if (resp.ok) {
+      const cfg = await resp.json();
+      if (cfg.auth_user) authUser = cfg.auth_user;
+      if (cfg.auth_pass) authPass = cfg.auth_pass;
+    }
+  } catch (e) {
+    /* Fallback to defaults */
+  }
+  renderAll();
+}
+
+function getBaseUrl() {
+  return window.location.origin;
+}
+
+function getSwmlUrl(route) {
+  const base = getBaseUrl();
+  try {
+    const url = new URL(base);
+    return `${url.protocol}//${authUser}:${authPass}@${url.host}${route}`;
+  } catch {
+    return `${base}${route}`;
+  }
+}
+
+function copyUrl(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = "Copied!";
+    btn.classList.add("copied");
+    setTimeout(() => {
+      btn.textContent = "Copy";
+      btn.classList.remove("copied");
+    }, 2000);
+  });
+}
+
+function renderQuickStart() {
+  const urlText = document.getElementById("quick-start-url-text");
+  const copyBtn = document.getElementById("quick-start-copy-btn");
+  const swmlUrl = getSwmlUrl("/step04");
+  urlText.textContent = swmlUrl;
+  copyBtn.setAttribute("onclick", `copyUrl(this, '${swmlUrl.replace(/'/g, "\\'")}')`);
+}
+
+function renderSteps() {
+  const container = document.getElementById("steps-container");
+  container.innerHTML = "";
+
+  /* AI Agent step cards */
+  STEPS_META.forEach(step => {
+    const swmlUrl = getSwmlUrl(step.route);
+
+    const caps = step.capabilities.map(c => {
+      const isNew = step.newCapabilities.includes(c);
+      return `<span class="cap-badge${isNew ? ' new' : ''}">${c}</span>`;
+    }).join("");
+
+    const keys = step.requiredKeys.map(k =>
+      `<span class="key-badge">${k}</span>`
+    ).join("");
+
+    const card = document.createElement("div");
+    card.className = "step-card";
+    card.innerHTML = `
+      <div class="step-header">
+        <span class="step-number">${step.step}</span>
+        <span class="step-name">${step.name}</span>
+      </div>
+      <div class="step-desc">${step.desc}</div>
+      <div class="step-new"><strong>What's new:</strong> ${step.whatsNew}</div>
+      <div class="step-capabilities">${caps}${keys ? ' ' + keys : ''}</div>
+      <div class="url-bar">
+        <span class="url-label">SWML URL</span>
+        <span class="url-text">${swmlUrl}</span>
+        <button class="url-copy" onclick="copyUrl(this, '${swmlUrl.replace(/'/g, "\\'")}')">Copy</button>
+      </div>
+      <div class="source-buttons">
+        <a href="${pySourceUrl(step.stem)}" target="_blank" class="source-btn">View Python Source</a>
+        <a href="${tsSourceUrl(step.stem)}" target="_blank" class="source-btn">View TypeScript Source</a>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  /* Pillar run cards (Step 12 REST, Step 13 RELAY) */
+  PILLAR_CARDS.forEach(p => {
+    const card = document.createElement("div");
+    card.className = "step-card";
+    card.dataset.pillar = p.pillar;
+    card.innerHTML = `
+      <div class="step-header">
+        <span class="step-number">${p.step}</span>
+        <span class="step-name">${p.name}</span>
+      </div>
+      <p class="step-desc">${p.desc}</p>
+      <div class="run-controls">
+        <button class="run-btn" data-pillar="${p.pillar}">${p.runLabel}</button>
+      </div>
+      <div class="run-inputs" data-pillar="${p.pillar}" hidden></div>
+      <pre class="run-log" data-pillar="${p.pillar}"></pre>
+      <div class="source-buttons">
+        <a href="${pySourceUrl(p.stem)}" target="_blank" class="source-btn">View Python Source</a>
+        <a href="${tsSourceUrl(p.stem)}" target="_blank" class="source-btn">View TypeScript Source</a>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  /* Attach run-button listeners after cards are in the DOM */
+  document.querySelectorAll(".run-btn").forEach(btn => {
+    btn.addEventListener("click", () => runPillar(btn.dataset.pillar));
+  });
+}
+
+function renderAll() {
+  renderQuickStart();
+  renderSteps();
+}
+
+async function runPillar(pillar) {
+  const logPane = document.querySelector(`.run-log[data-pillar="${pillar}"]`);
+  const inputsPane = document.querySelector(`.run-inputs[data-pillar="${pillar}"]`);
+  logPane.textContent = "";
+
+  const inputsResp = await fetch(`/run/${pillar}/inputs`);
+  const inputsInfo = await inputsResp.json();
+
+  let inputs = {};
+  if (inputsInfo.missing && inputsInfo.missing.length > 0) {
+    inputsPane.hidden = false;
+    inputsPane.innerHTML = inputsInfo.missing.map(k =>
+      `<label class="run-input-label">${k}: <input name="${k}" /></label>`
+    ).join(" ") + ` <button class="submit-inputs">Run</button>`;
+    await new Promise(resolve => {
+      inputsPane.querySelector(".submit-inputs").addEventListener("click", () => {
+        inputs = Object.fromEntries(
+          [...inputsPane.querySelectorAll("input")].map(i => [i.name, i.value])
+        );
+        inputsPane.hidden = true;
+        resolve();
+      }, { once: true });
+    });
+  }
+
+  const startResp = await fetch(`/run/${pillar}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ inputs }),
+  });
+  const { run_id } = await startResp.json();
+
+  const es = new EventSource(`/run/${pillar}/stream/${run_id}`);
+  function append(line, isErr) {
+    const span = document.createElement("span");
+    span.textContent = line + "\n";
+    if (isErr) span.style.color = "var(--sw-fuchsia)";
+    logPane.appendChild(span);
+    logPane.scrollTop = logPane.scrollHeight;
+  }
+  es.addEventListener("stdout", e => {
+    const payload = JSON.parse(e.data);
+    append(payload.data, false);
+  });
+  es.addEventListener("stderr", e => {
+    const payload = JSON.parse(e.data);
+    append(payload.data, true);
+  });
+  es.addEventListener("exit", e => {
+    const payload = JSON.parse(e.data);
+    append(`[exit code ${payload.data}]`, payload.data !== "0");
+    es.close();
+  });
+  es.addEventListener("end", () => es.close());
+  es.addEventListener("cancelled", () => {
+    append("[run cancelled by newer click]", true);
+    es.close();
+  });
+}
+
+loadConfig();
+</script>
+</body>
+</html>
