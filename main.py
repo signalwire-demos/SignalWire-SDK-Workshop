@@ -21,7 +21,12 @@ DEPLOYMENT NOTES (Replit Autoscale)
 4. Run full test suite: python test_routes.py https://<deployed-url>
 """
 
+import asyncio
+import json
 import os
+import signal
+import sys
+import uuid
 from replit_setup import startup
 from urllib.parse import urlparse
 
@@ -33,7 +38,7 @@ base_url, auth_user, auth_pass = startup()
 # ---------------------------------------------------------------------------
 from signalwire_agents import AgentServer
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import PlainTextResponse, JSONResponse, FileResponse
+from fastapi.responses import PlainTextResponse, JSONResponse, FileResponse, StreamingResponse
 
 from python.steps.step04_hello import HelloAgent
 from python.steps.step06_hardcoded_jokes import JokeAgent as HardcodedJokeAgent
@@ -220,6 +225,121 @@ if os.path.isdir("web"):
     @server.app.get("/")
     async def landing():
         return FileResponse("web/index.html")
+
+# ---------------------------------------------------------------------------
+# REST + RELAY pillar Run endpoints (steps 12 + 13)
+# ---------------------------------------------------------------------------
+
+# In-flight subprocesses keyed by pillar so a new POST cancels the old one.
+_INFLIGHT: dict[str, dict] = {}
+
+PILLAR_TO_SCRIPT = {
+    "rest": "python/steps/step12_rest_demo.py",
+    "relay": "python/steps/step13_relay_demo.py",
+}
+
+PILLAR_REQUIRED_ENV = {
+    "rest": ["SIGNALWIRE_PROJECT_ID", "SIGNALWIRE_TOKEN", "SIGNALWIRE_SPACE", "SMS_FROM", "SMS_TO"],
+    "relay": ["SIGNALWIRE_PROJECT_ID", "SIGNALWIRE_TOKEN"],
+}
+
+
+async def _terminate_inflight(state: dict) -> None:
+    # WHY two-stage: give the script a chance to clean up websockets and
+    # in-flight API calls before we hard-kill it.
+    proc = state.get("proc")
+    if proc and proc.returncode is None:
+        try:
+            proc.send_signal(signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        try:
+            await asyncio.wait_for(proc.wait(), timeout=2.0)
+        except asyncio.TimeoutError:
+            proc.kill()
+            await proc.wait()
+    queue: asyncio.Queue = state["queue"]
+    await queue.put({"event": "cancelled", "data": "previous run cancelled"})
+    await queue.put(None)
+
+
+async def _pump(stream, queue: asyncio.Queue, stream_name: str) -> None:
+    while True:
+        line = await stream.readline()
+        if not line:
+            return
+        await queue.put({
+            "event": stream_name,
+            "data": line.decode("utf-8", errors="replace").rstrip(),
+        })
+
+
+@server.app.get("/run/{pillar}/inputs")
+async def run_inputs(pillar: str):
+    if pillar not in PILLAR_REQUIRED_ENV:
+        return JSONResponse({"error": "unknown pillar"}, status_code=404)
+    required = PILLAR_REQUIRED_ENV[pillar]
+    missing = [k for k in required if not os.environ.get(k)]
+    return {"pillar": pillar, "required": required, "missing": missing}
+
+
+@server.app.post("/run/{pillar}")
+async def run_pillar(pillar: str, request: Request):
+    if pillar not in PILLAR_TO_SCRIPT:
+        return JSONResponse({"error": "unknown pillar"}, status_code=404)
+    raw = await request.body()
+    body = json.loads(raw) if raw else {}
+    inputs = body.get("inputs", {}) if isinstance(body, dict) else {}
+
+    if pillar in _INFLIGHT:
+        await _terminate_inflight(_INFLIGHT.pop(pillar))
+
+    run_id = uuid.uuid4().hex
+    queue: asyncio.Queue = asyncio.Queue()
+    env = {**os.environ, **{str(k): str(v) for k, v in inputs.items()}}
+
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable, "-u", PILLAR_TO_SCRIPT[pillar],
+        env=env,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+
+    async def supervise():
+        await asyncio.gather(
+            _pump(proc.stdout, queue, "stdout"),
+            _pump(proc.stderr, queue, "stderr"),
+        )
+        rc = await proc.wait()
+        await queue.put({"event": "exit", "data": str(rc)})
+        await queue.put(None)
+        # Only drop if this is still the current run; a newer POST may have
+        # already taken our slot.
+        if _INFLIGHT.get(pillar, {}).get("run_id") == run_id:
+            _INFLIGHT.pop(pillar, None)
+
+    asyncio.create_task(supervise())
+    _INFLIGHT[pillar] = {"proc": proc, "queue": queue, "run_id": run_id}
+    return {"pillar": pillar, "run_id": run_id}
+
+
+@server.app.get("/run/{pillar}/stream/{run_id}")
+async def run_stream(pillar: str, run_id: str):
+    state = _INFLIGHT.get(pillar)
+    if not state or state["run_id"] != run_id:
+        return JSONResponse({"error": "no such run"}, status_code=404)
+    queue: asyncio.Queue = state["queue"]
+
+    async def gen():
+        while True:
+            item = await queue.get()
+            if item is None:
+                yield "event: end\ndata: done\n\n"
+                return
+            payload = json.dumps({"event": item["event"], "data": item["data"]})
+            yield f"event: {item['event']}\ndata: {payload}\n\n"
+
+    return StreamingResponse(gen(), media_type="text/event-stream")
 
 # ---------------------------------------------------------------------------
 # Print SWML URLs to console
