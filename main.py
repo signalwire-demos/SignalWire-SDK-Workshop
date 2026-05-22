@@ -1,0 +1,267 @@
+#!/usr/bin/env python3
+"""
+SignalWire AI Agent Workshop - Replit Edition
+=============================================
+Serves all workshop step agents simultaneously on separate routes,
+plus a landing page at / with workshop info, SWML URLs, and setup instructions.
+
+Add your optional Secrets, click Run, and open the web preview.
+
+DEPLOYMENT NOTES (Replit Autoscale)
+------------------------------------
+1. The deploy URL is hardcoded in replit_setup.py (DEPLOY_URL).
+   Update it there if the Replit app name changes.
+
+2. After ANY code change, manually redeploy:
+   Deployments tab -> Redeploy. Autoscale does NOT auto-redeploy on git push.
+
+3. Verify deployment: GET https://<deployed-url>/validate
+   All agents should show swaig_url_valid: true.
+
+4. Run full test suite: python test_routes.py https://<deployed-url>
+"""
+
+import os
+from replit_setup import startup
+from urllib.parse import urlparse
+
+# Detect public URL and report secret status (no longer blocks on missing creds)
+base_url, auth_user, auth_pass = startup()
+
+# ---------------------------------------------------------------------------
+# SDK imports
+# ---------------------------------------------------------------------------
+from signalwire_agents import AgentServer
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import PlainTextResponse, JSONResponse, FileResponse
+
+from python.steps.step04_hello import HelloAgent
+from python.steps.step06_hardcoded_jokes import JokeAgent as HardcodedJokeAgent
+from python.steps.step07_api_jokes import JokeAgent as ApiJokeAgent
+from python.steps.step08_weather import WeatherJokeAgent
+from python.steps.step09_polish import PolishedAgent
+from python.steps.step10_skills import SkillsAgent
+from python.steps.step11_complete import CompleteAgent
+
+# ---------------------------------------------------------------------------
+# Register all step agents on their own routes
+# ---------------------------------------------------------------------------
+
+STEPS = [
+    ("/step04", HelloAgent,          "Step 4  - Hello Agent"),
+    ("/step06", HardcodedJokeAgent,  "Step 6  - Hardcoded Jokes"),
+    ("/step07", ApiJokeAgent,        "Step 7  - Live API Jokes"),
+    ("/step08", WeatherJokeAgent,    "Step 8  - Weather + Jokes (DataMap)"),
+    ("/step09", PolishedAgent,       "Step 9  - Polished Agent"),
+    ("/step10", SkillsAgent,         "Step 10 - Agent with Skills"),
+    ("/step11", CompleteAgent,       "Step 11 - Complete Agent"),
+]
+
+server = AgentServer(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
+# Each agent must know its route so the SDK generates correct webhook URLs
+# (e.g., /step06/swaig/ not /swaig/).  We pass route= through the constructor
+# so it's set during super().__init__() - the SDK's intended pattern.
+registered_agents = {}
+for route, agent_class, _desc in STEPS:
+    agent = agent_class(route=route)
+    server.register(agent, route)
+    registered_agents[route] = agent
+
+# ---------------------------------------------------------------------------
+# Config endpoint - landing page fetches auth credentials dynamically
+# ---------------------------------------------------------------------------
+
+@server.app.get("/config")
+async def get_config():
+    """Return non-sensitive config for the landing page JS."""
+    return JSONResponse({
+        "auth_user": auth_user,
+        "auth_pass": auth_pass,
+        "base_url": base_url,
+    })
+
+# ---------------------------------------------------------------------------
+# Validate endpoint - verify all webhook URLs have correct route prefixes
+# ---------------------------------------------------------------------------
+
+@server.app.get("/validate")
+async def validate_urls():
+    """Check every agent's webhook URLs include the correct route prefix."""
+    results = []
+    all_valid = True
+    for route, _cls, desc in STEPS:
+        agent = registered_agents.get(route)
+        if not agent:
+            results.append({"route": route, "error": "agent not registered"})
+            all_valid = False
+            continue
+
+        swaig_url = agent._build_webhook_url("swaig")
+        post_url = agent._build_webhook_url("post_prompt")
+
+        # Mask credentials for display
+        def mask(url):
+            from urllib.parse import urlparse, urlunparse
+            p = urlparse(url)
+            if p.username:
+                netloc = f"{p.username}:****@{p.hostname}"
+                if p.port:
+                    netloc += f":{p.port}"
+                return urlunparse(p._replace(netloc=netloc))
+            return url
+
+        swaig_ok = route in swaig_url
+        post_ok = route in post_url
+        if not swaig_ok or not post_ok:
+            all_valid = False
+
+        func_names = []
+        if hasattr(agent, '_tool_registry') and hasattr(agent._tool_registry, '_swaig_functions'):
+            func_names = list(agent._tool_registry._swaig_functions.keys())
+
+        results.append({
+            "route": route,
+            "name": agent.get_name(),
+            "description": desc,
+            "swaig_url": mask(swaig_url),
+            "post_prompt_url": mask(post_url),
+            "swaig_url_valid": swaig_ok,
+            "post_prompt_url_valid": post_ok,
+            "functions": func_names,
+        })
+
+    return JSONResponse({
+        "status": "ok" if all_valid else "error",
+        "base_url": base_url,
+        "agent_count": len(results),
+        "agents": results,
+    })
+
+# ---------------------------------------------------------------------------
+# SWAIG/post_prompt fallback - catches calls when URL generation omits the
+# step prefix (e.g., /swaig/ instead of /step06/swaig/).  Dispatches to the
+# correct agent by matching the function name in the request body.
+# ---------------------------------------------------------------------------
+
+from fastapi import Request, Response, HTTPException
+import json as _json
+
+@server.app.post("/swaig")
+@server.app.post("/swaig/")
+async def root_swaig_fallback(request: Request):
+    """Dispatch SWAIG calls that land on root /swaig/ to the correct agent."""
+    body = await request.body()
+    try:
+        data = _json.loads(body)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    func_name = data.get("function", "")
+
+    # Find the agent that owns this function
+    for _route, agent in registered_agents.items():
+        if hasattr(agent, '_tool_registry') and hasattr(agent._tool_registry, '_swaig_functions'):
+            if func_name in agent._tool_registry._swaig_functions:
+                result = agent._execute_swaig_function(func_name, data, None, None)
+                return JSONResponse(result if isinstance(result, dict) else {"response": str(result)})
+
+    raise HTTPException(status_code=404, detail="Function not found")
+
+@server.app.post("/post_prompt")
+@server.app.post("/post_prompt/")
+async def root_post_prompt_fallback(request: Request):
+    """Dispatch post_prompt calls that land on root /post_prompt/."""
+    body = await request.body()
+    try:
+        data = _json.loads(body)
+    except Exception:
+        data = {}
+
+    # Try each agent's on_summary handler
+    for _route, agent in registered_agents.items():
+        if hasattr(agent, 'on_summary'):
+            try:
+                summary = data.get("post_prompt_data", {}).get("raw", "")
+                agent.on_summary(summary, data)
+                return JSONResponse({"status": "ok"})
+            except Exception:
+                continue
+
+    return JSONResponse({"status": "ok"})
+
+# ---------------------------------------------------------------------------
+# Source viewer - lets the landing page link to /source/agents/step04_hello.py
+# ---------------------------------------------------------------------------
+
+ALLOWED_SOURCE_DIR = os.path.join(os.path.dirname(__file__), "agents")
+
+@server.app.get("/source/{file_path:path}")
+async def view_source(file_path: str):
+    """Serve agent source files as plain text for easy reading."""
+    full = os.path.normpath(os.path.join(os.path.dirname(__file__), file_path))
+    # Only serve files inside the agents/ directory
+    if not full.startswith(os.path.normpath(ALLOWED_SOURCE_DIR)):
+        return PlainTextResponse("Forbidden", status_code=403)
+    if not os.path.isfile(full):
+        return PlainTextResponse("Not found", status_code=404)
+    with open(full) as f:
+        return PlainTextResponse(f.read())
+
+# ---------------------------------------------------------------------------
+# Landing page - serve static files from web/
+# ---------------------------------------------------------------------------
+# WHY conditional: web/ does not exist until Task 8 lands; this keeps main.py
+# runnable in interim states without 500ing on missing assets.
+import os.path
+if os.path.isdir("web"):
+    server.app.mount("/static", StaticFiles(directory="web"), name="static")
+
+    @server.app.get("/")
+    async def landing():
+        return FileResponse("web/index.html")
+
+# ---------------------------------------------------------------------------
+# Print SWML URLs to console
+# ---------------------------------------------------------------------------
+
+if base_url:
+    p = urlparse(base_url)
+    print("\n" + "=" * 60)
+    print("  SWML URLs - paste any into your SignalWire dashboard")
+    print("=" * 60 + "\n")
+    for route, _cls, desc in STEPS:
+        url = f"{p.scheme}://{auth_user}:{auth_pass}@{p.netloc}{route}"
+        print(f"  {desc}")
+        print(f"  {url}\n")
+    print("=" * 60)
+    print(f"\n  Landing page: {base_url}\n")
+else:
+    print("\nNo public URL - SWML URLs will be available once")
+    print("REPLIT_DEV_DOMAIN or SWML_PROXY_URL_BASE is set.\n")
+
+# ---------------------------------------------------------------------------
+# Startup validation - catch webhook URL problems before accepting traffic
+# ---------------------------------------------------------------------------
+
+if base_url:
+    errors = []
+    for route, agent in registered_agents.items():
+        swaig_url = agent._build_webhook_url("swaig")
+        post_url = agent._build_webhook_url("post_prompt")
+        if route not in swaig_url:
+            errors.append(f"  {route}: swaig URL missing prefix -> {swaig_url}")
+        if route not in post_url:
+            errors.append(f"  {route}: post_prompt URL missing prefix -> {post_url}")
+    if errors:
+        print("\n*** WEBHOOK URL VALIDATION FAILED ***")
+        for e in errors:
+            print(e)
+        print("*** Fix: ensure agent.route is set before server.register() ***\n")
+    else:
+        print(f"\nWebhook URL validation passed for {len(registered_agents)} agents.")
+
+port = int(os.environ.get("PORT", 5000))
+print(f"\nStarting server with all agents on port {port}...\n")
+
+server.run()
