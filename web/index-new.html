@@ -405,6 +405,48 @@
   }
   .src-btn:hover { border-color: var(--sw-blue); }
   .src-btn.primary { background: var(--sw-blue); border-color: var(--sw-blue); }
+
+  @media (max-width: 768px) {
+    .topbar { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+    .topbar nav a { margin-left: 12px; font-size: 12px; }
+    .hero { padding: 88px 16px 40px; }
+    .hero h1 { font-size: 30px; }
+    .hero-sub { font-size: 15px; }
+
+    .milestones { flex-direction: column; align-items: stretch; gap: 14px; }
+    .milestone { flex-direction: row; align-items: center; gap: 14px; }
+    .milestone-label { font-size: 13px; }
+    .milestone-connector { display: none; }
+
+    .wizard-card { padding: 22px 18px; }
+    .wizard-card h2 { font-size: 22px; }
+    .url-card { flex-direction: column; align-items: stretch; }
+    .url-card .btn-copy { width: 100%; }
+    .dashboard-hint { flex-direction: column; }
+    .wizard-nav { flex-direction: column; gap: 12px; align-items: stretch; }
+    .wizard-nav .step-counter { text-align: center; order: -1; }
+
+    .timeline, .preview-timeline { flex-wrap: wrap; gap: 14px; justify-content: center; }
+    .timeline-connector, .preview-connector { display: none; }
+
+    .detail-grid, .pillars-grid { grid-template-columns: 1fr; }
+
+    .workshop-hero h1 { font-size: 26px; }
+    .active-detail { padding: 22px; }
+    .active-detail h2 { font-size: 22px; }
+  }
+
+  a:focus-visible, button:focus-visible, .timeline-node:focus-visible, .milestone:focus-visible {
+    outline: 2px solid var(--sw-blue); outline-offset: 3px; border-radius: 4px;
+  }
+
+  /* Link-styled button for actions that look like links (Reset workshop progress) */
+  .link-button {
+    background: none; border: none; padding: 0; margin: 0;
+    color: var(--sw-blue); text-decoration: none;
+    font: inherit; cursor: pointer;
+  }
+  .link-button:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -797,7 +839,7 @@ function renderLockedPreviews() {
   const nodes = STEPS_META.map((s, i) => {
     const sep = i > 0 ? `<div class="preview-connector"></div>` : "";
     return `${sep}
-      <div class="preview-node" aria-label="Step ${s.step}: ${s.name}, locked">
+      <div class="preview-node">
         <div class="preview-node-circle">${s.step.replace(/[^0-9]/g, "")}</div>
         <div class="preview-node-label">${s.name.split(" ")[0]}</div>
       </div>`;
@@ -841,7 +883,7 @@ function renderLockedPreviews() {
     <div class="footer">
       Built with the <a href="https://signalwire.com/docs/agents-sdk" target="_blank" rel="noopener noreferrer">SignalWire Agents SDK</a>
       · <a href="https://github.com/jongray00/Chicago-Roadshow-2026" target="_blank" rel="noopener noreferrer">github.com/jongray00/Chicago-Roadshow-2026</a>
-      · <a href="#" id="reset-progress-link">Reset workshop progress</a>
+      · <button type="button" class="link-button" id="reset-progress-link">Reset workshop progress</button>
     </div>
   `;
 }
@@ -854,9 +896,9 @@ function renderWorkshop() {
       <div class="hero-inner workshop-hero">
         <div class="status-pill">
           ✓ Setup complete
-          <span class="sep">·</span>
+          <span class="sep" aria-hidden="true">·</span>
           ${state.visited.length} of ${STEPS_META.length} agents tried
-          <span class="sep">·</span>
+          <span class="sep" aria-hidden="true">·</span>
           <a href="#" id="restart-wizard-link">Restart wizard</a>
         </div>
         <h1>You're up and running.</h1>
@@ -883,14 +925,30 @@ function renderWorkshop() {
         <p>SignalWire is more than AI voice. Both pillars run from your browser without picking up the phone.</p>
       </div>
       <div class="pillars-grid" id="pillars-host">
-        <p style="text-align:center;color:var(--sw-text-dim);grid-column:1/-1;">[Pillars wired in Task 5]</p>
+        ${PILLAR_CARDS.map(p => {
+          const accent = p.pillar;
+          const namePart = p.name.includes(" - ") ? p.name.split(" - ").slice(1).join(" - ") : p.name;
+          return `
+          <div class="pillar-card ${accent}">
+            <div class="pillar-eyebrow">${escapeHtml(p.step.toUpperCase())} · ${escapeHtml(p.name.split(" - ")[0])}</div>
+            <div class="pillar-name">${escapeHtml(namePart)}</div>
+            <div class="pillar-desc">${escapeHtml(p.desc)}</div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;">
+              <button class="src-btn primary" data-run="${p.pillar}">▶ ${escapeHtml(p.runLabel)}</button>
+              <a href="${pySourceUrl(p.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">Python source</a>
+              <a href="${tsSourceUrl(p.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">TypeScript source</a>
+            </div>
+            <div class="run-inputs" data-pillar="${p.pillar}" hidden style="margin-top:12px;"></div>
+            <pre class="run-log" data-pillar="${p.pillar}" style="margin-top:12px;background:var(--sw-dark);border:1px solid var(--sw-border);border-radius:8px;padding:12px;font-size:12px;color:var(--sw-text);min-height:0;max-height:280px;overflow:auto;font-family:'SF Mono',monospace;"></pre>
+          </div>`;
+        }).join("")}
       </div>
     </section>
 
     <div class="footer">
       Built with the <a href="https://signalwire.com/docs/agents-sdk" target="_blank" rel="noopener noreferrer">SignalWire Agents SDK</a>
       · <a href="https://github.com/jongray00/Chicago-Roadshow-2026" target="_blank" rel="noopener noreferrer">github.com/jongray00/Chicago-Roadshow-2026</a>
-      · <a href="#" id="reset-progress-link">Reset workshop progress</a>
+      · <button type="button" class="link-button" id="reset-progress-link">Reset workshop progress</button>
     </div>
   `;
 
@@ -910,6 +968,9 @@ function renderWorkshop() {
   });
   document.getElementById("pinned-copy")?.addEventListener("click", e => copyUrl(e.currentTarget, getSwmlUrl(state.activeStep)));
   document.getElementById("detail-copy")?.addEventListener("click", e => copyUrl(e.currentTarget, getSwmlUrl(state.activeStep)));
+  document.querySelectorAll("[data-run]").forEach(btn => {
+    btn.addEventListener("click", () => runPillar(btn.dataset.run));
+  });
 }
 
 function renderPinnedUrlCard() {
@@ -996,6 +1057,64 @@ function renderAll() {
   } else {
     renderOnboarding();
   }
+}
+
+async function runPillar(pillar) {
+  const logPane = document.querySelector(`.run-log[data-pillar="${pillar}"]`);
+  const inputsPane = document.querySelector(`.run-inputs[data-pillar="${pillar}"]`);
+  if (!logPane || !inputsPane) return;
+  logPane.textContent = "";
+
+  const inputsResp = await fetch(`/run/${pillar}/inputs`);
+  const inputsInfo = await inputsResp.json();
+
+  let inputs = {};
+  if (inputsInfo.missing && inputsInfo.missing.length > 0) {
+    inputsPane.hidden = false;
+    inputsPane.innerHTML = inputsInfo.missing.map(k =>
+      `<label style="display:inline-flex;flex-direction:column;font-size:11px;color:var(--sw-text-dim);margin-right:10px;">
+         ${escapeHtml(k)}
+         <input name="${escapeHtml(k)}" style="background:var(--sw-dark);border:1px solid var(--sw-border);color:var(--sw-text-bright);padding:6px 10px;border-radius:5px;font-size:13px;margin-top:3px;min-width:180px;" />
+       </label>`
+    ).join("") + ` <button class="src-btn primary submit-inputs" style="margin-left:8px;">Run</button>`;
+    await new Promise(resolve => {
+      inputsPane.querySelector(".submit-inputs").addEventListener("click", () => {
+        inputs = Object.fromEntries(
+          [...inputsPane.querySelectorAll("input")].map(i => [i.name, i.value])
+        );
+        inputsPane.hidden = true;
+        resolve();
+      }, { once: true });
+    });
+  }
+
+  const startResp = await fetch(`/run/${pillar}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ inputs }),
+  });
+  const { run_id } = await startResp.json();
+
+  const es = new EventSource(`/run/${pillar}/stream/${run_id}`);
+  function append(line, isErr) {
+    const span = document.createElement("span");
+    span.textContent = line + "\n";
+    if (isErr) span.style.color = "var(--sw-magenta)";
+    logPane.appendChild(span);
+    logPane.scrollTop = logPane.scrollHeight;
+  }
+  es.addEventListener("stdout", e => append(JSON.parse(e.data).data, false));
+  es.addEventListener("stderr", e => append(JSON.parse(e.data).data, true));
+  es.addEventListener("exit", e => {
+    const payload = JSON.parse(e.data);
+    append(`[exit code ${payload.data}]`, payload.data !== "0");
+    es.close();
+  });
+  es.addEventListener("end", () => es.close());
+  es.addEventListener("cancelled", () => {
+    append("[run cancelled by newer click]", true);
+    es.close();
+  });
 }
 
 loadConfig();
