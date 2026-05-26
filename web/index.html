@@ -1044,6 +1044,8 @@ function renderActiveDetail() {
 }
 
 function setActiveStep(route) {
+  activePillarStreams.forEach(es => es.close());
+  activePillarStreams.clear();
   state.activeStep = route;
   if (!state.visited.includes(route)) state.visited.push(route);
   persist();
