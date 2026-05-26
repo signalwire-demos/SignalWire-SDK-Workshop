@@ -253,6 +253,25 @@
     margin-left: 2px;
   }
 
+  /* try-saying — speakable prompt chips */
+  .try-saying { margin-top: 22px; }
+  .try-label {
+    font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--sw-text-dim); font-weight: 700; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .try-label::before {
+    content: '🎙'; font-size: 12px;
+  }
+  .try-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .try-chip {
+    font-size: 13px; padding: 7px 14px; border-radius: 999px;
+    background: rgba(247,42,114,0.08);
+    border: 1px solid rgba(247,42,114,0.28);
+    color: var(--sw-text-bright);
+    line-height: 1.3;
+  }
+
   /* ============ LOCKED PREVIEW (agent timeline) ============ */
   .preview-section {
     padding: 64px 24px 40px;
@@ -523,6 +542,7 @@ const STEPS_META = [
       { label: "Prompts (POM)", url: "/agents-sdk/building-agents/prompts-pom" },
       { label: "Call flow", url: "/agents-sdk/building-agents/call-flow" },
     ],
+    prompts: ["How are you today?", "What can you help me with?", "Tell me about yourself"],
   },
   {
     route: "/step06",
@@ -540,6 +560,7 @@ const STEPS_META = [
       { label: "Defining functions", url: "/agents-sdk/swaig-functions/defining-functions" },
       { label: "Function results", url: "/agents-sdk/swaig-functions/results-actions" },
     ],
+    prompts: ["Tell me a joke", "Got another one?", "That was terrible, give me a better one"],
   },
   {
     route: "/step07",
@@ -556,6 +577,7 @@ const STEPS_META = [
       { label: "Function parameters", url: "/agents-sdk/swaig-functions/parameters" },
       { label: "Defining functions", url: "/agents-sdk/swaig-functions/defining-functions" },
     ],
+    prompts: ["Tell me a dad joke", "Give me another", "One more!"],
   },
   {
     route: "/step08",
@@ -573,6 +595,7 @@ const STEPS_META = [
       { label: "DataMap reference", url: "/agents-sdk/reference/data-map" },
       { label: "Native functions", url: "/agents-sdk/swaig-functions/native-functions" },
     ],
+    prompts: ["What's the weather in Tokyo?", "How about Paris?", "Now tell me a joke"],
   },
   {
     route: "/step09",
@@ -590,6 +613,7 @@ const STEPS_META = [
       { label: "Hints", url: "/agents-sdk/building-agents/hints" },
       { label: "Best practices", url: "/agents-sdk/appendix/best-practices" },
     ],
+    prompts: ["What's the weather in London?", "Tell me a joke", "Are you still there?"],
   },
   {
     route: "/step10",
@@ -607,6 +631,7 @@ const STEPS_META = [
       { label: "Built-in skills", url: "/agents-sdk/skills/builtin-skills" },
       { label: "Skill config", url: "/agents-sdk/skills/skill-config" },
     ],
+    prompts: ["What time is it in Tokyo?", "What's an 18% tip on $47.50?", "What's the weather in Miami?"],
   },
   {
     route: "/step11",
@@ -624,6 +649,7 @@ const STEPS_META = [
       { label: "Custom skills", url: "/agents-sdk/skills/custom-skills" },
       { label: "Multi-agent setups", url: "/agents-sdk/advanced/multi-agent" },
     ],
+    prompts: ["What time is it?", "What's the weather in Paris?", "Tell me a joke", "What's 15% of $86?"],
   },
 ];
 
@@ -691,6 +717,16 @@ function renderDocLinks(docs, label = "Read more") {
     `<a href="${DOCS_BASE}${d.url}" target="_blank" rel="noopener noreferrer">${escapeHtml(d.label)}</a>`
   ).join("");
   return `<div class="doc-links"><span class="doc-label">${escapeHtml(label)}</span>${items}</div>`;
+}
+
+function renderTrySaying(prompts) {
+  if (!prompts || !prompts.length) return "";
+  const chips = prompts.map(p => `<span class="try-chip">"${escapeHtml(p)}"</span>`).join("");
+  return `
+    <div class="try-saying">
+      <div class="try-label">Try saying to Buddy</div>
+      <div class="try-chips">${chips}</div>
+    </div>`;
 }
 
 /* ---- Auth + URL composition (unchanged behavior) ---- */
@@ -1155,6 +1191,7 @@ function renderActiveDetail() {
       <div class="eyebrow">Now active · ${escapeHtml(step.step)}</div>
       <h2>${escapeHtml(step.name)}</h2>
       <p class="desc">${escapeHtml(step.desc)}</p>
+      ${renderTrySaying(step.prompts)}
       <div class="detail-grid">
         <div class="detail-tile">
           <div class="label">What's new in this step</div>
