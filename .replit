@@ -21,6 +21,7 @@ build = ["sh", "-c", "pip install signalwire-agents signalwire requests fastapi 
 
 [agent]
 expertMode = true
+stack = "BEST_EFFORT_FALLBACK"
 
 [workflows]
 runButton = "Project"
