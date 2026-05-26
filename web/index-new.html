@@ -918,7 +918,7 @@ function renderPinnedUrlCard() {
   return `
     <div class="url-card">
       <div class="url-meta">
-        <div class="url-label" style="color:var(--sw-text-bright);">${step.step} · ${step.name} · selected</div>
+        <div class="url-label" style="color:var(--sw-text-bright);">${escapeHtml(step.step)} · ${escapeHtml(step.name)} · selected</div>
         <div class="url-text">${escapeHtml(swmlUrl)}</div>
       </div>
       <button class="btn-copy" id="pinned-copy">Copy URL</button>
@@ -937,11 +937,14 @@ function renderTimeline() {
       state.visited.includes(s.route) ? "visited" : "",
       s.route === state.activeStep ? "active" : "",
     ].filter(Boolean).join(" ");
+    const stateWord =
+      s.route === state.activeStep ? "active" :
+      state.visited.includes(s.route) ? "visited" : "upcoming";
     const num = s.step.replace(/[^0-9]/g, "");
     const ariaCurrent = s.route === state.activeStep ? ' aria-current="step"' : '';
     html += `
       <button class="timeline-node ${cls}" data-route="${s.route}"${ariaCurrent}
-              aria-label="${s.step}: ${s.name}, ${cls || 'upcoming'}">
+              aria-label="${escapeHtml(s.step)}: ${escapeHtml(s.name)}, ${stateWord}">
         <div class="timeline-circle">${num}</div>
         <div class="timeline-label">${escapeHtml(s.name.split(" ")[0])}</div>
       </button>`;
@@ -958,7 +961,7 @@ function renderActiveDetail() {
   }).join("");
   return `
     <div class="active-detail">
-      <div class="eyebrow">Now active · ${step.step}</div>
+      <div class="eyebrow">Now active · ${escapeHtml(step.step)}</div>
       <h2>${escapeHtml(step.name)}</h2>
       <p class="desc">${escapeHtml(step.desc)}</p>
       <div class="detail-grid">
