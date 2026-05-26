@@ -216,6 +216,43 @@
   .skip-link a { color: var(--sw-text-dim); text-decoration: underline; text-underline-offset: 3px; }
   .skip-link a:hover { color: var(--sw-text-bright); }
 
+  /* doc-links — small reference list inside cards */
+  .doc-links {
+    margin-top: 22px;
+    font-size: 12.5px;
+    color: var(--sw-text);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    align-items: center;
+    line-height: 1.5;
+  }
+  .doc-links .doc-label {
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--sw-text-dim);
+  }
+  .doc-links a {
+    color: var(--sw-text-bright);
+    text-decoration: none;
+    border-bottom: 1px dotted rgba(125,168,252,0.45);
+    padding-bottom: 1px;
+    white-space: nowrap;
+  }
+  .doc-links a:hover {
+    color: var(--sw-blue);
+    border-bottom-color: var(--sw-blue);
+    text-decoration: none;
+  }
+  .doc-links a::after {
+    content: " ↗";
+    font-size: 10px;
+    opacity: 0.5;
+    margin-left: 2px;
+  }
+
   /* ============ LOCKED PREVIEW (agent timeline) ============ */
   .preview-section {
     padding: 64px 24px 40px;
@@ -480,7 +517,12 @@ const STEPS_META = [
     capabilities: ["Chat"],
     newCapabilities: ["Chat"],
     concepts: ["AgentBase", "add_language()", "prompt_add_section()", "set_post_prompt()"],
-    requiredKeys: []
+    requiredKeys: [],
+    docs: [
+      { label: "AgentBase architecture", url: "/agents-sdk/core-concepts/architecture" },
+      { label: "Prompts (POM)", url: "/agents-sdk/building-agents/prompts-pom" },
+      { label: "Call flow", url: "/agents-sdk/building-agents/call-flow" },
+    ],
   },
   {
     route: "/step06",
@@ -492,7 +534,12 @@ const STEPS_META = [
     capabilities: ["Chat", "Jokes (list)"],
     newCapabilities: ["Jokes (list)"],
     concepts: ["define_tool()", "FunctionResult", "SWAIG functions"],
-    requiredKeys: []
+    requiredKeys: [],
+    docs: [
+      { label: "What is SWAIG?", url: "/agents-sdk/core-concepts/swaig" },
+      { label: "Defining functions", url: "/agents-sdk/swaig-functions/defining-functions" },
+      { label: "Function results", url: "/agents-sdk/swaig-functions/results-actions" },
+    ],
   },
   {
     route: "/step07",
@@ -504,7 +551,11 @@ const STEPS_META = [
     capabilities: ["Chat", "Jokes (API)"],
     newCapabilities: ["Jokes (API)"],
     concepts: ["External API calls", "Error handling", "API_NINJAS_KEY"],
-    requiredKeys: ["API_NINJAS_KEY"]
+    requiredKeys: ["API_NINJAS_KEY"],
+    docs: [
+      { label: "Function parameters", url: "/agents-sdk/swaig-functions/parameters" },
+      { label: "Defining functions", url: "/agents-sdk/swaig-functions/defining-functions" },
+    ],
   },
   {
     route: "/step08",
@@ -516,7 +567,12 @@ const STEPS_META = [
     capabilities: ["Chat", "Jokes (API)", "Weather"],
     newCapabilities: ["Weather"],
     concepts: ["DataMap", "register_swaig_function()", "WEATHER_API_KEY"],
-    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"]
+    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"],
+    docs: [
+      { label: "DataMap guide", url: "/agents-sdk/swaig-functions/datamap" },
+      { label: "DataMap reference", url: "/agents-sdk/reference/data-map" },
+      { label: "Native functions", url: "/agents-sdk/swaig-functions/native-functions" },
+    ],
   },
   {
     route: "/step09",
@@ -528,7 +584,12 @@ const STEPS_META = [
     capabilities: ["Chat", "Jokes (API)", "Weather"],
     newCapabilities: [],
     concepts: ["set_params()", "add_hints()", "end_of_speech_timeout", "attention_timeout"],
-    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"]
+    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"],
+    docs: [
+      { label: "AI parameters", url: "/agents-sdk/building-agents/ai-parameters" },
+      { label: "Hints", url: "/agents-sdk/building-agents/hints" },
+      { label: "Best practices", url: "/agents-sdk/appendix/best-practices" },
+    ],
   },
   {
     route: "/step10",
@@ -540,7 +601,12 @@ const STEPS_META = [
     capabilities: ["Chat", "Jokes (API)", "Weather", "Date/Time", "Math"],
     newCapabilities: ["Date/Time", "Math"],
     concepts: ["add_skill(\"datetime\")", "add_skill(\"math\")"],
-    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"]
+    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"],
+    docs: [
+      { label: "Understanding skills", url: "/agents-sdk/skills/understanding-skills" },
+      { label: "Built-in skills", url: "/agents-sdk/skills/builtin-skills" },
+      { label: "Skill config", url: "/agents-sdk/skills/skill-config" },
+    ],
   },
   {
     route: "/step11",
@@ -552,7 +618,12 @@ const STEPS_META = [
     capabilities: ["Chat", "Jokes (API)", "Weather", "Date/Time", "Math"],
     newCapabilities: [],
     concepts: ["Code organization", "Production patterns"],
-    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"]
+    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"],
+    docs: [
+      { label: "Patterns", url: "/agents-sdk/appendix/patterns" },
+      { label: "Custom skills", url: "/agents-sdk/skills/custom-skills" },
+      { label: "Multi-agent setups", url: "/agents-sdk/advanced/multi-agent" },
+    ],
   },
 ];
 
@@ -564,6 +635,11 @@ const PILLAR_CARDS = [
     stem: "step12_rest_demo",
     desc: "List phone numbers, send SMS, fetch call history, and point the workshop voice handler at the agent.",
     runLabel: "Run REST Demo",
+    docs: [
+      { label: "REST API overview", url: "/main/rest/signalwire-rest/overview" },
+      { label: "Authorization", url: "/main/rest/overview/authorization" },
+      { label: "Compatibility API", url: "/main/rest/compatibility-api" },
+    ],
   },
   {
     pillar: "relay",
@@ -572,6 +648,11 @@ const PILLAR_CARDS = [
     stem: "step13_relay_demo",
     desc: "Connect via WebSocket, subscribe to incoming-call events, stream transcripts, and optionally place one outbound call.",
     runLabel: "Run RELAY Demo",
+    docs: [
+      { label: "Realtime SDK overview", url: "/realtime-sdk" },
+      { label: "Voice client guide", url: "/realtime-sdk/guides/voice" },
+      { label: "Messaging client guide", url: "/realtime-sdk/guides/messaging" },
+    ],
   },
 ];
 
@@ -579,6 +660,38 @@ const REPO = "jongray00/Chicago-Roadshow-2026";
 const BRANCH = "main";
 const pySourceUrl = stem => `https://github.com/${REPO}/blob/${BRANCH}/python/steps/${stem}.py`;
 const tsSourceUrl = stem => `https://github.com/${REPO}/blob/${BRANCH}/typescript/steps/${stem}.ts`;
+
+/* ---- Docs surfacing ---- */
+const DOCS_BASE = "https://developer.signalwire.com";
+
+const MILESTONE_DOCS = {
+  1: [
+    { label: "Account setup", url: "/agents-sdk/signalwire-integration/account-setup" },
+    { label: "Platform overview", url: "/main/home/overview/getting-started" },
+  ],
+  2: [
+    { label: "What is SWML?", url: "/main/swml" },
+    { label: "SWML quick start", url: "/main/swml/get-started/quickstart" },
+    { label: "SWML on the SDK", url: "/agents-sdk/core-concepts/swml" },
+  ],
+  3: [
+    { label: "Phone numbers with the SDK", url: "/agents-sdk/signalwire-integration/phone-numbers" },
+    { label: "Mapping numbers to agents", url: "/agents-sdk/signalwire-integration/mapping-numbers" },
+  ],
+  4: [
+    { label: "Call flow", url: "/agents-sdk/building-agents/call-flow" },
+    { label: "Lifecycle", url: "/agents-sdk/core-concepts/lifecycle" },
+    { label: "Troubleshooting", url: "/agents-sdk/signalwire-integration/troubleshooting" },
+  ],
+};
+
+function renderDocLinks(docs, label = "Read more") {
+  if (!docs || !docs.length) return "";
+  const items = docs.map(d =>
+    `<a href="${DOCS_BASE}${d.url}" target="_blank" rel="noopener noreferrer">${escapeHtml(d.label)}</a>`
+  ).join("");
+  return `<div class="doc-links"><span class="doc-label">${escapeHtml(label)}</span>${items}</div>`;
+}
 
 /* ---- Auth + URL composition (unchanged behavior) ---- */
 let authUser = "workshop";
@@ -716,6 +829,7 @@ function renderMilestone1() {
       <div class="wizard-eyebrow">Step 1 of 4 · SignalWire account</div>
       <h2>Do you have a SignalWire account?</h2>
       <p class="lead">You'll need one to receive a real phone call. The free tier covers everything in this workshop.</p>
+      ${renderDocLinks(MILESTONE_DOCS[1])}
       <div class="wizard-nav">
         <a href="https://id.signalwire.com/onboarding" target="_blank" class="btn-secondary" id="ms1-signup">Sign up — opens new tab</a>
         <span class="step-counter">Step 1 of 4</span>
@@ -750,6 +864,7 @@ function renderMilestone2() {
           <p>Under <strong>Handle Calls Using</strong>, pick <strong>External URL</strong>. Paste the URL above into <strong>Primary Script URL</strong>, then click <strong>Create</strong>.</p>
         </div>
       </div>
+      ${renderDocLinks(MILESTONE_DOCS[2])}
       <div class="wizard-nav">
         <button class="btn-secondary" id="ms2-back">← Back</button>
         <span class="step-counter">Step 2 of 4</span>
@@ -776,6 +891,7 @@ function renderMilestone3() {
           <p>Click <strong>+ Add</strong>, then pick an existing number — or buy a new one. Any local number works.</p>
         </div>
       </div>
+      ${renderDocLinks(MILESTONE_DOCS[3])}
       <div class="wizard-nav">
         <button class="btn-secondary" id="ms3-back">← Back</button>
         <span class="step-counter">Step 3 of 4</span>
@@ -790,6 +906,7 @@ function renderMilestone4() {
       <div class="wizard-eyebrow">Step 4 of 4 · Call your number</div>
       <h2>Dial your SignalWire number now.</h2>
       <p class="lead">Buddy will answer and chat with you. Ask anything — "How are you?", "Tell me about yourself." When you hear her, you're done with setup.</p>
+      ${renderDocLinks(MILESTONE_DOCS[4])}
       <div class="wizard-nav">
         <button class="btn-secondary" id="ms4-back">← Back</button>
         <span class="step-counter">Step 4 of 4</span>
@@ -950,6 +1067,7 @@ function renderWorkshop() {
               <a href="${pySourceUrl(p.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">Python source</a>
               <a href="${tsSourceUrl(p.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">TypeScript source</a>
             </div>
+            ${renderDocLinks(p.docs, "Docs")}
             <div class="run-inputs" data-pillar="${p.pillar}" hidden style="margin-top:12px;"></div>
             <pre class="run-log" data-pillar="${p.pillar}" style="margin-top:12px;background:var(--sw-dark);border:1px solid var(--sw-border);border-radius:8px;padding:12px;font-size:12px;color:var(--sw-text);min-height:0;max-height:280px;overflow:auto;font-family:'SF Mono',monospace;"></pre>
           </div>`;
@@ -1047,6 +1165,7 @@ function renderActiveDetail() {
           <div class="value">${caps}</div>
         </div>
       </div>
+      ${renderDocLinks(step.docs, "Docs")}
       <div class="source-row">
         <a href="${pySourceUrl(step.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">View Python source</a>
         <a href="${tsSourceUrl(step.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">View TypeScript source</a>
