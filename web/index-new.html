@@ -119,9 +119,6 @@
     margin: 0 -2px; align-self: flex-start; margin-top: 19px;
   }
   .milestone-connector.done { background: var(--sw-cyan); }
-  .milestone-connector.partial {
-    background: linear-gradient(90deg, var(--sw-cyan) 0%, var(--sw-cyan) 50%, var(--sw-border) 50%, var(--sw-border) 100%);
-  }
 
   /* ============ ACTIVE WIZARD CARD ============ */
   .wizard-card {
@@ -394,7 +391,7 @@ function copyUrl(btn, text) {
 /* ---- Persistent state ---- */
 const state = {
   onboardingComplete: localStorage.getItem("chicago2026.onboardingComplete") === "1",
-  milestone: parseInt(localStorage.getItem("chicago2026.milestone") || "1", 10),
+  milestone: Math.min(4, Math.max(1, parseInt(localStorage.getItem("chicago2026.milestone") || "1", 10) || 1)),
   visited: JSON.parse(localStorage.getItem("chicago2026.visited") || "[]"),
   activeStep: localStorage.getItem("chicago2026.activeStep") || "/step04",
 };
@@ -454,7 +451,7 @@ function renderMilestones() {
     const cls = mi.key < m ? "done" : mi.key === m ? "active" : "";
     const inner = mi.key < m ? "✓" : String(mi.key);
     html += `
-      <div class="milestone ${cls}" aria-current="${cls === 'active' ? 'step' : 'false'}" aria-label="Milestone ${mi.key}: ${mi.label}, ${cls || 'upcoming'}">
+      <div class="milestone ${cls}" ${cls === 'active' ? 'aria-current="step"' : ''} aria-label="Milestone ${mi.key}: ${mi.label}, ${cls || 'upcoming'}">
         <div class="milestone-dot">${inner}</div>
         <div class="milestone-label">${mi.label}</div>
       </div>`;
@@ -559,20 +556,19 @@ function escapeHtml(s) {
 
 function attachWizardHandlers() {
   const m = state.milestone;
+  const on = (id, ev, fn) => document.getElementById(id)?.addEventListener(ev, fn);
   if (m === 1) {
-    document.getElementById("ms1-yes").addEventListener("click", () => advanceMilestone());
+    on("ms1-yes", "click", () => advanceMilestone());
   } else if (m === 2) {
-    document.getElementById("ms2-back").addEventListener("click", () => backMilestone());
-    document.getElementById("ms2-next").addEventListener("click", () => advanceMilestone());
+    on("ms2-back", "click", () => backMilestone());
+    on("ms2-next", "click", () => advanceMilestone());
   } else if (m === 3) {
-    document.getElementById("ms3-back").addEventListener("click", () => backMilestone());
-    document.getElementById("ms3-next").addEventListener("click", () => advanceMilestone());
-    document.getElementById("ms3-copy").addEventListener("click", e => {
-      copyUrl(e.currentTarget, getSwmlUrl("/step04"));
-    });
+    on("ms3-back", "click", () => backMilestone());
+    on("ms3-next", "click", () => advanceMilestone());
+    on("ms3-copy", "click", e => copyUrl(e.currentTarget, getSwmlUrl("/step04")));
   } else if (m === 4) {
-    document.getElementById("ms4-back").addEventListener("click", () => backMilestone());
-    document.getElementById("ms4-done").addEventListener("click", () => completeOnboarding());
+    on("ms4-back", "click", () => backMilestone());
+    on("ms4-done", "click", () => completeOnboarding());
   }
 }
 
