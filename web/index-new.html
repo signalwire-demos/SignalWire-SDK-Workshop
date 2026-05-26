@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignalWire · Chicago Roadshow 2026</title>
+<link rel="icon" type="image/png" href="https://mcdn.signalwire.com/images/v2/loud/LogoLarge.png">
+<style>
+  :root {
+    --sw-blue: #044cf6;
+    --sw-blue-deep: #0a2882;
+    --sw-dark: #0a1628;
+    --sw-card: #111b30;
+    --sw-card-2: #16223c;
+    --sw-border: #1a2540;
+    --sw-magenta: #F72A72;
+    --sw-cyan: #38bdf8;
+    --sw-orange: #ff9100;
+    --sw-text: #cdd6e4;
+    --sw-text-bright: #f0f4fa;
+    --sw-text-dim: #6b7a94;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+    background: var(--sw-dark);
+    color: var(--sw-text);
+    line-height: 1.55;
+    min-height: 100vh;
+  }
+  a { color: var(--sw-blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px;
+    font-family: 'SF Mono', monospace; font-size: 0.88em; color: var(--sw-text-bright);
+  }
+
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 32px; position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; color: var(--sw-text-bright); font-size: 14px; }
+  .brand-mark {
+    width: 24px; height: 24px; border-radius: 6px;
+    background: linear-gradient(135deg, var(--sw-blue) 0%, var(--sw-magenta) 100%);
+    box-shadow: 0 4px 14px rgba(247,42,114,0.3);
+  }
+  .topbar nav a { color: rgba(240,244,250,0.7); text-decoration: none; font-size: 13px; margin-left: 22px; }
+  .topbar nav a:hover { color: var(--sw-text-bright); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><div class="brand-mark"></div>SignalWire · Chicago Roadshow 2026</div>
+  <nav>
+    <a href="https://signalwire.com/docs/agents-sdk/python" target="_blank">Docs</a>
+    <a href="https://github.com/jongray00/Chicago-Roadshow-2026" target="_blank">GitHub</a>
+    <a href="https://ai.signalwire.com/" target="_blank">SignalWire AI</a>
+  </nav>
+</div>
+
+<main id="app">
+  <p style="text-align:center;padding:120px 20px;color:var(--sw-text-dim);">Loading…</p>
+</main>
+
+<script>
+/* =========================================================================
+ *  Chicago Roadshow 2026 — Landing page state machine
+ * ========================================================================= */
+
+const STEPS_META = [
+  {
+    route: "/step04",
+    step: "Step 4",
+    name: "Hello Agent",
+    stem: "step04_hello",
+    desc: "The simplest possible agent. Call your number and have a basic conversation with Buddy. Proves everything works end to end.",
+    whatsNew: "Foundation: AgentBase, add_language(), prompt_add_section(), post-prompt summaries",
+    capabilities: ["Chat"],
+    newCapabilities: ["Chat"],
+    concepts: ["AgentBase", "add_language()", "prompt_add_section()", "set_post_prompt()"],
+    requiredKeys: []
+  },
+  {
+    route: "/step06",
+    step: "Step 6",
+    name: "Hardcoded Jokes",
+    stem: "step06_hardcoded_jokes",
+    desc: "Teaches the AI to tell jokes using a SWAIG function. The handler picks a random joke from a hardcoded list.",
+    whatsNew: "First SWAIG function: define_tool() with a custom handler that returns FunctionResult",
+    capabilities: ["Chat", "Jokes (list)"],
+    newCapabilities: ["Jokes (list)"],
+    concepts: ["define_tool()", "FunctionResult", "SWAIG functions"],
+    requiredKeys: []
+  },
+  {
+    route: "/step07",
+    step: "Step 7",
+    name: "Live API Jokes",
+    stem: "step07_api_jokes",
+    desc: "Replaces hardcoded jokes with fresh ones from the API Ninjas Dad Jokes API. Every call gets a different joke.",
+    whatsNew: "Calling an external REST API from a custom function handler",
+    capabilities: ["Chat", "Jokes (API)"],
+    newCapabilities: ["Jokes (API)"],
+    concepts: ["External API calls", "Error handling", "API_NINJAS_KEY"],
+    requiredKeys: ["API_NINJAS_KEY"]
+  },
+  {
+    route: "/step08",
+    step: "Step 8",
+    name: "Weather + Jokes",
+    stem: "step08_weather",
+    desc: "Adds weather lookups using DataMap - a serverless approach where SignalWire calls the weather API directly.",
+    whatsNew: "DataMap: declare an API call and SignalWire executes it. Your server never handles the weather request.",
+    capabilities: ["Chat", "Jokes (API)", "Weather"],
+    newCapabilities: ["Weather"],
+    concepts: ["DataMap", "register_swaig_function()", "WEATHER_API_KEY"],
+    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"]
+  },
+  {
+    route: "/step09",
+    step: "Step 9",
+    name: "Polished Agent",
+    stem: "step09_polish",
+    desc: "Same capabilities as Step 8, but with a much better conversation experience. Better personality, timing, and speech recognition.",
+    whatsNew: "UX tuning: set_params() for timing, add_hints() for speech recognition, richer prompts, varied fillers",
+    capabilities: ["Chat", "Jokes (API)", "Weather"],
+    newCapabilities: [],
+    concepts: ["set_params()", "add_hints()", "end_of_speech_timeout", "attention_timeout"],
+    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"]
+  },
+  {
+    route: "/step10",
+    step: "Step 10",
+    name: "Agent with Skills",
+    stem: "step10_skills",
+    desc: "Adds date/time and math capabilities with just two lines of code. Skills are pre-built capabilities that ship with the SDK.",
+    whatsNew: "Built-in skills: add_skill() for instant capabilities with zero handler code",
+    capabilities: ["Chat", "Jokes (API)", "Weather", "Date/Time", "Math"],
+    newCapabilities: ["Date/Time", "Math"],
+    concepts: ["add_skill(\"datetime\")", "add_skill(\"math\")"],
+    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"]
+  },
+  {
+    route: "/step11",
+    step: "Step 11",
+    name: "Complete Agent",
+    stem: "step11_complete",
+    desc: "Everything polished and organized into clean private methods. The production-ready pattern for building larger agents.",
+    whatsNew: "Production organization: _configure_*() and _register_*() method pattern for clean, maintainable code",
+    capabilities: ["Chat", "Jokes (API)", "Weather", "Date/Time", "Math"],
+    newCapabilities: [],
+    concepts: ["Code organization", "Production patterns"],
+    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"]
+  },
+];
+
+const PILLAR_CARDS = [
+  {
+    pillar: "rest",
+    step: "Step 12",
+    name: "REST pillar - RestClient",
+    stem: "step12_rest_demo",
+    desc: "List phone numbers, send SMS, fetch call history, and point the workshop voice handler at the agent.",
+    runLabel: "Run REST Demo",
+  },
+  {
+    pillar: "relay",
+    step: "Step 13",
+    name: "RELAY pillar - WebSocket client",
+    stem: "step13_relay_demo",
+    desc: "Connect via WebSocket, subscribe to incoming-call events, stream transcripts, and optionally place one outbound call.",
+    runLabel: "Run RELAY Demo",
+  },
+];
+
+const REPO = "jongray00/Chicago-Roadshow-2026";
+const BRANCH = "main";
+const pySourceUrl = stem => `https://github.com/${REPO}/blob/${BRANCH}/python/steps/${stem}.py`;
+const tsSourceUrl = stem => `https://github.com/${REPO}/blob/${BRANCH}/typescript/steps/${stem}.ts`;
+
+/* ---- Auth + URL composition (unchanged behavior) ---- */
+let authUser = "workshop";
+let authPass = "password";
+
+async function loadConfig() {
+  try {
+    const resp = await fetch("/config");
+    if (resp.ok) {
+      const cfg = await resp.json();
+      if (cfg.auth_user) authUser = cfg.auth_user;
+      if (cfg.auth_pass) authPass = cfg.auth_pass;
+    }
+  } catch (e) { /* keep defaults */ }
+  renderAll();
+}
+
+function getBaseUrl() { return window.location.origin; }
+
+function getSwmlUrl(route) {
+  const base = getBaseUrl();
+  try {
+    const url = new URL(base);
+    return `${url.protocol}//${authUser}:${authPass}@${url.host}${route}`;
+  } catch {
+    return `${base}${route}`;
+  }
+}
+
+function copyUrl(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const original = btn.textContent;
+    btn.textContent = "Copied!";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = original; btn.classList.remove("copied"); }, 2000);
+  });
+}
+
+/* ---- Persistent state ---- */
+const state = {
+  onboardingComplete: localStorage.getItem("chicago2026.onboardingComplete") === "1",
+  milestone: parseInt(localStorage.getItem("chicago2026.milestone") || "1", 10),
+  visited: JSON.parse(localStorage.getItem("chicago2026.visited") || "[]"),
+  activeStep: localStorage.getItem("chicago2026.activeStep") || "/step04",
+};
+
+function persist() {
+  localStorage.setItem("chicago2026.onboardingComplete", state.onboardingComplete ? "1" : "0");
+  localStorage.setItem("chicago2026.milestone", String(state.milestone));
+  localStorage.setItem("chicago2026.visited", JSON.stringify(state.visited));
+  localStorage.setItem("chicago2026.activeStep", state.activeStep);
+}
+
+function resetState() {
+  localStorage.removeItem("chicago2026.onboardingComplete");
+  localStorage.removeItem("chicago2026.milestone");
+  localStorage.removeItem("chicago2026.visited");
+  localStorage.removeItem("chicago2026.activeStep");
+  location.reload();
+}
+
+/* ---- Render dispatcher ---- */
+function renderAll() {
+  const app = document.getElementById("app");
+  if (state.onboardingComplete) {
+    app.innerHTML = `<p style="text-align:center;padding:120px 20px;color:var(--sw-text-dim);">[Workshop state — Task 4 will render]</p>`;
+  } else {
+    app.innerHTML = `<p style="text-align:center;padding:120px 20px;color:var(--sw-text-dim);">[Onboarding state — Task 2 will render — milestone ${state.milestone}]</p>`;
+  }
+}
+
+loadConfig();
+</script>
+</body>
+</html>
