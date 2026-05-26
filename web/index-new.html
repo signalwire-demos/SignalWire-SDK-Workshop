@@ -899,7 +899,7 @@ function renderWorkshop() {
           <span class="sep" aria-hidden="true">·</span>
           ${state.visited.length} of ${STEPS_META.length} agents tried
           <span class="sep" aria-hidden="true">·</span>
-          <a href="#" id="restart-wizard-link">Restart wizard</a>
+          <button type="button" class="link-button" id="restart-wizard-link">Restart wizard</button>
         </div>
         <h1>You're up and running.</h1>
         <div class="pinned-url">${renderPinnedUrlCard()}</div>
@@ -1059,10 +1059,12 @@ function renderAll() {
   }
 }
 
+const activePillarStreams = new Map();
 async function runPillar(pillar) {
   const logPane = document.querySelector(`.run-log[data-pillar="${pillar}"]`);
   const inputsPane = document.querySelector(`.run-inputs[data-pillar="${pillar}"]`);
   if (!logPane || !inputsPane) return;
+  activePillarStreams.get(pillar)?.close();
   logPane.textContent = "";
 
   const inputsResp = await fetch(`/run/${pillar}/inputs`);
@@ -1096,6 +1098,7 @@ async function runPillar(pillar) {
   const { run_id } = await startResp.json();
 
   const es = new EventSource(`/run/${pillar}/stream/${run_id}`);
+  activePillarStreams.set(pillar, es);
   function append(line, isErr) {
     const span = document.createElement("span");
     span.textContent = line + "\n";
@@ -1105,15 +1108,19 @@ async function runPillar(pillar) {
   }
   es.addEventListener("stdout", e => append(JSON.parse(e.data).data, false));
   es.addEventListener("stderr", e => append(JSON.parse(e.data).data, true));
+  function closeStream() {
+    es.close();
+    if (activePillarStreams.get(pillar) === es) activePillarStreams.delete(pillar);
+  }
   es.addEventListener("exit", e => {
     const payload = JSON.parse(e.data);
     append(`[exit code ${payload.data}]`, payload.data !== "0");
-    es.close();
+    closeStream();
   });
-  es.addEventListener("end", () => es.close());
+  es.addEventListener("end", closeStream);
   es.addEventListener("cancelled", () => {
     append("[run cancelled by newer click]", true);
-    es.close();
+    closeStream();
   });
 }
 
