@@ -310,6 +310,101 @@
     text-align: center; padding: 32px 24px; font-size: 13px;
     color: var(--sw-text-dim); border-top: 1px solid var(--sw-border);
   }
+
+  /* ===== Workshop state ===== */
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.3);
+    color: var(--sw-cyan); padding: 6px 14px; border-radius: 999px;
+    font-size: 12.5px; font-weight: 600; letter-spacing: 0.02em;
+  }
+  .status-pill .sep { color: rgba(56,189,248,0.4); }
+  .status-pill a { color: var(--sw-cyan); text-decoration: underline; text-underline-offset: 3px; }
+  .status-pill a:hover { color: var(--sw-text-bright); }
+
+  .workshop-hero { text-align: center; }
+  .workshop-hero h1 {
+    font-size: 32px; line-height: 1.15; font-weight: 700;
+    color: var(--sw-text-bright); letter-spacing: -0.015em;
+    margin-top: 18px;
+  }
+  .workshop-hero .pinned-url {
+    margin: 28px auto 0; max-width: 760px;
+  }
+  .workshop-hero .helper {
+    margin: 16px auto 0; max-width: 640px; font-size: 14px; color: var(--sw-text-dim);
+  }
+
+  /* Timeline (interactive) */
+  .timeline {
+    display: flex; align-items: center; gap: 0;
+    max-width: 880px; margin: 0 auto; padding: 16px 0;
+  }
+  .timeline-node {
+    flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    cursor: pointer; background: transparent; border: none; padding: 0;
+  }
+  .timeline-node:focus-visible .timeline-circle {
+    outline: 2px solid var(--sw-blue); outline-offset: 4px;
+  }
+  .timeline-circle {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--sw-card); border: 2px solid var(--sw-border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--sw-text-dim); font-weight: 700; font-size: 13px;
+    transition: all 0.2s;
+  }
+  .timeline-node.visited .timeline-circle {
+    background: rgba(56,189,248,0.15); border-color: var(--sw-cyan); color: var(--sw-cyan);
+  }
+  .timeline-node.active .timeline-circle {
+    background: linear-gradient(135deg, var(--sw-blue), var(--sw-magenta));
+    border-color: var(--sw-magenta); color: white; transform: scale(1.25);
+    box-shadow: 0 0 0 5px rgba(247,42,114,0.18), 0 0 24px rgba(247,42,114,0.45);
+  }
+  .timeline-label { font-size: 11px; color: var(--sw-text-dim); }
+  .timeline-node.visited .timeline-label { color: var(--sw-text); }
+  .timeline-node.active .timeline-label { color: var(--sw-text-bright); font-weight: 600; }
+  .timeline-connector { flex: 1; height: 2px; background: var(--sw-border); margin: 0 -2px; align-self: flex-start; margin-top: 20px; }
+  .timeline-connector.visited { background: var(--sw-cyan); }
+
+  /* Active step detail */
+  .active-detail {
+    background: var(--sw-card); border: 1px solid var(--sw-border);
+    border-radius: 16px; padding: 32px;
+    max-width: 900px; margin: 40px auto 0;
+    box-shadow: 0 24px 60px -20px rgba(247,42,114,0.15);
+  }
+  .active-detail .eyebrow {
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--sw-magenta); font-weight: 700;
+  }
+  .active-detail h2 { font-size: 26px; color: var(--sw-text-bright); margin-top: 6px; }
+  .active-detail .desc { font-size: 15px; color: var(--sw-text); margin-top: 8px; }
+  .detail-grid {
+    margin-top: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  }
+  .detail-tile {
+    background: var(--sw-dark); border: 1px solid var(--sw-border);
+    border-radius: 10px; padding: 14px 16px;
+  }
+  .detail-tile .label {
+    font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--sw-text-dim); font-weight: 700; margin-bottom: 8px;
+  }
+  .detail-tile .value { font-size: 13.5px; color: var(--sw-text-bright); }
+  .pill { display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 10px;
+    background: rgba(255,255,255,0.06); color: var(--sw-text); margin: 0 4px 4px 0; }
+  .pill.new { background: rgba(247,42,114,0.15); color: var(--sw-magenta); }
+  .source-row { margin-top: 22px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .src-btn {
+    font-size: 12.5px; padding: 8px 14px; border-radius: 8px;
+    border: 1px solid var(--sw-border); color: var(--sw-text-bright);
+    background: transparent; text-decoration: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .src-btn:hover { border-color: var(--sw-blue); }
+  .src-btn.primary { background: var(--sw-blue); border-color: var(--sw-blue); }
 </style>
 </head>
 <body>
@@ -751,10 +846,150 @@ function renderLockedPreviews() {
   `;
 }
 
+/* ---- Workshop state render ---- */
+function renderWorkshop() {
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    <section class="hero">
+      <div class="hero-inner workshop-hero">
+        <div class="status-pill">
+          ✓ Setup complete
+          <span class="sep">·</span>
+          ${state.visited.length} of ${STEPS_META.length} agents tried
+          <span class="sep">·</span>
+          <a href="#" id="restart-wizard-link">Restart wizard</a>
+        </div>
+        <h1>You're up and running.</h1>
+        <div class="pinned-url">${renderPinnedUrlCard()}</div>
+        <p class="helper">Paste this URL into your existing SWML Script in the dashboard, then call your number. Click any step below to switch.</p>
+      </div>
+    </section>
+
+    <section class="preview-section">
+      <div class="preview-inner">
+        <div class="preview-head">
+          <h2>The seven agents</h2>
+          <p>Each one adds a capability to the last. Click any node to make it active.</p>
+        </div>
+        ${renderTimeline()}
+        ${renderActiveDetail()}
+      </div>
+    </section>
+
+    <section class="pillars-section">
+      <div class="pillars-head">
+        <div class="label">After the basics</div>
+        <h2>Two more pillars beyond the AI agent</h2>
+        <p>SignalWire is more than AI voice. Both pillars run from your browser without picking up the phone.</p>
+      </div>
+      <div class="pillars-grid" id="pillars-host">
+        <p style="text-align:center;color:var(--sw-text-dim);grid-column:1/-1;">[Pillars wired in Task 5]</p>
+      </div>
+    </section>
+
+    <div class="footer">
+      Built with the <a href="https://signalwire.com/docs/agents-sdk" target="_blank" rel="noopener noreferrer">SignalWire Agents SDK</a>
+      · <a href="https://github.com/jongray00/Chicago-Roadshow-2026" target="_blank" rel="noopener noreferrer">github.com/jongray00/Chicago-Roadshow-2026</a>
+      · <a href="#" id="reset-progress-link">Reset workshop progress</a>
+    </div>
+  `;
+
+  document.getElementById("restart-wizard-link")?.addEventListener("click", e => {
+    e.preventDefault();
+    state.onboardingComplete = false;
+    state.milestone = 1;
+    persist();
+    renderAll();
+  });
+  document.getElementById("reset-progress-link")?.addEventListener("click", e => {
+    e.preventDefault();
+    resetState();
+  });
+  document.querySelectorAll(".timeline-node").forEach(node => {
+    node.addEventListener("click", () => setActiveStep(node.dataset.route));
+  });
+  document.getElementById("pinned-copy")?.addEventListener("click", e => copyUrl(e.currentTarget, getSwmlUrl(state.activeStep)));
+  document.getElementById("detail-copy")?.addEventListener("click", e => copyUrl(e.currentTarget, getSwmlUrl(state.activeStep)));
+}
+
+function renderPinnedUrlCard() {
+  const step = STEPS_META.find(s => s.route === state.activeStep) || STEPS_META[0];
+  const swmlUrl = getSwmlUrl(step.route);
+  return `
+    <div class="url-card">
+      <div class="url-meta">
+        <div class="url-label" style="color:var(--sw-text-bright);">${step.step} · ${step.name} · selected</div>
+        <div class="url-text">${escapeHtml(swmlUrl)}</div>
+      </div>
+      <button class="btn-copy" id="pinned-copy">Copy URL</button>
+    </div>`;
+}
+
+function renderTimeline() {
+  let html = `<div class="timeline">`;
+  STEPS_META.forEach((s, i) => {
+    if (i > 0) {
+      const prev = STEPS_META[i - 1];
+      const conn = (state.visited.includes(prev.route) && state.visited.includes(s.route)) ? "visited" : "";
+      html += `<div class="timeline-connector ${conn}"></div>`;
+    }
+    const cls = [
+      state.visited.includes(s.route) ? "visited" : "",
+      s.route === state.activeStep ? "active" : "",
+    ].filter(Boolean).join(" ");
+    const num = s.step.replace(/[^0-9]/g, "");
+    const ariaCurrent = s.route === state.activeStep ? ' aria-current="step"' : '';
+    html += `
+      <button class="timeline-node ${cls}" data-route="${s.route}"${ariaCurrent}
+              aria-label="${s.step}: ${s.name}, ${cls || 'upcoming'}">
+        <div class="timeline-circle">${num}</div>
+        <div class="timeline-label">${escapeHtml(s.name.split(" ")[0])}</div>
+      </button>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+function renderActiveDetail() {
+  const step = STEPS_META.find(s => s.route === state.activeStep) || STEPS_META[0];
+  const caps = step.capabilities.map(c => {
+    const isNew = step.newCapabilities.includes(c);
+    return `<span class="pill${isNew ? ' new' : ''}">${escapeHtml(c)}</span>`;
+  }).join("");
+  return `
+    <div class="active-detail">
+      <div class="eyebrow">Now active · ${step.step}</div>
+      <h2>${escapeHtml(step.name)}</h2>
+      <p class="desc">${escapeHtml(step.desc)}</p>
+      <div class="detail-grid">
+        <div class="detail-tile">
+          <div class="label">What's new in this step</div>
+          <div class="value">${escapeHtml(step.whatsNew)}</div>
+        </div>
+        <div class="detail-tile">
+          <div class="label">Capabilities so far</div>
+          <div class="value">${caps}</div>
+        </div>
+      </div>
+      <div class="source-row">
+        <a href="${pySourceUrl(step.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">View Python source</a>
+        <a href="${tsSourceUrl(step.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">View TypeScript source</a>
+        <button class="src-btn primary" id="detail-copy">Copy this URL</button>
+      </div>
+    </div>`;
+}
+
+function setActiveStep(route) {
+  state.activeStep = route;
+  if (!state.visited.includes(route)) state.visited.push(route);
+  persist();
+  renderAll();
+}
+
 /* ---- Render dispatcher ---- */
 function renderAll() {
   if (state.onboardingComplete) {
-    document.getElementById("app").innerHTML = `<p style="text-align:center;padding:120px 20px;color:var(--sw-text-dim);">[Workshop state — Task 4 will render]</p>`;
+    renderWorkshop();
   } else {
     renderOnboarding();
   }
