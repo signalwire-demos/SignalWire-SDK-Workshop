@@ -675,8 +675,8 @@ function renderOnboarding() {
 
 const MILESTONES = [
   { key: 1, label: "Account" },
-  { key: 2, label: "Get a number" },
-  { key: 3, label: "Wire it up" },
+  { key: 2, label: "Create script" },
+  { key: 3, label: "Connect number" },
   { key: 4, label: "Call it" },
 ];
 
@@ -725,43 +725,55 @@ function renderMilestone1() {
 }
 
 function renderMilestone2() {
+  const swmlUrl = getSwmlUrl("/step04");
   return `
     <div class="wizard-card">
-      <div class="wizard-eyebrow">Step 2 of 4 · Phone number</div>
-      <h2>Buy a phone number in your SignalWire dashboard.</h2>
-      <p class="lead">Go to <strong>Phone Numbers → + Buy a New Phone Number</strong>. Any local number works; trial credits cover it.</p>
+      <div class="wizard-eyebrow">Step 2 of 4 · Create the SWML script</div>
+      <h2>Create a SWML Script in your dashboard, then paste this URL.</h2>
+      <p class="lead">A SWML Script tells SignalWire how to handle a call. You'll point it at the Hello Agent URL below — SignalWire fetches that URL whenever a call comes in.</p>
+      <div class="url-card">
+        <div class="url-meta">
+          <div class="url-label">Step 4 · Hello Agent · your first SWML URL</div>
+          <div class="url-text" id="ms2-url-text">${escapeHtml(swmlUrl)}</div>
+        </div>
+        <button class="btn-copy" id="ms2-copy">Copy URL</button>
+      </div>
+      <div class="dashboard-hint">
+        <div class="hint-step">
+          <div class="hint-num">A</div>
+          <h4>Open the SWML Scripts page</h4>
+          <p>In the dashboard, go to <strong>Resources</strong> → <strong>+ Add</strong> → <strong>SWML Script</strong>.</p>
+        </div>
+        <div class="hint-step">
+          <div class="hint-num">B</div>
+          <h4>Paste the URL and save</h4>
+          <p>Under <strong>Handle Calls Using</strong>, pick <strong>External URL</strong>. Paste the URL above into <strong>Primary Script URL</strong>, then click <strong>Create</strong>.</p>
+        </div>
+      </div>
       <div class="wizard-nav">
         <button class="btn-secondary" id="ms2-back">← Back</button>
         <span class="step-counter">Step 2 of 4</span>
-        <button class="btn-primary" id="ms2-next">I've got one →</button>
+        <button class="btn-primary" id="ms2-next">I've done it →</button>
       </div>
     </div>`;
 }
 
 function renderMilestone3() {
-  const swmlUrl = getSwmlUrl("/step04");
   return `
     <div class="wizard-card">
-      <div class="wizard-eyebrow">Step 3 of 4 · Wire your number to an agent</div>
-      <h2>Copy this URL, then paste it into your dashboard.</h2>
-      <p class="lead">This URL serves an SWML script that tells SignalWire how to handle the call. You'll learn what SWML is in the next steps.</p>
-      <div class="url-card">
-        <div class="url-meta">
-          <div class="url-label">Step 4 · Hello Agent · your first SWML URL</div>
-          <div class="url-text" id="ms3-url-text">${escapeHtml(swmlUrl)}</div>
-        </div>
-        <button class="btn-copy" id="ms3-copy">Copy URL</button>
-      </div>
+      <div class="wizard-eyebrow">Step 3 of 4 · Connect a phone number</div>
+      <h2>Attach a phone number to your script.</h2>
+      <p class="lead">After you saved the script, you should be on its detail page. From there you can attach any number — buy a new one if you don't have one yet. Trial credits cover it.</p>
       <div class="dashboard-hint">
         <div class="hint-step">
           <div class="hint-num">A</div>
-          <h4>In your SignalWire dashboard</h4>
-          <p>Go to <strong>Resources</strong> → <strong>+ Add</strong> → <strong>SWML Script</strong>. Pick <strong>External URL</strong>.</p>
+          <h4>Open the Addresses tab</h4>
+          <p>On your script's page, click the <strong>Addresses & Phone Numbers</strong> tab.</p>
         </div>
         <div class="hint-step">
           <div class="hint-num">B</div>
-          <h4>Paste the URL above</h4>
-          <p>Save the script. Then go to <strong>Phone Numbers</strong> → your number → assign this SWML Script as the voice handler.</p>
+          <h4>Add a number</h4>
+          <p>Click <strong>+ Add</strong>, then pick an existing number — or buy a new one. Any local number works.</p>
         </div>
       </div>
       <div class="wizard-nav">
@@ -798,10 +810,10 @@ function attachWizardHandlers() {
   } else if (m === 2) {
     on("ms2-back", "click", () => backMilestone());
     on("ms2-next", "click", () => advanceMilestone());
+    on("ms2-copy", "click", e => copyUrl(e.currentTarget, getSwmlUrl("/step04")));
   } else if (m === 3) {
     on("ms3-back", "click", () => backMilestone());
     on("ms3-next", "click", () => advanceMilestone());
-    on("ms3-copy", "click", e => copyUrl(e.currentTarget, getSwmlUrl("/step04")));
   } else if (m === 4) {
     on("ms4-back", "click", () => backMilestone());
     on("ms4-done", "click", () => completeOnboarding());
