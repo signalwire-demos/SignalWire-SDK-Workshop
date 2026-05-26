@@ -146,3 +146,37 @@ def test_run_rest_with_bogus_creds_streams_an_exit():
 
     assert saw_any_output, "stream produced no data lines"
     assert saw_exit, "subprocess never emitted an exit event"
+
+
+def test_landing_has_wizard_milestones():
+    """Onboarding state ships with 4 milestones and the wizard card."""
+    r = requests.get(f"{BASE_URL}/", timeout=5)
+    assert r.status_code == 200
+    text = r.text
+    # Theme & state-machine signal
+    assert "chicago2026.onboardingComplete" in text, "state machine missing"
+    assert "--sw-cyan" in text and "--sw-magenta" in text, "theme variables missing"
+    # Wizard wiring
+    assert "MILESTONES" in text and "renderMilestones" in text
+    assert "renderMilestone1" in text and "renderMilestone4" in text
+    # No green leftovers
+    assert "#00c853" not in text, "green sneaked back in — use --sw-cyan"
+
+
+def test_landing_has_workshop_renderer():
+    """Workshop state and pillar runtime are present."""
+    r = requests.get(f"{BASE_URL}/", timeout=5)
+    text = r.text
+    assert "renderWorkshop" in text
+    assert "renderTimeline" in text
+    assert "renderActiveDetail" in text
+    assert "runPillar" in text, "pillar SSE machinery missing"
+    assert 'EventSource(`/run/' in text, "EventSource wiring missing"
+
+
+def test_landing_references_step_routes():
+    """All seven agent routes are referenced in STEPS_META."""
+    r = requests.get(f"{BASE_URL}/", timeout=5)
+    text = r.text
+    for route in ["/step04", "/step06", "/step07", "/step08", "/step09", "/step10", "/step11"]:
+        assert f'"{route}"' in text, f"missing route {route}"

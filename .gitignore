@@ -12,3 +12,4 @@ typescript/dist/
 .DS_Store
 calls/
 *.log
+.superpowers/

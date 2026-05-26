@@ -3,653 +3,471 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SignalWire Workshop</title>
+<title>SignalWire · Chicago Roadshow 2026</title>
 <link rel="icon" type="image/png" href="https://mcdn.signalwire.com/images/v2/loud/LogoLarge.png">
 <style>
   :root {
     --sw-blue: #044cf6;
+    --sw-blue-deep: #0a2882;
     --sw-dark: #0a1628;
-    --sw-gray: #1a2540;
-    --sw-light: #e8ecf4;
-    --sw-green: #00c853;
+    --sw-card: #111b30;
+    --sw-card-2: #16223c;
+    --sw-border: #1a2540;
+    --sw-magenta: #F72A72;
+    --sw-cyan: #38bdf8;
     --sw-orange: #ff9100;
-    --sw-fuchsia: #F72A72;
-    --card-bg: #111b30;
-    --text: #cdd6e4;
-    --text-bright: #f0f4fa;
-    --radius: 10px;
+    --sw-text: #cdd6e4;
+    --sw-text-bright: #f0f4fa;
+    --sw-text-dim: #6b7a94;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
     background: var(--sw-dark);
-    color: var(--text);
-    line-height: 1.6;
+    color: var(--sw-text);
+    line-height: 1.55;
     min-height: 100vh;
   }
   a { color: var(--sw-blue); text-decoration: none; }
   a:hover { text-decoration: underline; }
   code {
-    background: rgba(255,255,255,0.08);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.9em;
-    font-family: 'SF Mono', 'Fira Code', monospace;
+    background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px;
+    font-family: 'SF Mono', monospace; font-size: 0.88em; color: var(--sw-text-bright);
   }
 
-  /* Header */
-  .header {
-    background: linear-gradient(135deg, var(--sw-dark) 0%, #0d2252 100%);
-    border-bottom: 1px solid rgba(4,76,246,0.3);
-    padding: 3rem 2rem 2.5rem;
-    text-align: center;
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 32px; position: absolute; top: 0; left: 0; right: 0; z-index: 10;
   }
-  .header h1 {
-    font-size: 2.2rem;
-    color: var(--text-bright);
-    margin-bottom: 0.5rem;
-    font-weight: 700;
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; color: var(--sw-text-bright); font-size: 14px; }
+  .brand-mark {
+    width: 24px; height: 24px; border-radius: 6px;
+    background: linear-gradient(135deg, var(--sw-blue) 0%, var(--sw-magenta) 100%);
+    box-shadow: 0 4px 14px rgba(247,42,114,0.3);
   }
-  .header h1 span { color: var(--sw-blue); }
-  .header p {
-    font-size: 1.1rem;
-    color: var(--text);
-    max-width: 640px;
-    margin: 0 auto;
-  }
-  .badge-row {
-    margin-top: 1rem;
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-  .badge {
-    display: inline-block;
-    background: rgba(4,76,246,0.15);
-    border: 1px solid rgba(4,76,246,0.3);
-    color: #7da8fc;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 500;
-  }
+  .topbar nav a { color: rgba(240,244,250,0.7); text-decoration: none; font-size: 13px; margin-left: 22px; }
+  .topbar nav a:hover { color: var(--sw-text-bright); text-decoration: none; }
 
-  /* Container */
-  .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
-
-  /* Section titles */
-  .section-title {
-    font-size: 1.3rem;
-    color: var(--text-bright);
-    margin: 2.5rem 0 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-  }
-
-  /* Quick Start box */
-  .quick-start {
-    background: linear-gradient(135deg, rgba(4,76,246,0.12) 0%, rgba(247,42,114,0.08) 100%);
-    border: 1px solid rgba(4,76,246,0.3);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-  .quick-start h2 {
-    font-size: 1.2rem;
-    color: var(--text-bright);
-    margin-bottom: 0.5rem;
-  }
-  .quick-start p {
-    margin-bottom: 1rem;
-    font-size: 0.95rem;
-  }
-  .quick-start .url-bar { margin-top: 0; }
-  .quick-start-label {
-    display: inline-block;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--sw-green);
-    background: rgba(0,200,83,0.1);
-    border: 1px solid rgba(0,200,83,0.25);
-    padding: 2px 10px;
-    border-radius: 12px;
-    margin-bottom: 0.5rem;
-  }
-
-  /* Setup guide steps */
-  .setup-step {
-    background: var(--card-bg);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: var(--radius);
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 0.75rem;
-    display: flex;
-    gap: 1.25rem;
-    align-items: flex-start;
-  }
-  .setup-step-number {
-    flex-shrink: 0;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: rgba(4,76,246,0.15);
-    border: 2px solid var(--sw-blue);
-    color: var(--sw-blue);
-    font-size: 1.1rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .setup-step-content {
-    flex: 1;
-    min-width: 0;
-  }
-  .setup-step-content h3 {
-    font-size: 1.05rem;
-    color: var(--text-bright);
-    margin-bottom: 0.3rem;
-  }
-  .setup-step-content p {
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
-  }
-  .setup-step-content p:last-child { margin-bottom: 0; }
-  .dashboard-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(4,76,246,0.12);
-    border: 1px solid rgba(4,76,246,0.3);
-    color: #7da8fc;
-    padding: 5px 14px;
-    border-radius: 6px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    text-decoration: none;
-    transition: background 0.2s, border-color 0.2s;
-    margin-top: 0.25rem;
-  }
-  .dashboard-link:hover {
-    background: rgba(4,76,246,0.2);
-    border-color: rgba(4,76,246,0.5);
-    text-decoration: none;
-  }
-  .dashboard-link::after {
-    content: "\2197";
-    font-size: 0.9em;
-  }
-
-  /* Overview */
-  .overview {
-    background: var(--card-bg);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-  }
-  .overview p { margin-bottom: 0.75rem; }
-  .overview p:last-child { margin-bottom: 0; }
-  .learn-list {
-    list-style: none;
-    padding: 0;
-  }
-  .learn-list li {
-    padding: 0.4rem 0 0.4rem 1.5rem;
+  /* ============ HERO with WIZARD ============ */
+  .hero {
+    padding: 92px 24px 64px;
+    background:
+      radial-gradient(ellipse 60% 50% at 18% 22%, rgba(4,76,246,0.42) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 84% 18%, rgba(247,42,114,0.30) 0%, transparent 60%),
+      radial-gradient(ellipse 70% 30% at 50% 100%, rgba(4,76,246,0.12) 0%, transparent 70%),
+      var(--sw-dark);
+    border-bottom: 1px solid var(--sw-border);
     position: relative;
   }
-  .learn-list li::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0.75rem;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--sw-blue);
-  }
-  .learn-list li strong { color: var(--text-bright); }
+  .hero-inner { max-width: 880px; margin: 0 auto; }
 
-  /* Step cards */
-  .step-card {
-    background: var(--card-bg);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    transition: border-color 0.2s;
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--sw-magenta); font-weight: 700; margin-bottom: 18px;
   }
-  .step-card:hover { border-color: rgba(4,76,246,0.3); }
-  .step-header {
-    display: flex;
-    align-items: baseline;
-    gap: 0.75rem;
-    margin-bottom: 0.5rem;
-    flex-wrap: wrap;
+  .hero-eyebrow::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--sw-magenta); box-shadow: 0 0 8px var(--sw-magenta);
   }
-  .step-number {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--sw-blue);
-    background: rgba(4,76,246,0.12);
-    padding: 3px 10px;
+  .hero h1 {
+    font-size: 44px; line-height: 1.08; font-weight: 800;
+    color: var(--sw-text-bright); letter-spacing: -0.025em;
+    text-align: center; max-width: 760px; margin: 0 auto;
+  }
+  .hero h1 .accent {
+    background: linear-gradient(90deg, var(--sw-blue), var(--sw-magenta));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero-sub {
+    margin: 16px auto 0; font-size: 17px; color: var(--sw-text);
+    max-width: 560px; text-align: center;
+  }
+
+  /* ============ PROGRESS BAR (wizard milestones) ============ */
+  .milestones {
+    display: flex; align-items: center; gap: 0;
+    max-width: 720px; margin: 44px auto 0;
+  }
+  .milestone {
+    flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    position: relative;
+  }
+  .milestone-dot {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: rgba(10,22,40,0.7); border: 2px solid var(--sw-border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--sw-text-dim); font-weight: 700; font-size: 13px;
+    transition: all 0.2s;
+  }
+  .milestone.done .milestone-dot {
+    background: rgba(56,189,248,0.15); border-color: var(--sw-cyan); color: var(--sw-cyan);
+  }
+  .milestone.active .milestone-dot {
+    background: linear-gradient(135deg, var(--sw-blue), var(--sw-magenta));
+    border-color: var(--sw-magenta); color: white; transform: scale(1.22);
+    box-shadow: 0 0 0 5px rgba(247,42,114,0.18), 0 0 24px rgba(247,42,114,0.45);
+  }
+  .milestone-label {
+    font-size: 11.5px; color: var(--sw-text-dim); font-weight: 500;
+    white-space: nowrap; letter-spacing: 0.01em;
+  }
+  .milestone.done .milestone-label { color: var(--sw-text); }
+  .milestone.active .milestone-label { color: var(--sw-text-bright); font-weight: 600; }
+  .milestone-connector {
+    flex: 1; height: 2px; background: var(--sw-border);
+    margin: 0 -2px; align-self: flex-start; margin-top: 19px;
+  }
+  .milestone-connector.done { background: var(--sw-cyan); }
+
+  /* ============ ACTIVE WIZARD CARD ============ */
+  .wizard-card {
+    margin: 36px auto 0;
+    max-width: 720px;
+    background: linear-gradient(180deg, rgba(4,76,246,0.06) 0%, var(--sw-card) 50%);
+    border: 1px solid rgba(4,76,246,0.3);
+    border-radius: 18px;
+    padding: 36px 36px 32px;
+    box-shadow: 0 24px 60px -20px rgba(4,76,246,0.4), 0 8px 30px -10px rgba(247,42,114,0.15);
+    position: relative;
+  }
+  .wizard-eyebrow {
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--sw-blue); font-weight: 700; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .wizard-eyebrow::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--sw-blue); box-shadow: 0 0 8px var(--sw-blue);
+  }
+  .wizard-card h2 {
+    font-size: 30px; color: var(--sw-text-bright); font-weight: 700;
+    letter-spacing: -0.015em; line-height: 1.15;
+  }
+  .wizard-card .lead {
+    font-size: 15.5px; color: var(--sw-text); margin-top: 10px;
+  }
+
+  /* big URL card inside wizard */
+  .url-card {
+    margin-top: 24px;
+    background: rgba(10,22,40,0.7);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--sw-border);
     border-radius: 12px;
-    white-space: nowrap;
+    padding: 16px 18px;
+    display: flex; align-items: center; gap: 14px;
   }
-  .step-name {
-    font-size: 1.15rem;
-    font-weight: 600;
-    color: var(--text-bright);
-  }
-  .step-desc {
-    margin-bottom: 0.75rem;
-    font-size: 0.95rem;
-  }
-  .step-new {
-    font-size: 0.85rem;
-    color: var(--sw-green);
-    margin-bottom: 0.75rem;
-  }
-  .step-new strong { color: var(--sw-green); }
-  .step-capabilities {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-bottom: 0.75rem;
-  }
-  .cap-badge {
-    font-size: 0.75rem;
-    padding: 2px 8px;
-    border-radius: 4px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.08);
-    color: var(--text);
-  }
-  .cap-badge.new {
-    background: rgba(0,200,83,0.1);
-    border-color: rgba(0,200,83,0.25);
-    color: var(--sw-green);
-  }
-  .key-badge {
-    font-size: 0.7rem;
-    padding: 2px 7px;
-    border-radius: 4px;
-    background: rgba(255,145,0,0.1);
-    border: 1px solid rgba(255,145,0,0.25);
-    color: var(--sw-orange);
-  }
-
-  /* URL bar */
-  .url-bar {
-    display: flex;
-    align-items: center;
-    background: rgba(0,0,0,0.3);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 6px;
-    margin-top: 0.75rem;
-    overflow: hidden;
-  }
+  .url-meta { flex: 1; min-width: 0; }
   .url-label {
-    padding: 8px 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #6b7a94;
-    background: rgba(255,255,255,0.03);
-    border-right: 1px solid rgba(255,255,255,0.08);
-    white-space: nowrap;
+    font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--sw-text-dim); font-weight: 600; margin-bottom: 6px;
   }
   .url-text {
-    flex: 1;
-    padding: 8px 12px;
-    font-family: 'SF Mono', 'Fira Code', monospace;
-    font-size: 0.82rem;
-    color: var(--text-bright);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-family: 'SF Mono', 'JetBrains Mono', monospace; font-size: 14.5px;
+    color: var(--sw-text-bright); overflow-x: auto; white-space: nowrap;
   }
-  .url-copy {
-    padding: 8px 14px;
-    background: var(--sw-blue);
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    font-size: 0.8rem;
-    font-weight: 600;
-    white-space: nowrap;
-    transition: background 0.2s;
-  }
-  .url-copy:hover { background: #0340d0; }
-  .url-copy.copied { background: var(--sw-green); }
-
-  /* Links row */
-  .step-links {
-    display: flex;
-    gap: 1rem;
-    margin-top: 0.75rem;
-    font-size: 0.85rem;
-  }
-  .step-links a {
-    color: #7da8fc;
-    display: flex;
-    align-items: center;
-    gap: 4px;
+  .url-text .scheme { color: var(--sw-text-dim); }
+  .url-text .step { color: var(--sw-magenta); font-weight: 700; }
+  .btn-copy {
+    background: var(--sw-blue); border: none; color: white;
+    padding: 11px 22px; border-radius: 8px; font-weight: 600;
+    font-size: 13.5px; cursor: pointer; white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(4,76,246,0.35);
   }
 
-  /* Source buttons */
-  .source-buttons {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 0.75rem;
-    flex-wrap: wrap;
+  /* dashboard preview */
+  .dashboard-hint {
+    margin-top: 18px; display: flex; gap: 14px; align-items: stretch;
   }
-  .source-btn {
-    display: inline-block;
-    background: rgba(4,76,246,0.12);
-    border: 1px solid rgba(4,76,246,0.3);
-    color: #7da8fc;
-    padding: 6px 14px;
-    border-radius: 6px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    text-decoration: none;
-    transition: background 0.2s, border-color 0.2s;
+  .hint-step {
+    flex: 1; background: rgba(255,255,255,0.02);
+    border: 1px solid var(--sw-border); border-radius: 10px;
+    padding: 14px 16px;
   }
-  .source-btn:hover {
-    background: rgba(4,76,246,0.2);
-    border-color: rgba(4,76,246,0.5);
-    text-decoration: none;
+  .hint-num {
+    display: inline-flex; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--sw-blue); color: white; font-size: 11px; font-weight: 700;
+    align-items: center; justify-content: center; margin-bottom: 8px;
+  }
+  .hint-step h4 { font-size: 13px; color: var(--sw-text-bright); margin-bottom: 4px; font-weight: 600; }
+  .hint-step p { font-size: 12.5px; color: var(--sw-text-dim); line-height: 1.45; }
+  .hint-step strong { color: var(--sw-text); }
+
+  .wizard-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--sw-border);
+  }
+  .btn-secondary {
+    background: transparent; border: 1px solid var(--sw-border); color: var(--sw-text);
+    padding: 10px 18px; border-radius: 8px; font-size: 13.5px; cursor: pointer;
+  }
+  .btn-secondary:hover { border-color: var(--sw-blue); color: var(--sw-text-bright); }
+  .btn-primary {
+    background: var(--sw-blue); border: none; color: white;
+    padding: 10px 22px; border-radius: 8px; font-weight: 600;
+    font-size: 13.5px; cursor: pointer;
+  }
+  .step-counter { font-size: 12px; color: var(--sw-text-dim); }
+
+  .skip-link {
+    text-align: center; margin-top: 24px; font-size: 12.5px; color: var(--sw-text-dim);
+  }
+  .skip-link a { color: var(--sw-text-dim); text-decoration: underline; text-underline-offset: 3px; }
+  .skip-link a:hover { color: var(--sw-text-bright); }
+
+  /* ============ LOCKED PREVIEW (agent timeline) ============ */
+  .preview-section {
+    padding: 64px 24px 40px;
+    border-top: 1px solid var(--sw-border);
+    background:
+      radial-gradient(ellipse 60% 80% at 50% 0%, rgba(247,42,114,0.05) 0%, transparent 50%),
+      var(--sw-dark);
+  }
+  .preview-inner { max-width: 1080px; margin: 0 auto; }
+  .preview-head {
+    text-align: center; margin-bottom: 36px;
+  }
+  .preview-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--sw-text-dim); font-weight: 700; margin-bottom: 10px;
+  }
+  .preview-eyebrow::before { content: '🔒'; font-size: 12px; }
+  .preview-head h2 {
+    font-size: 26px; color: var(--sw-text-bright); font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .preview-head p {
+    margin-top: 8px; font-size: 14.5px; color: var(--sw-text-dim);
+    max-width: 580px; margin-left: auto; margin-right: auto;
   }
 
-  /* Run controls */
-  .run-controls {
-    margin-top: 0.75rem;
-    display: flex;
-    gap: 0.5rem;
+  .preview-timeline {
+    display: flex; align-items: center; gap: 0;
+    max-width: 880px; margin: 0 auto;
+    padding: 16px 0;
+    opacity: 0.55;
+    filter: saturate(0.6);
   }
-  .run-btn {
-    background: var(--sw-blue);
-    color: white;
-    border: none;
-    padding: 8px 18px;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
+  .preview-node {
+    flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 8px;
   }
-  .run-btn:hover {
-    background: #2c64f7;
+  .preview-node-circle {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--sw-card); border: 2px solid var(--sw-border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--sw-text-dim); font-weight: 700; font-size: 13px;
   }
-  .run-inputs {
-    margin-top: 0.75rem;
-    padding: 0.75rem;
-    background: rgba(0,0,0,0.2);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 6px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
-  }
-  .run-input-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    font-size: 0.85rem;
-  }
-  .run-input-label input {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.12);
-    color: var(--text-bright);
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-family: 'SF Mono', monospace;
-    font-size: 0.85rem;
-  }
-  .submit-inputs {
-    background: var(--sw-green);
-    color: black;
-    border: none;
-    padding: 6px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-  }
-  .run-log {
-    margin-top: 0.75rem;
-    background: rgba(0,0,0,0.4);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 6px;
-    padding: 0.75rem;
-    height: 200px;
-    overflow-y: auto;
-    font-family: 'SF Mono', monospace;
-    font-size: 0.82rem;
-    color: var(--text);
-    white-space: pre-wrap;
+  .preview-node-label { font-size: 10.5px; color: var(--sw-text-dim); }
+  .preview-connector {
+    flex: 1; height: 2px; background: var(--sw-border); margin: 0 -2px; align-self: flex-start; margin-top: 18px;
   }
 
-  /* Instructions */
-  .instructions {
-    background: var(--card-bg);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-  }
-  .instructions ol {
-    padding-left: 1.5rem;
-    margin-top: 0.5rem;
-  }
-  .instructions li {
-    padding: 0.4rem 0;
-    font-size: 0.95rem;
-  }
-  .instructions li strong { color: var(--text-bright); }
-  .note-box {
-    background: rgba(255,145,0,0.08);
-    border-left: 3px solid var(--sw-orange);
-    padding: 0.75rem 1rem;
-    border-radius: 0 6px 6px 0;
-    margin-top: 1rem;
-    font-size: 0.9rem;
-  }
-  .note-box strong { color: var(--sw-orange); }
-
-  .tip-box {
-    background: rgba(0,200,83,0.06);
-    border-left: 3px solid var(--sw-green);
-    padding: 0.75rem 1rem;
-    border-radius: 0 6px 6px 0;
-    margin-top: 1rem;
-    font-size: 0.9rem;
-  }
-  .tip-box strong { color: var(--sw-green); }
-
-  /* Secrets table */
-  .secrets-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 0.5rem;
-    font-size: 0.9rem;
-  }
-  .secrets-table th {
-    text-align: left;
-    padding: 0.5rem 0.75rem;
-    color: #6b7a94;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-  }
-  .secrets-table td {
-    padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-  }
-  .secrets-table code { font-size: 0.85rem; }
-
-  /* Approach comparison */
-  .approach-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 0.5rem;
-    font-size: 0.9rem;
-  }
-  .approach-table th {
-    text-align: left;
-    padding: 0.5rem 0.75rem;
-    color: #6b7a94;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-  }
-  .approach-table td {
-    padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
+  .preview-blurb {
+    margin: 28px auto 0; text-align: center; max-width: 580px;
+    font-size: 13.5px; color: var(--sw-text-dim); font-style: italic;
   }
 
-  /* Footer */
+  /* ============ AFTER THE BASICS (pillars) ============ */
+  .pillars-section { padding: 64px 24px; max-width: 1080px; margin: 0 auto; }
+  .pillars-head {
+    text-align: center; margin-bottom: 36px;
+  }
+  .pillars-head .label {
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--sw-text-dim); font-weight: 700;
+  }
+  .pillars-head h2 {
+    font-size: 28px; color: var(--sw-text-bright); margin-top: 6px;
+    letter-spacing: -0.01em; font-weight: 700;
+  }
+  .pillars-head p { color: var(--sw-text); margin-top: 8px; max-width: 560px; margin-left: auto; margin-right: auto; font-size: 14.5px; }
+
+  .pillars-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .pillar-card {
+    background: var(--sw-card); border: 1px solid var(--sw-border);
+    border-radius: 16px; padding: 28px;
+    opacity: 0.7; filter: saturate(0.85);
+    transition: opacity 0.2s, filter 0.2s;
+  }
+  .pillar-card.locked {
+    position: relative;
+  }
+  .pillar-card.locked::after {
+    content: '🔒'; position: absolute; top: 18px; right: 22px; font-size: 16px; opacity: 0.5;
+  }
+  .pillar-eyebrow {
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    font-weight: 700; margin-bottom: 8px;
+  }
+  .pillar-card.rest .pillar-eyebrow { color: var(--sw-orange); }
+  .pillar-card.relay .pillar-eyebrow { color: var(--sw-cyan); }
+  .pillar-name { font-size: 18px; color: var(--sw-text-bright); font-weight: 600; margin-bottom: 8px; }
+  .pillar-desc { font-size: 13.5px; color: var(--sw-text); }
+
   .footer {
-    text-align: center;
-    padding: 2rem;
-    font-size: 0.85rem;
-    color: #4a5a74;
-    border-top: 1px solid rgba(255,255,255,0.04);
-    margin-top: 2rem;
+    text-align: center; padding: 32px 24px; font-size: 13px;
+    color: var(--sw-text-dim); border-top: 1px solid var(--sw-border);
   }
-  .footer a { color: #5a7aac; }
 
-  /* Responsive */
-  @media (max-width: 600px) {
-    .header { padding: 2rem 1rem 1.5rem; }
-    .header h1 { font-size: 1.6rem; }
-    .container { padding: 1rem; }
-    .step-header { flex-direction: column; gap: 0.25rem; }
-    .url-bar { flex-direction: column; }
-    .url-label { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.08); }
-    .setup-step { flex-direction: column; gap: 0.75rem; }
+  /* ===== Workshop state ===== */
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.3);
+    color: var(--sw-cyan); padding: 6px 14px; border-radius: 999px;
+    font-size: 12.5px; font-weight: 600; letter-spacing: 0.02em;
   }
+  .status-pill .sep { color: rgba(56,189,248,0.4); }
+  .status-pill a { color: var(--sw-cyan); text-decoration: underline; text-underline-offset: 3px; }
+  .status-pill a:hover { color: var(--sw-text-bright); }
+
+  .workshop-hero { text-align: center; }
+  .workshop-hero h1 {
+    font-size: 32px; line-height: 1.15; font-weight: 700;
+    color: var(--sw-text-bright); letter-spacing: -0.015em;
+    margin-top: 18px;
+  }
+  .workshop-hero .pinned-url {
+    margin: 28px auto 0; max-width: 760px;
+  }
+  .workshop-hero .helper {
+    margin: 16px auto 0; max-width: 640px; font-size: 14px; color: var(--sw-text-dim);
+  }
+
+  /* Timeline (interactive) */
+  .timeline {
+    display: flex; align-items: center; gap: 0;
+    max-width: 880px; margin: 0 auto; padding: 16px 0;
+  }
+  .timeline-node {
+    flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    cursor: pointer; background: transparent; border: none; padding: 0;
+  }
+  .timeline-node:focus-visible .timeline-circle {
+    outline: 2px solid var(--sw-blue); outline-offset: 4px;
+  }
+  .timeline-circle {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--sw-card); border: 2px solid var(--sw-border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--sw-text-dim); font-weight: 700; font-size: 13px;
+    transition: all 0.2s;
+  }
+  .timeline-node.visited .timeline-circle {
+    background: rgba(56,189,248,0.15); border-color: var(--sw-cyan); color: var(--sw-cyan);
+  }
+  .timeline-node.active .timeline-circle {
+    background: linear-gradient(135deg, var(--sw-blue), var(--sw-magenta));
+    border-color: var(--sw-magenta); color: white; transform: scale(1.25);
+    box-shadow: 0 0 0 5px rgba(247,42,114,0.18), 0 0 24px rgba(247,42,114,0.45);
+  }
+  .timeline-label { font-size: 11px; color: var(--sw-text-dim); }
+  .timeline-node.visited .timeline-label { color: var(--sw-text); }
+  .timeline-node.active .timeline-label { color: var(--sw-text-bright); font-weight: 600; }
+  .timeline-connector { flex: 1; height: 2px; background: var(--sw-border); margin: 0 -2px; align-self: flex-start; margin-top: 20px; }
+  .timeline-connector.visited { background: var(--sw-cyan); }
+
+  /* Active step detail */
+  .active-detail {
+    background: var(--sw-card); border: 1px solid var(--sw-border);
+    border-radius: 16px; padding: 32px;
+    max-width: 900px; margin: 40px auto 0;
+    box-shadow: 0 24px 60px -20px rgba(247,42,114,0.15);
+  }
+  .active-detail .eyebrow {
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--sw-magenta); font-weight: 700;
+  }
+  .active-detail h2 { font-size: 26px; color: var(--sw-text-bright); margin-top: 6px; }
+  .active-detail .desc { font-size: 15px; color: var(--sw-text); margin-top: 8px; }
+  .detail-grid {
+    margin-top: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  }
+  .detail-tile {
+    background: var(--sw-dark); border: 1px solid var(--sw-border);
+    border-radius: 10px; padding: 14px 16px;
+  }
+  .detail-tile .label {
+    font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--sw-text-dim); font-weight: 700; margin-bottom: 8px;
+  }
+  .detail-tile .value { font-size: 13.5px; color: var(--sw-text-bright); }
+  .pill { display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 10px;
+    background: rgba(255,255,255,0.06); color: var(--sw-text); margin: 0 4px 4px 0; }
+  .pill.new { background: rgba(247,42,114,0.15); color: var(--sw-magenta); }
+  .source-row { margin-top: 22px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .src-btn {
+    font-size: 12.5px; padding: 8px 14px; border-radius: 8px;
+    border: 1px solid var(--sw-border); color: var(--sw-text-bright);
+    background: transparent; text-decoration: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .src-btn:hover { border-color: var(--sw-blue); }
+  .src-btn.primary { background: var(--sw-blue); border-color: var(--sw-blue); }
+
+  @media (max-width: 768px) {
+    .topbar { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+    .topbar nav a { margin-left: 12px; font-size: 12px; }
+    .hero { padding: 88px 16px 40px; }
+    .hero h1 { font-size: 30px; }
+    .hero-sub { font-size: 15px; }
+
+    .milestones { flex-direction: column; align-items: stretch; gap: 14px; }
+    .milestone { flex-direction: row; align-items: center; gap: 14px; }
+    .milestone-label { font-size: 13px; }
+    .milestone-connector { display: none; }
+
+    .wizard-card { padding: 22px 18px; }
+    .wizard-card h2 { font-size: 22px; }
+    .url-card { flex-direction: column; align-items: stretch; }
+    .url-card .btn-copy { width: 100%; }
+    .dashboard-hint { flex-direction: column; }
+    .wizard-nav { flex-direction: column; gap: 12px; align-items: stretch; }
+    .wizard-nav .step-counter { text-align: center; order: -1; }
+
+    .timeline, .preview-timeline { flex-wrap: wrap; gap: 14px; justify-content: center; }
+    .timeline-connector, .preview-connector { display: none; }
+
+    .detail-grid, .pillars-grid { grid-template-columns: 1fr; }
+
+    .workshop-hero h1 { font-size: 26px; }
+    .active-detail { padding: 22px; }
+    .active-detail h2 { font-size: 22px; }
+  }
+
+  a:focus-visible, button:focus-visible, .timeline-node:focus-visible, .milestone:focus-visible {
+    outline: 2px solid var(--sw-blue); outline-offset: 3px; border-radius: 4px;
+  }
+
+  /* Link-styled button for actions that look like links (Reset workshop progress) */
+  .link-button {
+    background: none; border: none; padding: 0; margin: 0;
+    color: var(--sw-blue); text-decoration: none;
+    font: inherit; cursor: pointer;
+  }
+  .link-button:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>SignalWire <span>AI Agent Workshop</span></h1>
-  <p>Not a developer? Not a problem! Follow along with the SignalWire Chicago Roadshow without hosting anything!</p>
-  <div class="badge-row">
-    <span class="badge">~60 minutes</span>
-    <span class="badge">Beginner friendly</span>
-    <span class="badge">Python</span>
-    <span class="badge">SignalWire Agents SDK</span>
-  </div>
+<div class="topbar">
+  <div class="brand"><div class="brand-mark"></div>SignalWire · Chicago Roadshow 2026</div>
+  <nav>
+    <a href="https://signalwire.com/docs/agents-sdk/python" target="_blank">Docs</a>
+    <a href="https://github.com/jongray00/Chicago-Roadshow-2026" target="_blank">GitHub</a>
+    <a href="https://ai.signalwire.com/" target="_blank">SignalWire AI</a>
+  </nav>
 </div>
 
-<div class="container">
-
-  <!-- Quick Start -->
-  <div class="quick-start">
-    <span class="quick-start-label">Recommended starting point</span>
-    <h2>Quick Start: Copy Your First SWML URL</h2>
-    <p>This is the URL for <strong>Step 4 - Hello Agent</strong>, the simplest agent. Copy it now, then follow the setup guide below to connect it to a phone number.</p>
-    <div class="url-bar" id="quick-start-url">
-      <span class="url-label">SWML URL</span>
-      <span class="url-text" id="quick-start-url-text">Loading...</span>
-      <button class="url-copy" id="quick-start-copy-btn" onclick="copyUrl(this, getSwmlUrl('/step04'))">Copy</button>
-    </div>
-  </div>
-
-  <!-- Resources -->
-  <h2 class="section-title">Resources</h2>
-  <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem;">
-    <a href="https://github.com/jongray00/Chicago-Roadshow-2026" target="_blank" style="flex: 1; min-width: 200px; padding: 1.2rem; background: var(--sw-card); border: 1px solid var(--sw-border); border-radius: 10px; text-decoration: none; color: inherit; transition: border-color 0.2s, transform 0.2s;">
-      <div style="font-size: 1.4rem; margin-bottom: 0.5rem;">&#128230;</div>
-      <div style="font-weight: 600; color: var(--sw-blue); margin-bottom: 0.3rem;">Chicago Roadshow 2026</div>
-      <div style="font-size: 0.85rem; color: var(--sw-muted);">This repo - Python + TypeScript steps for the Chicago workshop</div>
-    </a>
-    <a href="https://ai.signalwire.com/" target="_blank" style="flex: 1; min-width: 200px; padding: 1.2rem; background: var(--sw-card); border: 1px solid var(--sw-border); border-radius: 10px; text-decoration: none; color: inherit; transition: border-color 0.2s, transform 0.2s;">
-      <div style="font-size: 1.4rem; margin-bottom: 0.5rem;">&#9889;</div>
-      <div style="font-weight: 600; color: var(--sw-blue); margin-bottom: 0.3rem;">SignalWire AI</div>
-      <div style="font-size: 0.85rem; color: var(--sw-muted);">Explore SignalWire's AI-powered communication platform</div>
-    </a>
-    <a href="https://signalwire.com/docs/agents-sdk/python" target="_blank" style="flex: 1; min-width: 200px; padding: 1.2rem; background: var(--sw-card); border: 1px solid var(--sw-border); border-radius: 10px; text-decoration: none; color: inherit; transition: border-color 0.2s, transform 0.2s;">
-      <div style="font-size: 1.4rem; margin-bottom: 0.5rem;">&#128214;</div>
-      <div style="font-weight: 600; color: var(--sw-blue); margin-bottom: 0.3rem;">Agents SDK (Python)</div>
-      <div style="font-size: 0.85rem; color: var(--sw-muted);">Official documentation for the SignalWire Agents SDK</div>
-    </a>
-  </div>
-
-  <!-- SignalWire Setup Guide -->
-  <h2 class="section-title">SignalWire Setup Guide</h2>
-  <p style="margin-bottom: 1rem; font-size: 0.95rem;">Follow these five steps to connect your first AI agent to a real phone number in seconds!</p>
-
-  <div class="setup-step">
-    <div class="setup-step-number">1</div>
-    <div class="setup-step-content">
-      <h3>Create a SignalWire Account</h3>
-      <p>Sign up for a free SignalWire Space. This gives you a dashboard where you'll manage phone numbers and call settings.</p>
-      <a href="https://id.signalwire.com/onboarding" target="_blank" class="dashboard-link">Create a SignalWire Space</a>
-    </div>
-  </div>
-
-  <div class="setup-step">
-    <div class="setup-step-number">2</div>
-    <div class="setup-step-content">
-      <h3>Buy a Phone Number</h3>
-      <p>In your SignalWire Dashboard, go to <strong>Phone Numbers</strong> and click <strong>+ Buy a New Phone Number</strong>. Pick any local number in your area.</p>
-    </div>
-  </div>
-
-  <div class="setup-step">
-    <div class="setup-step-number">3</div>
-    <div class="setup-step-content">
-      <h3>Create a SWML Script Resource</h3>
-      <p>Go to <strong>Resources</strong>, click <strong>+ Add New</strong>, and choose <strong>SWML Script</strong>. Select <strong>"Use an external URL for your SWML Script"</strong> and paste the SWML URL you copied above.</p>
-    </div>
-  </div>
-
-  <div class="setup-step">
-    <div class="setup-step-number">4</div>
-    <div class="setup-step-content">
-      <h3>Assign the Script to Your Phone Number</h3>
-      <p>Go back to <strong>Phone Numbers</strong>, click your number, then <strong>Edit Settings</strong>. Under <strong>"Handle Calls Using"</strong>, select <strong>"a SWML Script"</strong> and pick the script you just created.</p>
-    </div>
-  </div>
-
-  <div class="setup-step">
-    <div class="setup-step-number">5</div>
-    <div class="setup-step-content">
-      <h3>Call Your Number</h3>
-      <p>Dial your SignalWire phone number from any phone. Buddy should answer and start chatting with you.</p>
-      <div class="note-box" style="margin-top: 0.5rem;">
-        <strong>Tip:</strong> To switch between agent steps, just update the SWML Script resource with a different URL from below. No restart needed.
-      </div>
-    </div>
-  </div>
-
-  <!-- Workshop Steps -->
-  <h2 class="section-title">Workshop Steps</h2>
-  <p style="margin-bottom: 1rem; font-size: 0.95rem;">Each step builds on the previous one. Copy any SWML URL and paste it into your SWML Script resource to try that agent.</p>
-  <div id="steps-container">
-    <p style="color: #6b7a94;">Loading agent information...</p>
-  </div>
-
-  <div class="footer">
-    Built with the <a href="https://signalwire.com/docs/agents-sdk" target="_blank">SignalWire Agents SDK</a>
-  </div>
-</div>
+<main id="app">
+  <p style="text-align:center;padding:120px 20px;color:var(--sw-text-dim);">Loading…</p>
+</main>
 
 <script>
-const REPO = "jongray00/Chicago-Roadshow-2026";
-const BRANCH = "main";
-
-function pySourceUrl(stem) {
-  return `https://github.com/${REPO}/blob/${BRANCH}/python/steps/${stem}.py`;
-}
-function tsSourceUrl(stem) {
-  return `https://github.com/${REPO}/blob/${BRANCH}/typescript/steps/${stem}.ts`;
-}
+/* =========================================================================
+ *  Chicago Roadshow 2026 — Landing page state machine
+ * ========================================================================= */
 
 const STEPS_META = [
   {
@@ -757,7 +575,12 @@ const PILLAR_CARDS = [
   },
 ];
 
-/* Config loaded from backend */
+const REPO = "jongray00/Chicago-Roadshow-2026";
+const BRANCH = "main";
+const pySourceUrl = stem => `https://github.com/${REPO}/blob/${BRANCH}/python/steps/${stem}.py`;
+const tsSourceUrl = stem => `https://github.com/${REPO}/blob/${BRANCH}/typescript/steps/${stem}.ts`;
+
+/* ---- Auth + URL composition (unchanged behavior) ---- */
 let authUser = "workshop";
 let authPass = "password";
 
@@ -769,15 +592,11 @@ async function loadConfig() {
       if (cfg.auth_user) authUser = cfg.auth_user;
       if (cfg.auth_pass) authPass = cfg.auth_pass;
     }
-  } catch (e) {
-    /* Fallback to defaults */
-  }
+  } catch (e) { /* keep defaults */ }
   renderAll();
 }
 
-function getBaseUrl() {
-  return window.location.origin;
-}
+function getBaseUrl() { return window.location.origin; }
 
 function getSwmlUrl(route) {
   const base = getBaseUrl();
@@ -790,102 +609,464 @@ function getSwmlUrl(route) {
 }
 
 function copyUrl(btn, text) {
+  const original = btn.textContent;
   navigator.clipboard.writeText(text).then(() => {
     btn.textContent = "Copied!";
     btn.classList.add("copied");
-    setTimeout(() => {
-      btn.textContent = "Copy";
-      btn.classList.remove("copied");
-    }, 2000);
+    setTimeout(() => { btn.textContent = original; btn.classList.remove("copied"); }, 2000);
+  }).catch(() => {
+    btn.textContent = "Copy failed";
+    setTimeout(() => { btn.textContent = original; }, 2000);
   });
 }
 
-function renderQuickStart() {
-  const urlText = document.getElementById("quick-start-url-text");
-  const copyBtn = document.getElementById("quick-start-copy-btn");
+/* ---- Persistent state ---- */
+const state = {
+  onboardingComplete: localStorage.getItem("chicago2026.onboardingComplete") === "1",
+  milestone: Math.min(4, Math.max(1, parseInt(localStorage.getItem("chicago2026.milestone") || "1", 10) || 1)),
+  visited: JSON.parse(localStorage.getItem("chicago2026.visited") || "[]"),
+  activeStep: localStorage.getItem("chicago2026.activeStep") || "/step04",
+};
+
+function persist() {
+  localStorage.setItem("chicago2026.onboardingComplete", state.onboardingComplete ? "1" : "0");
+  localStorage.setItem("chicago2026.milestone", String(state.milestone));
+  localStorage.setItem("chicago2026.visited", JSON.stringify(state.visited));
+  localStorage.setItem("chicago2026.activeStep", state.activeStep);
+}
+
+function resetState() {
+  localStorage.removeItem("chicago2026.onboardingComplete");
+  localStorage.removeItem("chicago2026.milestone");
+  localStorage.removeItem("chicago2026.visited");
+  localStorage.removeItem("chicago2026.activeStep");
+  location.reload();
+}
+
+/* ---- Onboarding render ---- */
+function renderOnboarding() {
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    <section class="hero">
+      <div class="hero-inner">
+        <div style="text-align:center;"><div class="hero-eyebrow">Chicago Roadshow 2026 · 60-minute workshop</div></div>
+        <h1>Build your first <span class="accent">AI phone agent</span> in four steps.</h1>
+        <p class="hero-sub">No code, no servers, no ngrok. Just a URL, your phone, and about five minutes.</p>
+        ${renderMilestones()}
+        <div id="wizard-card-host">${renderWizardCard()}</div>
+        <div class="skip-link">
+          Already comfortable with SignalWire?
+          <a href="#" id="skip-wizard-link">Skip the wizard and show me all 7 agents</a>
+        </div>
+      </div>
+    </section>
+    ${renderLockedPreviews()}
+  `;
+  document.getElementById("skip-wizard-link").addEventListener("click", e => {
+    e.preventDefault();
+    completeOnboarding();
+  });
+  document.getElementById("reset-progress-link")?.addEventListener("click", e => {
+    e.preventDefault();
+    resetState();
+  });
+  attachWizardHandlers();
+}
+
+const MILESTONES = [
+  { key: 1, label: "Account" },
+  { key: 2, label: "Get a number" },
+  { key: 3, label: "Wire it up" },
+  { key: 4, label: "Call it" },
+];
+
+function renderMilestones() {
+  const m = state.milestone;
+  let html = `<div class="milestones">`;
+  MILESTONES.forEach((mi, i) => {
+    const cls = mi.key < m ? "done" : mi.key === m ? "active" : "";
+    const inner = mi.key < m ? "✓" : String(mi.key);
+    html += `
+      <div class="milestone ${cls}" ${cls === 'active' ? 'aria-current="step"' : ''} aria-label="Milestone ${mi.key}: ${mi.label}, ${cls || 'upcoming'}">
+        <div class="milestone-dot">${inner}</div>
+        <div class="milestone-label">${mi.label}</div>
+      </div>`;
+    if (i < MILESTONES.length - 1) {
+      const conn = mi.key < m ? "done" : "";
+      html += `<div class="milestone-connector ${conn}"></div>`;
+    }
+  });
+  html += `</div>`;
+  return html;
+}
+
+function renderWizardCard() {
+  switch (state.milestone) {
+    case 1: return renderMilestone1();
+    case 2: return renderMilestone2();
+    case 3: return renderMilestone3();
+    case 4: return renderMilestone4();
+    default: return renderMilestone3();
+  }
+}
+
+function renderMilestone1() {
+  return `
+    <div class="wizard-card">
+      <div class="wizard-eyebrow">Step 1 of 4 · SignalWire account</div>
+      <h2>Do you have a SignalWire account?</h2>
+      <p class="lead">You'll need one to receive a real phone call. The free tier covers everything in this workshop.</p>
+      <div class="wizard-nav">
+        <a href="https://id.signalwire.com/onboarding" target="_blank" class="btn-secondary" id="ms1-signup">Sign up — opens new tab</a>
+        <span class="step-counter">Step 1 of 4</span>
+        <button class="btn-primary" id="ms1-yes">Yes, I have one →</button>
+      </div>
+    </div>`;
+}
+
+function renderMilestone2() {
+  return `
+    <div class="wizard-card">
+      <div class="wizard-eyebrow">Step 2 of 4 · Phone number</div>
+      <h2>Buy a phone number in your SignalWire dashboard.</h2>
+      <p class="lead">Go to <strong>Phone Numbers → + Buy a New Phone Number</strong>. Any local number works; trial credits cover it.</p>
+      <div class="wizard-nav">
+        <button class="btn-secondary" id="ms2-back">← Back</button>
+        <span class="step-counter">Step 2 of 4</span>
+        <button class="btn-primary" id="ms2-next">I've got one →</button>
+      </div>
+    </div>`;
+}
+
+function renderMilestone3() {
   const swmlUrl = getSwmlUrl("/step04");
-  urlText.textContent = swmlUrl;
-  copyBtn.setAttribute("onclick", `copyUrl(this, '${swmlUrl.replace(/'/g, "\\'")}')`);
+  return `
+    <div class="wizard-card">
+      <div class="wizard-eyebrow">Step 3 of 4 · Wire your number to an agent</div>
+      <h2>Copy this URL, then paste it into your dashboard.</h2>
+      <p class="lead">This URL serves an SWML script that tells SignalWire how to handle the call. You'll learn what SWML is in the next steps.</p>
+      <div class="url-card">
+        <div class="url-meta">
+          <div class="url-label">Step 4 · Hello Agent · your first SWML URL</div>
+          <div class="url-text" id="ms3-url-text">${escapeHtml(swmlUrl)}</div>
+        </div>
+        <button class="btn-copy" id="ms3-copy">Copy URL</button>
+      </div>
+      <div class="dashboard-hint">
+        <div class="hint-step">
+          <div class="hint-num">A</div>
+          <h4>In your SignalWire dashboard</h4>
+          <p>Go to <strong>Resources</strong> → <strong>+ Add</strong> → <strong>SWML Script</strong>. Pick <strong>External URL</strong>.</p>
+        </div>
+        <div class="hint-step">
+          <div class="hint-num">B</div>
+          <h4>Paste the URL above</h4>
+          <p>Save the script. Then go to <strong>Phone Numbers</strong> → your number → assign this SWML Script as the voice handler.</p>
+        </div>
+      </div>
+      <div class="wizard-nav">
+        <button class="btn-secondary" id="ms3-back">← Back</button>
+        <span class="step-counter">Step 3 of 4</span>
+        <button class="btn-primary" id="ms3-next">I've done it →</button>
+      </div>
+    </div>`;
 }
 
-function renderSteps() {
-  const container = document.getElementById("steps-container");
-  container.innerHTML = "";
-
-  /* AI Agent step cards */
-  STEPS_META.forEach(step => {
-    const swmlUrl = getSwmlUrl(step.route);
-
-    const caps = step.capabilities.map(c => {
-      const isNew = step.newCapabilities.includes(c);
-      return `<span class="cap-badge${isNew ? ' new' : ''}">${c}</span>`;
-    }).join("");
-
-    const keys = step.requiredKeys.map(k =>
-      `<span class="key-badge">${k}</span>`
-    ).join("");
-
-    const card = document.createElement("div");
-    card.className = "step-card";
-    card.innerHTML = `
-      <div class="step-header">
-        <span class="step-number">${step.step}</span>
-        <span class="step-name">${step.name}</span>
+function renderMilestone4() {
+  return `
+    <div class="wizard-card">
+      <div class="wizard-eyebrow">Step 4 of 4 · Call your number</div>
+      <h2>Dial your SignalWire number now.</h2>
+      <p class="lead">Buddy will answer and chat with you. Ask anything — "How are you?", "Tell me about yourself." When you hear her, you're done with setup.</p>
+      <div class="wizard-nav">
+        <button class="btn-secondary" id="ms4-back">← Back</button>
+        <span class="step-counter">Step 4 of 4</span>
+        <button class="btn-primary" id="ms4-done">It worked! →</button>
       </div>
-      <div class="step-desc">${step.desc}</div>
-      <div class="step-new"><strong>What's new:</strong> ${step.whatsNew}</div>
-      <div class="step-capabilities">${caps}${keys ? ' ' + keys : ''}</div>
-      <div class="url-bar">
-        <span class="url-label">SWML URL</span>
-        <span class="url-text">${swmlUrl}</span>
-        <button class="url-copy" onclick="copyUrl(this, '${swmlUrl.replace(/'/g, "\\'")}')">Copy</button>
+    </div>`;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+}
+
+function attachWizardHandlers() {
+  const m = state.milestone;
+  const on = (id, ev, fn) => document.getElementById(id)?.addEventListener(ev, fn);
+  if (m === 1) {
+    on("ms1-yes", "click", () => advanceMilestone());
+  } else if (m === 2) {
+    on("ms2-back", "click", () => backMilestone());
+    on("ms2-next", "click", () => advanceMilestone());
+  } else if (m === 3) {
+    on("ms3-back", "click", () => backMilestone());
+    on("ms3-next", "click", () => advanceMilestone());
+    on("ms3-copy", "click", e => copyUrl(e.currentTarget, getSwmlUrl("/step04")));
+  } else if (m === 4) {
+    on("ms4-back", "click", () => backMilestone());
+    on("ms4-done", "click", () => completeOnboarding());
+  }
+}
+
+function advanceMilestone() {
+  if (state.milestone < 4) {
+    state.milestone += 1;
+    persist();
+    renderAll();
+  } else {
+    completeOnboarding();
+  }
+}
+
+function backMilestone() {
+  if (state.milestone > 1) {
+    state.milestone -= 1;
+    persist();
+    renderAll();
+  }
+}
+
+function completeOnboarding() {
+  state.onboardingComplete = true;
+  if (!state.visited.includes("/step04")) state.visited.push("/step04");
+  state.activeStep = "/step04";
+  persist();
+  renderAll();
+}
+
+/* ---- Locked previews (Onboarding state) ---- */
+function renderLockedPreviews() {
+  const nodes = STEPS_META.map((s, i) => {
+    const sep = i > 0 ? `<div class="preview-connector"></div>` : "";
+    return `${sep}
+      <div class="preview-node">
+        <div class="preview-node-circle">${s.step.replace(/[^0-9]/g, "")}</div>
+        <div class="preview-node-label">${s.name.split(" ")[0]}</div>
+      </div>`;
+  }).join("");
+
+  return `
+    <section class="preview-section">
+      <div class="preview-inner">
+        <div class="preview-head">
+          <div class="preview-eyebrow">Unlocks after your first call</div>
+          <h2>Seven agents. Each adds one new capability.</h2>
+          <p>Once Buddy answers your phone, swap the URL on your number to try jokes, weather, math, skills — all the way up to a production-ready agent.</p>
+        </div>
+        <div class="preview-timeline" aria-hidden="true">
+          ${nodes}
+        </div>
+        <p class="preview-blurb">Finish step 4 above to unlock the full journey — including source code in Python and TypeScript for every agent.</p>
       </div>
-      <div class="source-buttons">
-        <a href="${pySourceUrl(step.stem)}" target="_blank" class="source-btn">View Python Source</a>
-        <a href="${tsSourceUrl(step.stem)}" target="_blank" class="source-btn">View TypeScript Source</a>
+    </section>
+
+    <section class="pillars-section">
+      <div class="pillars-head">
+        <div class="label">After the basics</div>
+        <h2>Two more pillars beyond the AI agent</h2>
+        <p>SignalWire is more than AI voice. Once you've made your first call, explore REST and RELAY — both runnable from this page without picking up the phone.</p>
       </div>
-    `;
-    container.appendChild(card);
+      <div class="pillars-grid">
+        <div class="pillar-card rest locked" aria-disabled="true">
+          <div class="pillar-eyebrow">REST pillar · Step 12</div>
+          <div class="pillar-name">RestClient demo</div>
+          <div class="pillar-desc">List phone numbers, send SMS, fetch call history, and update a number's voice handler — all from a Python script. No phone call needed.</div>
+        </div>
+        <div class="pillar-card relay locked" aria-disabled="true">
+          <div class="pillar-eyebrow">RELAY pillar · Step 13</div>
+          <div class="pillar-name">Live WebSocket events</div>
+          <div class="pillar-desc">Open a persistent connection and subscribe to incoming-call events. Stream live transcripts to your browser as calls happen.</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">
+      Built with the <a href="https://signalwire.com/docs/agents-sdk" target="_blank" rel="noopener noreferrer">SignalWire Agents SDK</a>
+      · <a href="https://github.com/jongray00/Chicago-Roadshow-2026" target="_blank" rel="noopener noreferrer">github.com/jongray00/Chicago-Roadshow-2026</a>
+      · <button type="button" class="link-button" id="reset-progress-link">Reset workshop progress</button>
+    </div>
+  `;
+}
+
+/* ---- Workshop state render ---- */
+function renderWorkshop() {
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    <section class="hero">
+      <div class="hero-inner workshop-hero">
+        <div class="status-pill">
+          ✓ Setup complete
+          <span class="sep" aria-hidden="true">·</span>
+          ${state.visited.length} of ${STEPS_META.length} agents tried
+          <span class="sep" aria-hidden="true">·</span>
+          <button type="button" class="link-button" id="restart-wizard-link">Restart wizard</button>
+        </div>
+        <h1>You're up and running.</h1>
+        <div class="pinned-url">${renderPinnedUrlCard()}</div>
+        <p class="helper">Paste this URL into your existing SWML Script in the dashboard, then call your number. Click any step below to switch.</p>
+      </div>
+    </section>
+
+    <section class="preview-section">
+      <div class="preview-inner">
+        <div class="preview-head">
+          <h2>The seven agents</h2>
+          <p>Each one adds a capability to the last. Click any node to make it active.</p>
+        </div>
+        ${renderTimeline()}
+        ${renderActiveDetail()}
+      </div>
+    </section>
+
+    <section class="pillars-section">
+      <div class="pillars-head">
+        <div class="label">After the basics</div>
+        <h2>Two more pillars beyond the AI agent</h2>
+        <p>SignalWire is more than AI voice. Both pillars run from your browser without picking up the phone.</p>
+      </div>
+      <div class="pillars-grid" id="pillars-host">
+        ${PILLAR_CARDS.map(p => {
+          const accent = p.pillar;
+          const namePart = p.name.includes(" - ") ? p.name.split(" - ").slice(1).join(" - ") : p.name;
+          return `
+          <div class="pillar-card ${accent}">
+            <div class="pillar-eyebrow">${escapeHtml(p.step.toUpperCase())} · ${escapeHtml(p.name.split(" - ")[0])}</div>
+            <div class="pillar-name">${escapeHtml(namePart)}</div>
+            <div class="pillar-desc">${escapeHtml(p.desc)}</div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;">
+              <button class="src-btn primary" data-run="${p.pillar}">▶ ${escapeHtml(p.runLabel)}</button>
+              <a href="${pySourceUrl(p.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">Python source</a>
+              <a href="${tsSourceUrl(p.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">TypeScript source</a>
+            </div>
+            <div class="run-inputs" data-pillar="${p.pillar}" hidden style="margin-top:12px;"></div>
+            <pre class="run-log" data-pillar="${p.pillar}" style="margin-top:12px;background:var(--sw-dark);border:1px solid var(--sw-border);border-radius:8px;padding:12px;font-size:12px;color:var(--sw-text);min-height:0;max-height:280px;overflow:auto;font-family:'SF Mono',monospace;"></pre>
+          </div>`;
+        }).join("")}
+      </div>
+    </section>
+
+    <div class="footer">
+      Built with the <a href="https://signalwire.com/docs/agents-sdk" target="_blank" rel="noopener noreferrer">SignalWire Agents SDK</a>
+      · <a href="https://github.com/jongray00/Chicago-Roadshow-2026" target="_blank" rel="noopener noreferrer">github.com/jongray00/Chicago-Roadshow-2026</a>
+      · <button type="button" class="link-button" id="reset-progress-link">Reset workshop progress</button>
+    </div>
+  `;
+
+  document.getElementById("restart-wizard-link")?.addEventListener("click", e => {
+    e.preventDefault();
+    state.onboardingComplete = false;
+    state.milestone = 1;
+    persist();
+    renderAll();
   });
-
-  /* Pillar run cards (Step 12 REST, Step 13 RELAY) */
-  PILLAR_CARDS.forEach(p => {
-    const card = document.createElement("div");
-    card.className = "step-card";
-    card.dataset.pillar = p.pillar;
-    card.innerHTML = `
-      <div class="step-header">
-        <span class="step-number">${p.step}</span>
-        <span class="step-name">${p.name}</span>
-      </div>
-      <p class="step-desc">${p.desc}</p>
-      <div class="run-controls">
-        <button class="run-btn" data-pillar="${p.pillar}">${p.runLabel}</button>
-      </div>
-      <div class="run-inputs" data-pillar="${p.pillar}" hidden></div>
-      <pre class="run-log" data-pillar="${p.pillar}"></pre>
-      <div class="source-buttons">
-        <a href="${pySourceUrl(p.stem)}" target="_blank" class="source-btn">View Python Source</a>
-        <a href="${tsSourceUrl(p.stem)}" target="_blank" class="source-btn">View TypeScript Source</a>
-      </div>
-    `;
-    container.appendChild(card);
+  document.getElementById("reset-progress-link")?.addEventListener("click", e => {
+    e.preventDefault();
+    resetState();
   });
-
-  /* Attach run-button listeners after cards are in the DOM */
-  document.querySelectorAll(".run-btn").forEach(btn => {
-    btn.addEventListener("click", () => runPillar(btn.dataset.pillar));
+  document.querySelectorAll(".timeline-node").forEach(node => {
+    node.addEventListener("click", () => setActiveStep(node.dataset.route));
+  });
+  document.getElementById("pinned-copy")?.addEventListener("click", e => copyUrl(e.currentTarget, getSwmlUrl(state.activeStep)));
+  document.getElementById("detail-copy")?.addEventListener("click", e => copyUrl(e.currentTarget, getSwmlUrl(state.activeStep)));
+  document.querySelectorAll("[data-run]").forEach(btn => {
+    btn.addEventListener("click", () => runPillar(btn.dataset.run));
   });
 }
 
+function renderPinnedUrlCard() {
+  const step = STEPS_META.find(s => s.route === state.activeStep) || STEPS_META[0];
+  const swmlUrl = getSwmlUrl(step.route);
+  return `
+    <div class="url-card">
+      <div class="url-meta">
+        <div class="url-label" style="color:var(--sw-text-bright);">${escapeHtml(step.step)} · ${escapeHtml(step.name)} · selected</div>
+        <div class="url-text">${escapeHtml(swmlUrl)}</div>
+      </div>
+      <button class="btn-copy" id="pinned-copy">Copy URL</button>
+    </div>`;
+}
+
+function renderTimeline() {
+  let html = `<div class="timeline">`;
+  STEPS_META.forEach((s, i) => {
+    if (i > 0) {
+      const prev = STEPS_META[i - 1];
+      const conn = (state.visited.includes(prev.route) && state.visited.includes(s.route)) ? "visited" : "";
+      html += `<div class="timeline-connector ${conn}"></div>`;
+    }
+    const cls = [
+      state.visited.includes(s.route) ? "visited" : "",
+      s.route === state.activeStep ? "active" : "",
+    ].filter(Boolean).join(" ");
+    const stateWord =
+      s.route === state.activeStep ? "active" :
+      state.visited.includes(s.route) ? "visited" : "upcoming";
+    const num = s.step.replace(/[^0-9]/g, "");
+    const ariaCurrent = s.route === state.activeStep ? ' aria-current="step"' : '';
+    html += `
+      <button class="timeline-node ${cls}" data-route="${s.route}"${ariaCurrent}
+              aria-label="${escapeHtml(s.step)}: ${escapeHtml(s.name)}, ${stateWord}">
+        <div class="timeline-circle">${num}</div>
+        <div class="timeline-label">${escapeHtml(s.name.split(" ")[0])}</div>
+      </button>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+function renderActiveDetail() {
+  const step = STEPS_META.find(s => s.route === state.activeStep) || STEPS_META[0];
+  const caps = step.capabilities.map(c => {
+    const isNew = step.newCapabilities.includes(c);
+    return `<span class="pill${isNew ? ' new' : ''}">${escapeHtml(c)}</span>`;
+  }).join("");
+  return `
+    <div class="active-detail">
+      <div class="eyebrow">Now active · ${escapeHtml(step.step)}</div>
+      <h2>${escapeHtml(step.name)}</h2>
+      <p class="desc">${escapeHtml(step.desc)}</p>
+      <div class="detail-grid">
+        <div class="detail-tile">
+          <div class="label">What's new in this step</div>
+          <div class="value">${escapeHtml(step.whatsNew)}</div>
+        </div>
+        <div class="detail-tile">
+          <div class="label">Capabilities so far</div>
+          <div class="value">${caps}</div>
+        </div>
+      </div>
+      <div class="source-row">
+        <a href="${pySourceUrl(step.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">View Python source</a>
+        <a href="${tsSourceUrl(step.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">View TypeScript source</a>
+        <button class="src-btn primary" id="detail-copy">Copy this URL</button>
+      </div>
+    </div>`;
+}
+
+function setActiveStep(route) {
+  activePillarStreams.forEach(es => es.close());
+  activePillarStreams.clear();
+  state.activeStep = route;
+  if (!state.visited.includes(route)) state.visited.push(route);
+  persist();
+  renderAll();
+}
+
+/* ---- Render dispatcher ---- */
 function renderAll() {
-  renderQuickStart();
-  renderSteps();
+  if (state.onboardingComplete) {
+    renderWorkshop();
+  } else {
+    renderOnboarding();
+  }
 }
 
+const activePillarStreams = new Map();
 async function runPillar(pillar) {
   const logPane = document.querySelector(`.run-log[data-pillar="${pillar}"]`);
   const inputsPane = document.querySelector(`.run-inputs[data-pillar="${pillar}"]`);
+  if (!logPane || !inputsPane) return;
+  activePillarStreams.get(pillar)?.close();
   logPane.textContent = "";
 
   const inputsResp = await fetch(`/run/${pillar}/inputs`);
@@ -895,8 +1076,11 @@ async function runPillar(pillar) {
   if (inputsInfo.missing && inputsInfo.missing.length > 0) {
     inputsPane.hidden = false;
     inputsPane.innerHTML = inputsInfo.missing.map(k =>
-      `<label class="run-input-label">${k}: <input name="${k}" /></label>`
-    ).join(" ") + ` <button class="submit-inputs">Run</button>`;
+      `<label style="display:inline-flex;flex-direction:column;font-size:11px;color:var(--sw-text-dim);margin-right:10px;">
+         ${escapeHtml(k)}
+         <input name="${escapeHtml(k)}" style="background:var(--sw-dark);border:1px solid var(--sw-border);color:var(--sw-text-bright);padding:6px 10px;border-radius:5px;font-size:13px;margin-top:3px;min-width:180px;" />
+       </label>`
+    ).join("") + ` <button class="src-btn primary submit-inputs" style="margin-left:8px;">Run</button>`;
     await new Promise(resolve => {
       inputsPane.querySelector(".submit-inputs").addEventListener("click", () => {
         inputs = Object.fromEntries(
@@ -916,30 +1100,29 @@ async function runPillar(pillar) {
   const { run_id } = await startResp.json();
 
   const es = new EventSource(`/run/${pillar}/stream/${run_id}`);
+  activePillarStreams.set(pillar, es);
   function append(line, isErr) {
     const span = document.createElement("span");
     span.textContent = line + "\n";
-    if (isErr) span.style.color = "var(--sw-fuchsia)";
+    if (isErr) span.style.color = "var(--sw-magenta)";
     logPane.appendChild(span);
     logPane.scrollTop = logPane.scrollHeight;
   }
-  es.addEventListener("stdout", e => {
-    const payload = JSON.parse(e.data);
-    append(payload.data, false);
-  });
-  es.addEventListener("stderr", e => {
-    const payload = JSON.parse(e.data);
-    append(payload.data, true);
-  });
+  es.addEventListener("stdout", e => append(JSON.parse(e.data).data, false));
+  es.addEventListener("stderr", e => append(JSON.parse(e.data).data, true));
+  function closeStream() {
+    es.close();
+    if (activePillarStreams.get(pillar) === es) activePillarStreams.delete(pillar);
+  }
   es.addEventListener("exit", e => {
     const payload = JSON.parse(e.data);
     append(`[exit code ${payload.data}]`, payload.data !== "0");
-    es.close();
+    closeStream();
   });
-  es.addEventListener("end", () => es.close());
+  es.addEventListener("end", closeStream);
   es.addEventListener("cancelled", () => {
     append("[run cancelled by newer click]", true);
-    es.close();
+    closeStream();
   });
 }
 
