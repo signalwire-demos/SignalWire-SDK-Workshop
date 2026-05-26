@@ -47,6 +47,177 @@
   }
   .topbar nav a { color: rgba(240,244,250,0.7); text-decoration: none; font-size: 13px; margin-left: 22px; }
   .topbar nav a:hover { color: var(--sw-text-bright); text-decoration: none; }
+
+  /* ============ HERO with WIZARD ============ */
+  .hero {
+    padding: 92px 24px 64px;
+    background:
+      radial-gradient(ellipse 60% 50% at 18% 22%, rgba(4,76,246,0.42) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 84% 18%, rgba(247,42,114,0.30) 0%, transparent 60%),
+      radial-gradient(ellipse 70% 30% at 50% 100%, rgba(4,76,246,0.12) 0%, transparent 70%),
+      var(--sw-dark);
+    border-bottom: 1px solid var(--sw-border);
+    position: relative;
+  }
+  .hero-inner { max-width: 880px; margin: 0 auto; }
+
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--sw-magenta); font-weight: 700; margin-bottom: 18px;
+  }
+  .hero-eyebrow::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--sw-magenta); box-shadow: 0 0 8px var(--sw-magenta);
+  }
+  .hero h1 {
+    font-size: 44px; line-height: 1.08; font-weight: 800;
+    color: var(--sw-text-bright); letter-spacing: -0.025em;
+    text-align: center; max-width: 760px; margin: 0 auto;
+  }
+  .hero h1 .accent {
+    background: linear-gradient(90deg, var(--sw-blue), var(--sw-magenta));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero-sub {
+    margin: 16px auto 0; font-size: 17px; color: var(--sw-text);
+    max-width: 560px; text-align: center;
+  }
+
+  /* ============ PROGRESS BAR (wizard milestones) ============ */
+  .milestones {
+    display: flex; align-items: center; gap: 0;
+    max-width: 720px; margin: 44px auto 0;
+  }
+  .milestone {
+    flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    position: relative;
+  }
+  .milestone-dot {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: rgba(10,22,40,0.7); border: 2px solid var(--sw-border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--sw-text-dim); font-weight: 700; font-size: 13px;
+    transition: all 0.2s;
+  }
+  .milestone.done .milestone-dot {
+    background: rgba(56,189,248,0.15); border-color: var(--sw-cyan); color: var(--sw-cyan);
+  }
+  .milestone.active .milestone-dot {
+    background: linear-gradient(135deg, var(--sw-blue), var(--sw-magenta));
+    border-color: var(--sw-magenta); color: white; transform: scale(1.22);
+    box-shadow: 0 0 0 5px rgba(247,42,114,0.18), 0 0 24px rgba(247,42,114,0.45);
+  }
+  .milestone-label {
+    font-size: 11.5px; color: var(--sw-text-dim); font-weight: 500;
+    white-space: nowrap; letter-spacing: 0.01em;
+  }
+  .milestone.done .milestone-label { color: var(--sw-text); }
+  .milestone.active .milestone-label { color: var(--sw-text-bright); font-weight: 600; }
+  .milestone-connector {
+    flex: 1; height: 2px; background: var(--sw-border);
+    margin: 0 -2px; align-self: flex-start; margin-top: 19px;
+  }
+  .milestone-connector.done { background: var(--sw-cyan); }
+  .milestone-connector.partial {
+    background: linear-gradient(90deg, var(--sw-cyan) 0%, var(--sw-cyan) 50%, var(--sw-border) 50%, var(--sw-border) 100%);
+  }
+
+  /* ============ ACTIVE WIZARD CARD ============ */
+  .wizard-card {
+    margin: 36px auto 0;
+    max-width: 720px;
+    background: linear-gradient(180deg, rgba(4,76,246,0.06) 0%, var(--sw-card) 50%);
+    border: 1px solid rgba(4,76,246,0.3);
+    border-radius: 18px;
+    padding: 36px 36px 32px;
+    box-shadow: 0 24px 60px -20px rgba(4,76,246,0.4), 0 8px 30px -10px rgba(247,42,114,0.15);
+    position: relative;
+  }
+  .wizard-eyebrow {
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--sw-blue); font-weight: 700; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .wizard-eyebrow::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--sw-blue); box-shadow: 0 0 8px var(--sw-blue);
+  }
+  .wizard-card h2 {
+    font-size: 30px; color: var(--sw-text-bright); font-weight: 700;
+    letter-spacing: -0.015em; line-height: 1.15;
+  }
+  .wizard-card .lead {
+    font-size: 15.5px; color: var(--sw-text); margin-top: 10px;
+  }
+
+  /* big URL card inside wizard */
+  .url-card {
+    margin-top: 24px;
+    background: rgba(10,22,40,0.7);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--sw-border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .url-meta { flex: 1; min-width: 0; }
+  .url-label {
+    font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--sw-text-dim); font-weight: 600; margin-bottom: 6px;
+  }
+  .url-text {
+    font-family: 'SF Mono', 'JetBrains Mono', monospace; font-size: 14.5px;
+    color: var(--sw-text-bright); overflow-x: auto; white-space: nowrap;
+  }
+  .url-text .scheme { color: var(--sw-text-dim); }
+  .url-text .step { color: var(--sw-magenta); font-weight: 700; }
+  .btn-copy {
+    background: var(--sw-blue); border: none; color: white;
+    padding: 11px 22px; border-radius: 8px; font-weight: 600;
+    font-size: 13.5px; cursor: pointer; white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(4,76,246,0.35);
+  }
+
+  /* dashboard preview */
+  .dashboard-hint {
+    margin-top: 18px; display: flex; gap: 14px; align-items: stretch;
+  }
+  .hint-step {
+    flex: 1; background: rgba(255,255,255,0.02);
+    border: 1px solid var(--sw-border); border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .hint-num {
+    display: inline-flex; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--sw-blue); color: white; font-size: 11px; font-weight: 700;
+    align-items: center; justify-content: center; margin-bottom: 8px;
+  }
+  .hint-step h4 { font-size: 13px; color: var(--sw-text-bright); margin-bottom: 4px; font-weight: 600; }
+  .hint-step p { font-size: 12.5px; color: var(--sw-text-dim); line-height: 1.45; }
+  .hint-step strong { color: var(--sw-text); }
+
+  .wizard-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--sw-border);
+  }
+  .btn-secondary {
+    background: transparent; border: 1px solid var(--sw-border); color: var(--sw-text);
+    padding: 10px 18px; border-radius: 8px; font-size: 13.5px; cursor: pointer;
+  }
+  .btn-secondary:hover { border-color: var(--sw-blue); color: var(--sw-text-bright); }
+  .btn-primary {
+    background: var(--sw-blue); border: none; color: white;
+    padding: 10px 22px; border-radius: 8px; font-weight: 600;
+    font-size: 13.5px; cursor: pointer;
+  }
+  .step-counter { font-size: 12px; color: var(--sw-text-dim); }
+
+  .skip-link {
+    text-align: center; margin-top: 24px; font-size: 12.5px; color: var(--sw-text-dim);
+  }
+  .skip-link a { color: var(--sw-text-dim); text-decoration: underline; text-underline-offset: 3px; }
+  .skip-link a:hover { color: var(--sw-text-bright); }
 </style>
 </head>
 <body>
@@ -209,11 +380,14 @@ function getSwmlUrl(route) {
 }
 
 function copyUrl(btn, text) {
+  const original = btn.textContent;
   navigator.clipboard.writeText(text).then(() => {
-    const original = btn.textContent;
     btn.textContent = "Copied!";
     btn.classList.add("copied");
     setTimeout(() => { btn.textContent = original; btn.classList.remove("copied"); }, 2000);
+  }).catch(() => {
+    btn.textContent = "Copy failed";
+    setTimeout(() => { btn.textContent = original; }, 2000);
   });
 }
 
@@ -240,13 +414,200 @@ function resetState() {
   location.reload();
 }
 
+/* ---- Onboarding render ---- */
+function renderOnboarding() {
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    <section class="hero">
+      <div class="hero-inner">
+        <div style="text-align:center;"><div class="hero-eyebrow">Chicago Roadshow 2026 · 60-minute workshop</div></div>
+        <h1>Build your first <span class="accent">AI phone agent</span> in four steps.</h1>
+        <p class="hero-sub">No code, no servers, no ngrok. Just a URL, your phone, and about five minutes.</p>
+        ${renderMilestones()}
+        <div id="wizard-card-host">${renderWizardCard()}</div>
+        <div class="skip-link">
+          Already comfortable with SignalWire?
+          <a href="#" id="skip-wizard-link">Skip the wizard and show me all 7 agents</a>
+        </div>
+      </div>
+    </section>
+    <div id="below-hero-host"></div>
+  `;
+  document.getElementById("skip-wizard-link").addEventListener("click", e => {
+    e.preventDefault();
+    completeOnboarding();
+  });
+  attachWizardHandlers();
+}
+
+const MILESTONES = [
+  { key: 1, label: "Account" },
+  { key: 2, label: "Get a number" },
+  { key: 3, label: "Wire it up" },
+  { key: 4, label: "Call it" },
+];
+
+function renderMilestones() {
+  const m = state.milestone;
+  let html = `<div class="milestones">`;
+  MILESTONES.forEach((mi, i) => {
+    const cls = mi.key < m ? "done" : mi.key === m ? "active" : "";
+    const inner = mi.key < m ? "✓" : String(mi.key);
+    html += `
+      <div class="milestone ${cls}" aria-current="${cls === 'active' ? 'step' : 'false'}" aria-label="Milestone ${mi.key}: ${mi.label}, ${cls || 'upcoming'}">
+        <div class="milestone-dot">${inner}</div>
+        <div class="milestone-label">${mi.label}</div>
+      </div>`;
+    if (i < MILESTONES.length - 1) {
+      const conn = mi.key < m ? "done" : "";
+      html += `<div class="milestone-connector ${conn}"></div>`;
+    }
+  });
+  html += `</div>`;
+  return html;
+}
+
+function renderWizardCard() {
+  switch (state.milestone) {
+    case 1: return renderMilestone1();
+    case 2: return renderMilestone2();
+    case 3: return renderMilestone3();
+    case 4: return renderMilestone4();
+    default: return renderMilestone3();
+  }
+}
+
+function renderMilestone1() {
+  return `
+    <div class="wizard-card">
+      <div class="wizard-eyebrow">Step 1 of 4 · SignalWire account</div>
+      <h2>Do you have a SignalWire account?</h2>
+      <p class="lead">You'll need one to receive a real phone call. The free tier covers everything in this workshop.</p>
+      <div class="wizard-nav">
+        <a href="https://id.signalwire.com/onboarding" target="_blank" class="btn-secondary" id="ms1-signup">Sign up — opens new tab</a>
+        <span class="step-counter">Step 1 of 4</span>
+        <button class="btn-primary" id="ms1-yes">Yes, I have one →</button>
+      </div>
+    </div>`;
+}
+
+function renderMilestone2() {
+  return `
+    <div class="wizard-card">
+      <div class="wizard-eyebrow">Step 2 of 4 · Phone number</div>
+      <h2>Buy a phone number in your SignalWire dashboard.</h2>
+      <p class="lead">Go to <strong>Phone Numbers → + Buy a New Phone Number</strong>. Any local number works; trial credits cover it.</p>
+      <div class="wizard-nav">
+        <button class="btn-secondary" id="ms2-back">← Back</button>
+        <span class="step-counter">Step 2 of 4</span>
+        <button class="btn-primary" id="ms2-next">I've got one →</button>
+      </div>
+    </div>`;
+}
+
+function renderMilestone3() {
+  const swmlUrl = getSwmlUrl("/step04");
+  return `
+    <div class="wizard-card">
+      <div class="wizard-eyebrow">Step 3 of 4 · Wire your number to an agent</div>
+      <h2>Copy this URL, then paste it into your dashboard.</h2>
+      <p class="lead">This URL serves an SWML script that tells SignalWire how to handle the call. You'll learn what SWML is in the next steps.</p>
+      <div class="url-card">
+        <div class="url-meta">
+          <div class="url-label">Step 4 · Hello Agent · your first SWML URL</div>
+          <div class="url-text" id="ms3-url-text">${escapeHtml(swmlUrl)}</div>
+        </div>
+        <button class="btn-copy" id="ms3-copy">Copy URL</button>
+      </div>
+      <div class="dashboard-hint">
+        <div class="hint-step">
+          <div class="hint-num">A</div>
+          <h4>In your SignalWire dashboard</h4>
+          <p>Go to <strong>Resources</strong> → <strong>+ Add</strong> → <strong>SWML Script</strong>. Pick <strong>External URL</strong>.</p>
+        </div>
+        <div class="hint-step">
+          <div class="hint-num">B</div>
+          <h4>Paste the URL above</h4>
+          <p>Save the script. Then go to <strong>Phone Numbers</strong> → your number → assign this SWML Script as the voice handler.</p>
+        </div>
+      </div>
+      <div class="wizard-nav">
+        <button class="btn-secondary" id="ms3-back">← Back</button>
+        <span class="step-counter">Step 3 of 4</span>
+        <button class="btn-primary" id="ms3-next">I've done it →</button>
+      </div>
+    </div>`;
+}
+
+function renderMilestone4() {
+  return `
+    <div class="wizard-card">
+      <div class="wizard-eyebrow">Step 4 of 4 · Call your number</div>
+      <h2>Dial your SignalWire number now.</h2>
+      <p class="lead">Buddy will answer and chat with you. Ask anything — "How are you?", "Tell me about yourself." When you hear her, you're done with setup.</p>
+      <div class="wizard-nav">
+        <button class="btn-secondary" id="ms4-back">← Back</button>
+        <span class="step-counter">Step 4 of 4</span>
+        <button class="btn-primary" id="ms4-done">It worked! →</button>
+      </div>
+    </div>`;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+}
+
+function attachWizardHandlers() {
+  const m = state.milestone;
+  if (m === 1) {
+    document.getElementById("ms1-yes").addEventListener("click", () => advanceMilestone());
+  } else if (m === 2) {
+    document.getElementById("ms2-back").addEventListener("click", () => backMilestone());
+    document.getElementById("ms2-next").addEventListener("click", () => advanceMilestone());
+  } else if (m === 3) {
+    document.getElementById("ms3-back").addEventListener("click", () => backMilestone());
+    document.getElementById("ms3-next").addEventListener("click", () => advanceMilestone());
+    document.getElementById("ms3-copy").addEventListener("click", e => {
+      copyUrl(e.currentTarget, getSwmlUrl("/step04"));
+    });
+  } else if (m === 4) {
+    document.getElementById("ms4-back").addEventListener("click", () => backMilestone());
+    document.getElementById("ms4-done").addEventListener("click", () => completeOnboarding());
+  }
+}
+
+function advanceMilestone() {
+  if (state.milestone < 4) {
+    state.milestone += 1;
+    persist();
+    renderAll();
+  } else {
+    completeOnboarding();
+  }
+}
+
+function backMilestone() {
+  if (state.milestone > 1) {
+    state.milestone -= 1;
+    persist();
+    renderAll();
+  }
+}
+
+function completeOnboarding() {
+  state.onboardingComplete = true;
+  if (!state.visited.includes("/step04")) state.visited.push("/step04");
+  state.activeStep = "/step04";
+  persist();
+  renderAll();
+}
+
 /* ---- Render dispatcher ---- */
 function renderAll() {
-  const app = document.getElementById("app");
   if (state.onboardingComplete) {
-    app.innerHTML = `<p style="text-align:center;padding:120px 20px;color:var(--sw-text-dim);">[Workshop state — Task 4 will render]</p>`;
+    document.getElementById("app").innerHTML = `<p style="text-align:center;padding:120px 20px;color:var(--sw-text-dim);">[Workshop state — Task 4 will render]</p>`;
   } else {
-    app.innerHTML = `<p style="text-align:center;padding:120px 20px;color:var(--sw-text-dim);">[Onboarding state — Task 2 will render — milestone ${state.milestone}]</p>`;
+    renderOnboarding();
   }
 }
 
