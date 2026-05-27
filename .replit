@@ -7,17 +7,13 @@ PYTHONUNBUFFERED = "1"
 SWML_PROXY_URL_BASE = "https://chicago-roadshow-2026.replit.app"
 
 [[ports]]
-localPort = 3000
-externalPort = 80
-
-[[ports]]
 localPort = 5000
 externalPort = 80
 
 [deployment]
 deploymentTarget = "autoscale"
 run = ["python", "main.py"]
-build = ["sh", "-c", "pip install signalwire-agents signalwire requests fastapi uvicorn"]
+build = ["sh", "-c", "pip install ."]
 
 [agent]
 expertMode = true

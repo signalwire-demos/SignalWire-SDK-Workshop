@@ -9,6 +9,7 @@ venv/
 .coverage
 node_modules/
 typescript/dist/
+build/
 .DS_Store
 calls/
 *.log
