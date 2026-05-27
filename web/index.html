@@ -462,6 +462,14 @@
   .src-btn:hover { border-color: var(--sw-blue); }
   .src-btn.primary { background: var(--sw-blue); border-color: var(--sw-blue); }
 
+  /* agent URL bubble + next/prev navigation inside active-detail */
+  .agent-nav {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--sw-border);
+  }
+  .agent-nav .btn-primary { display: inline-flex; align-items: center; gap: 8px; }
+  .agent-nav-done { font-size: 13px; color: var(--sw-text-dim); margin-left: auto; text-align: right; }
+
   @media (max-width: 768px) {
     .topbar { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
     .topbar nav a { margin-left: 12px; font-size: 12px; }
@@ -481,6 +489,8 @@
     .dashboard-hint { flex-direction: column; }
     .wizard-nav { flex-direction: column; gap: 12px; align-items: stretch; }
     .wizard-nav .step-counter { text-align: center; order: -1; }
+    .agent-nav { flex-direction: column; align-items: stretch; gap: 10px; }
+    .agent-nav-done { text-align: center; margin-left: 0; }
 
     .timeline, .preview-timeline { flex-wrap: wrap; gap: 14px; justify-content: center; }
     .timeline-connector, .preview-connector { display: none; }
@@ -510,7 +520,7 @@
 <div class="topbar">
   <div class="brand"><div class="brand-mark"></div>SignalWire · Chicago Roadshow 2026</div>
   <nav>
-    <a href="https://signalwire.com/docs/agents-sdk/python" target="_blank">Docs</a>
+    <a href="https://signalwire.com/docs/server-sdks/reference/python" target="_blank">Docs</a>
     <a href="https://github.com/jongray00/Chicago-Roadshow-2026" target="_blank">GitHub</a>
     <a href="https://ai.signalwire.com/" target="_blank">SignalWire AI</a>
   </nav>
@@ -538,9 +548,9 @@ const STEPS_META = [
     concepts: ["AgentBase", "add_language()", "prompt_add_section()", "set_post_prompt()"],
     requiredKeys: [],
     docs: [
-      { label: "AgentBase architecture", url: "/agents-sdk/core-concepts/architecture" },
-      { label: "Prompts (POM)", url: "/agents-sdk/building-agents/prompts-pom" },
-      { label: "Call flow", url: "/agents-sdk/building-agents/call-flow" },
+      { label: "AgentBase architecture", url: "/server-sdks/guides/architecture" },
+      { label: "Prompts (POM)", url: "/server-sdks/guides/prompts-pom" },
+      { label: "Call flow", url: "/server-sdks/guides/call-flow" },
     ],
     prompts: ["How are you today?", "What can you help me with?", "Tell me about yourself"],
   },
@@ -556,9 +566,9 @@ const STEPS_META = [
     concepts: ["define_tool()", "FunctionResult", "SWAIG functions"],
     requiredKeys: [],
     docs: [
-      { label: "What is SWAIG?", url: "/agents-sdk/core-concepts/swaig" },
-      { label: "Defining functions", url: "/agents-sdk/swaig-functions/defining-functions" },
-      { label: "Function results", url: "/agents-sdk/swaig-functions/results-actions" },
+      { label: "What is SWAIG?", url: "/server-sdks/guides/swaig" },
+      { label: "Defining functions", url: "/server-sdks/guides/defining-functions" },
+      { label: "Function results", url: "/server-sdks/guides/result-actions" },
     ],
     prompts: ["Tell me a joke", "Got another one?", "That was terrible, give me a better one"],
   },
@@ -574,8 +584,8 @@ const STEPS_META = [
     concepts: ["External API calls", "Error handling", "API_NINJAS_KEY"],
     requiredKeys: ["API_NINJAS_KEY"],
     docs: [
-      { label: "Function parameters", url: "/agents-sdk/swaig-functions/parameters" },
-      { label: "Defining functions", url: "/agents-sdk/swaig-functions/defining-functions" },
+      { label: "Function parameters", url: "/server-sdks/guides/parameters" },
+      { label: "Defining functions", url: "/server-sdks/guides/defining-functions" },
     ],
     prompts: ["Tell me a dad joke", "Give me another", "One more!"],
   },
@@ -591,9 +601,9 @@ const STEPS_META = [
     concepts: ["DataMap", "register_swaig_function()", "WEATHER_API_KEY"],
     requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"],
     docs: [
-      { label: "DataMap guide", url: "/agents-sdk/swaig-functions/datamap" },
-      { label: "DataMap reference", url: "/agents-sdk/reference/data-map" },
-      { label: "Native functions", url: "/agents-sdk/swaig-functions/native-functions" },
+      { label: "DataMap guide", url: "/server-sdks/guides/data-map" },
+      { label: "DataMap reference", url: "/server-sdks/reference/python/agents/data-map" },
+      { label: "Native functions", url: "/server-sdks/guides/native-functions" },
     ],
     prompts: ["What's the weather in Tokyo?", "How about Paris?", "Now tell me a joke"],
   },
@@ -609,9 +619,9 @@ const STEPS_META = [
     concepts: ["set_params()", "add_hints()", "end_of_speech_timeout", "attention_timeout"],
     requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"],
     docs: [
-      { label: "AI parameters", url: "/agents-sdk/building-agents/ai-parameters" },
-      { label: "Hints", url: "/agents-sdk/building-agents/hints" },
-      { label: "Best practices", url: "/agents-sdk/appendix/best-practices" },
+      { label: "AI parameters", url: "/server-sdks/guides/ai-parameters" },
+      { label: "Hints", url: "/server-sdks/guides/hints" },
+      { label: "Best practices", url: "/platform/ai/best-practices" },
     ],
     prompts: ["What's the weather in London?", "Tell me a joke", "Are you still there?"],
   },
@@ -627,9 +637,9 @@ const STEPS_META = [
     concepts: ["add_skill(\"datetime\")", "add_skill(\"math\")"],
     requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"],
     docs: [
-      { label: "Understanding skills", url: "/agents-sdk/skills/understanding-skills" },
-      { label: "Built-in skills", url: "/agents-sdk/skills/builtin-skills" },
-      { label: "Skill config", url: "/agents-sdk/skills/skill-config" },
+      { label: "Understanding skills", url: "/server-sdks/guides/understanding-skills" },
+      { label: "Built-in skills", url: "/server-sdks/guides/builtin-skills" },
+      { label: "Skill config", url: "/server-sdks/guides/skill-config" },
     ],
     prompts: ["What time is it in Tokyo?", "What's an 18% tip on $47.50?", "What's the weather in Miami?"],
   },
@@ -645,9 +655,9 @@ const STEPS_META = [
     concepts: ["Code organization", "Production patterns"],
     requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"],
     docs: [
-      { label: "Patterns", url: "/agents-sdk/appendix/patterns" },
-      { label: "Custom skills", url: "/agents-sdk/skills/custom-skills" },
-      { label: "Multi-agent setups", url: "/agents-sdk/advanced/multi-agent" },
+      { label: "Patterns", url: "/server-sdks/reference/python/agents/prefabs" },
+      { label: "Custom skills", url: "/server-sdks/guides/custom" },
+      { label: "Multi-agent setups", url: "/server-sdks/guides/multi-agent" },
     ],
     prompts: ["What time is it?", "What's the weather in Paris?", "Tell me a joke", "What's 15% of $86?"],
   },
@@ -662,9 +672,9 @@ const PILLAR_CARDS = [
     desc: "List phone numbers, send SMS, fetch call history, and point the workshop voice handler at the agent.",
     runLabel: "Run REST Demo",
     docs: [
-      { label: "REST API overview", url: "/main/rest/signalwire-rest/overview" },
-      { label: "Authorization", url: "/main/rest/overview/authorization" },
-      { label: "Compatibility API", url: "/main/rest/compatibility-api" },
+      { label: "REST API overview", url: "/apis" },
+      { label: "Authorization", url: "/apis/authorization" },
+      { label: "Compatibility API", url: "/compatibility-api" },
     ],
   },
   {
@@ -675,9 +685,9 @@ const PILLAR_CARDS = [
     desc: "Connect via WebSocket, subscribe to incoming-call events, stream transcripts, and optionally place one outbound call.",
     runLabel: "Run RELAY Demo",
     docs: [
-      { label: "Realtime SDK overview", url: "/realtime-sdk" },
-      { label: "Voice client guide", url: "/realtime-sdk/guides/voice" },
-      { label: "Messaging client guide", url: "/realtime-sdk/guides/messaging" },
+      { label: "Realtime SDK overview", url: "/server-sdks/guides/relay-client" },
+      { label: "Voice client guide", url: "/server-sdks/guides/relay-client" },
+      { label: "Messaging client guide", url: "/server-sdks/reference/python/relay/message" },
     ],
   },
 ];
@@ -688,26 +698,26 @@ const pySourceUrl = stem => `https://github.com/${REPO}/blob/${BRANCH}/python/st
 const tsSourceUrl = stem => `https://github.com/${REPO}/blob/${BRANCH}/typescript/steps/${stem}.ts`;
 
 /* ---- Docs surfacing ---- */
-const DOCS_BASE = "https://developer.signalwire.com";
+const DOCS_BASE = "https://signalwire.com/docs";
 
 const MILESTONE_DOCS = {
   1: [
-    { label: "Account setup", url: "/agents-sdk/signalwire-integration/account-setup" },
-    { label: "Platform overview", url: "/main/home/overview/getting-started" },
+    { label: "Account setup", url: "/server-sdks/guides/account-setup" },
+    { label: "Platform overview", url: "/platform/getting-started" },
   ],
   2: [
-    { label: "What is SWML?", url: "/main/swml" },
-    { label: "SWML quick start", url: "/main/swml/get-started/quickstart" },
-    { label: "SWML on the SDK", url: "/agents-sdk/core-concepts/swml" },
+    { label: "What is SWML?", url: "/swml" },
+    { label: "SWML quick start", url: "/swml/guides" },
+    { label: "SWML on the SDK", url: "/server-sdks/guides/swml" },
   ],
   3: [
-    { label: "Phone numbers with the SDK", url: "/agents-sdk/signalwire-integration/phone-numbers" },
-    { label: "Mapping numbers to agents", url: "/agents-sdk/signalwire-integration/mapping-numbers" },
+    { label: "Phone numbers with the SDK", url: "/server-sdks/guides/phone-numbers" },
+    { label: "Mapping numbers to agents", url: "/server-sdks/guides/mapping-numbers" },
   ],
   4: [
-    { label: "Call flow", url: "/agents-sdk/building-agents/call-flow" },
-    { label: "Lifecycle", url: "/agents-sdk/core-concepts/lifecycle" },
-    { label: "Troubleshooting", url: "/agents-sdk/signalwire-integration/troubleshooting" },
+    { label: "Call flow", url: "/server-sdks/guides/call-flow" },
+    { label: "Lifecycle", url: "/server-sdks/guides/lifecycle" },
+    { label: "Troubleshooting", url: "/server-sdks/guides/troubleshooting" },
   ],
 };
 
@@ -1046,7 +1056,7 @@ function renderLockedPreviews() {
     </section>
 
     <div class="footer">
-      Built with the <a href="https://signalwire.com/docs/agents-sdk" target="_blank" rel="noopener noreferrer">SignalWire Agents SDK</a>
+      Built with the <a href="https://signalwire.com/docs/server-sdks" target="_blank" rel="noopener noreferrer">SignalWire Agents SDK</a>
       · <a href="https://github.com/jongray00/Chicago-Roadshow-2026" target="_blank" rel="noopener noreferrer">github.com/jongray00/Chicago-Roadshow-2026</a>
       · <button type="button" class="link-button" id="reset-progress-link">Reset workshop progress</button>
     </div>
@@ -1112,7 +1122,7 @@ function renderWorkshop() {
     </section>
 
     <div class="footer">
-      Built with the <a href="https://signalwire.com/docs/agents-sdk" target="_blank" rel="noopener noreferrer">SignalWire Agents SDK</a>
+      Built with the <a href="https://signalwire.com/docs/server-sdks" target="_blank" rel="noopener noreferrer">SignalWire Agents SDK</a>
       · <a href="https://github.com/jongray00/Chicago-Roadshow-2026" target="_blank" rel="noopener noreferrer">github.com/jongray00/Chicago-Roadshow-2026</a>
       · <button type="button" class="link-button" id="reset-progress-link">Reset workshop progress</button>
     </div>
@@ -1133,7 +1143,9 @@ function renderWorkshop() {
     node.addEventListener("click", () => setActiveStep(node.dataset.route));
   });
   document.getElementById("pinned-copy")?.addEventListener("click", e => copyUrl(e.currentTarget, getSwmlUrl(state.activeStep)));
-  document.getElementById("detail-copy")?.addEventListener("click", e => copyUrl(e.currentTarget, getSwmlUrl(state.activeStep)));
+  document.getElementById("detail-url-copy")?.addEventListener("click", e => copyUrl(e.currentTarget, getSwmlUrl(state.activeStep)));
+  document.getElementById("detail-prev")?.addEventListener("click", e => setActiveStep(e.currentTarget.dataset.route));
+  document.getElementById("detail-next")?.addEventListener("click", e => setActiveStep(e.currentTarget.dataset.route));
   document.querySelectorAll("[data-run]").forEach(btn => {
     btn.addEventListener("click", () => runPillar(btn.dataset.run));
   });
@@ -1181,7 +1193,12 @@ function renderTimeline() {
 }
 
 function renderActiveDetail() {
-  const step = STEPS_META.find(s => s.route === state.activeStep) || STEPS_META[0];
+  const idx = STEPS_META.findIndex(s => s.route === state.activeStep);
+  const i = idx >= 0 ? idx : 0;
+  const step = STEPS_META[i];
+  const prev = i > 0 ? STEPS_META[i - 1] : null;
+  const next = i < STEPS_META.length - 1 ? STEPS_META[i + 1] : null;
+  const swmlUrl = getSwmlUrl(step.route);
   const caps = step.capabilities.map(c => {
     const isNew = step.newCapabilities.includes(c);
     return `<span class="pill${isNew ? ' new' : ''}">${escapeHtml(c)}</span>`;
@@ -1206,7 +1223,21 @@ function renderActiveDetail() {
       <div class="source-row">
         <a href="${pySourceUrl(step.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">View Python source</a>
         <a href="${tsSourceUrl(step.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">View TypeScript source</a>
-        <button class="src-btn primary" id="detail-copy">Copy this URL</button>
+      </div>
+      <div class="url-card">
+        <div class="url-meta">
+          <div class="url-label">${escapeHtml(step.step)} · ${escapeHtml(step.name)} · SWML URL</div>
+          <div class="url-text">${escapeHtml(swmlUrl)}</div>
+        </div>
+        <button class="btn-copy" id="detail-url-copy">Copy URL</button>
+      </div>
+      <div class="agent-nav">
+        ${prev
+          ? `<button class="btn-secondary" id="detail-prev" data-route="${prev.route}">← ${escapeHtml(prev.name)}</button>`
+          : `<span></span>`}
+        ${next
+          ? `<button class="btn-primary" id="detail-next" data-route="${next.route}">Next agent: ${escapeHtml(next.name)} →</button>`
+          : `<span class="agent-nav-done">Final agent — explore the REST &amp; RELAY pillars below ↓</span>`}
       </div>
     </div>`;
 }
