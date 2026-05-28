@@ -7,18 +7,20 @@
 <link rel="icon" type="image/png" href="https://mcdn.signalwire.com/images/v2/loud/LogoLarge.png">
 <style>
   :root {
-    --sw-blue: #044cf6;
-    --sw-blue-deep: #0a2882;
-    --sw-dark: #0a1628;
-    --sw-card: #111b30;
-    --sw-card-2: #16223c;
-    --sw-border: #1a2540;
-    --sw-magenta: #F72A72;
-    --sw-cyan: #38bdf8;
-    --sw-orange: #ff9100;
-    --sw-text: #cdd6e4;
-    --sw-text-bright: #f0f4fa;
-    --sw-text-dim: #6b7a94;
+    /* SignalWire brand palette (locked values) */
+    --sw-blue: #044EF4;
+    --sw-blue-deep: #022DA8;
+    --sw-dark: #0e0e18;
+    --sw-card: #181a28;
+    --sw-card-2: #222436;
+    --sw-border: #2a2d42;
+    --sw-magenta: #F72A72;      /* fuchsia */
+    --sw-cyan: #40E0D0;         /* turquoise */
+    --sw-orange: #FFD700;       /* gold (warnings) */
+    --sw-purple: #601BE6;
+    --sw-text: #e8e8ec;
+    --sw-text-bright: #f0f0f4;
+    --sw-text-dim: #a0a0aa;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -66,7 +68,7 @@
   }
   .api-ticker.is-active .api-ticker-dot {
     background: var(--sw-cyan);
-    box-shadow: 0 0 0 3px rgba(56,189,248,0.2);
+    box-shadow: 0 0 0 3px rgba(64,224,208,0.2);
     animation: tick-pulse 1.2s ease-in-out infinite;
   }
   .api-ticker.is-error .api-ticker-dot { background: var(--sw-magenta); box-shadow: 0 0 0 3px rgba(247,42,114,0.2); }
@@ -136,7 +138,7 @@
   }
   .api-log.is-active .api-log-toggle-dot {
     background: var(--sw-cyan);
-    box-shadow: 0 0 0 4px rgba(56,189,248,0.2);
+    box-shadow: 0 0 0 4px rgba(64,224,208,0.2);
     animation: tick-pulse 1.2s ease-in-out infinite;
   }
   .api-log-toggle-text { flex: 1; text-align: left; padding-left: 8px; color: var(--sw-text); font-weight: 600; letter-spacing: 0.04em; text-transform: none; font-size: 11.5px; }
@@ -168,7 +170,7 @@
   }
   .api-log-sub .api-tag {
     display: inline-block; padding: 1px 6px; border-radius: 4px;
-    background: rgba(4,76,246,0.18); color: var(--sw-blue);
+    background: rgba(4,78,244,0.18); color: var(--sw-blue);
     font-weight: 700; font-size: 9.5px; letter-spacing: 0.04em; margin-right: 4px;
   }
   .api-log-sub .api-tag.fabric { background: rgba(247,42,114,0.18); color: var(--sw-magenta); }
@@ -176,110 +178,79 @@
     padding: 18px 6px; text-align: center; color: var(--sw-text-dim); font-size: 11px;
   }
 
-  /* ============ BUDDY THE ROBOT ============ */
-  .buddy-stage { position: relative; }
-  .buddy-frame {
-    background: rgba(12,16,24,0.92);
-    border: 1px solid var(--sw-border); border-radius: 16px;
-    padding: 6px 10px 4px;
-    cursor: pointer; line-height: 0;
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 18px 50px -20px rgba(0,0,0,0.6);
-    transition: transform 0.2s ease, border-color 0.2s ease;
+  /* ============ API EXECUTION THEATER — live REST call playback ============ */
+  .api-theater {
+    position: fixed; inset: 0; z-index: 320;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(8,10,18,0.74);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease;
   }
-  .buddy-frame:hover { transform: translateY(-2px); border-color: var(--sw-cyan); }
-  .buddy { width: 96px; height: 120px; display: block; }
-
-  /* All parts start hidden, then animate in when their step has been visited */
-  .buddy [data-part] {
-    opacity: 0; transform: scale(0.4); transform-origin: 60px 70px;
-    transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 1.6, 0.3, 1);
+  .api-theater.is-open { opacity: 1; pointer-events: auto; }
+  .api-theater-panel {
+    width: min(460px, calc(100vw - 40px));
+    background: var(--sw-card);
+    border: 1px solid var(--sw-border);
+    border-radius: 16px;
+    box-shadow: 0 30px 80px -24px rgba(0,0,0,0.8);
+    padding: 24px 24px 20px;
+    transform: translateY(14px) scale(0.97);
+    transition: transform 0.25s cubic-bezier(0.2,1.2,0.3,1);
   }
-  .buddy[data-progress~="step04"] [data-part="head"],
-  .buddy[data-progress~="step06"] [data-part="torso"],
-  .buddy[data-progress~="step07"] [data-part="arm-left"],
-  .buddy[data-progress~="step08"] [data-part="arm-right"],
-  .buddy[data-progress~="step09"] [data-part="chest-led"],
-  .buddy[data-progress~="step10"] [data-part="legs"],
-  .buddy[data-progress~="step11"] [data-part="halo"] {
-    opacity: 1; transform: scale(1);
+  .api-theater.is-open .api-theater-panel { transform: translateY(0) scale(1); }
+  .api-theater-head { display: flex; align-items: center; gap: 12px; }
+  .api-theater-icon {
+    width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+    background: rgba(4,78,244,0.14); border: 1px solid rgba(4,78,244,0.4);
   }
-
-  /* Geometric strokes & fills */
-  .buddy-head-shape, .buddy-torso-shape {
-    fill: #161b27; stroke: var(--sw-blue); stroke-width: 1.5;
+  .api-theater-title { font-size: 16px; font-weight: 700; color: var(--sw-text-bright); }
+  .api-theater-req {
+    margin-top: 16px; font-family: 'SF Mono','JetBrains Mono',monospace; font-size: 12.5px;
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 12px; border-radius: 8px; background: var(--sw-dark);
+    border: 1px solid var(--sw-border);
   }
-  .buddy-torso-panel { fill: #0b1018; stroke: rgba(56,189,248,0.35); stroke-width: 1; }
-  .buddy-antenna { stroke: var(--sw-cyan); stroke-width: 1.5; }
-  .buddy-antenna-tip { fill: var(--sw-magenta); }
-  .buddy-eye { fill: var(--sw-cyan); transition: fill 0.2s ease; }
-  .buddy-mouth { fill: var(--sw-text-dim); }
-  .buddy-arm { stroke: var(--sw-blue); stroke-width: 4; stroke-linecap: round; }
-  .buddy-hand { fill: var(--sw-magenta); }
-  .buddy-chest-led { fill: var(--sw-magenta); filter: drop-shadow(0 0 4px rgba(247,42,114,0.7)); animation: buddy-led 2s ease-in-out infinite; }
-  .buddy-leg { fill: #161b27; stroke: var(--sw-blue); stroke-width: 1.5; }
-  .buddy-foot { fill: var(--sw-blue); }
-  .buddy-halo { stroke: var(--sw-magenta); stroke-width: 2; filter: drop-shadow(0 0 4px rgba(247,42,114,0.8)); }
-
-  /* Idle behaviors */
-  .buddy[data-progress~="step04"] [data-part="head"] .buddy-eye {
-    animation: buddy-blink 5s infinite;
+  .api-theater-req .verb { color: #fff; font-weight: 700; background: var(--sw-blue); padding: 2px 7px; border-radius: 5px; font-size: 11px; }
+  .api-theater-req .path { color: var(--sw-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .api-theater-spinner {
+    margin-left: auto; width: 14px; height: 14px; flex-shrink: 0; border-radius: 50%;
+    border: 2px solid var(--sw-border); border-top-color: var(--sw-cyan);
+    animation: theater-spin 0.7s linear infinite;
   }
-  .buddy[data-progress~="step04"] [data-part="head"] {
-    animation: buddy-bob 7s ease-in-out infinite;
+  @keyframes theater-spin { to { transform: rotate(360deg); } }
+  .api-theater-steps { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .api-theater-step {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'SF Mono','JetBrains Mono',monospace; font-size: 12px;
+    opacity: 0; transform: translateX(-6px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
   }
-  @keyframes buddy-blink {
-    0%, 92%, 96%, 100% { transform: scaleY(1); }
-    94% { transform: scaleY(0.1); }
+  .api-theater-step.is-in { opacity: 1; transform: translateX(0); }
+  .api-theater-step .tag {
+    font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em;
+    padding: 2px 7px; border-radius: 5px; flex-shrink: 0;
+    background: rgba(4,78,244,0.18); color: var(--sw-blue);
   }
-  @keyframes buddy-bob {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-2px); }
+  .api-theater-step .tag.fabric { background: rgba(247,42,114,0.18); color: var(--sw-magenta); }
+  .api-theater-step .label { flex: 1; color: var(--sw-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .api-theater-step .ms { color: var(--sw-text-dim); flex-shrink: 0; }
+  .api-theater-step .check { color: var(--sw-cyan); flex-shrink: 0; }
+  .api-theater-foot {
+    margin-top: 18px; display: flex; align-items: center; gap: 10px;
+    font-size: 13.5px; font-weight: 600; color: var(--sw-cyan);
+    opacity: 0; transform: translateY(4px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
   }
-  @keyframes buddy-led {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.55; }
+  .api-theater-foot.is-in { opacity: 1; transform: translateY(0); }
+  .api-theater-foot .check-badge {
+    width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%;
+    background: rgba(64,224,208,0.16); color: var(--sw-cyan);
+    display: flex; align-items: center; justify-content: center; font-size: 13px;
   }
-
-  /* Thinking state (during pending API calls) */
-  .buddy-thinking { opacity: 0; transition: opacity 0.18s ease; }
-  .buddy-think-dot { fill: var(--sw-cyan); }
-  .buddy-think-ring {
-    stroke: var(--sw-cyan); stroke-width: 1.5; stroke-dasharray: 8 6; opacity: 0;
-    transform-origin: 60px 44px;
-  }
-  .buddy.is-thinking [data-part="head"] .buddy-eye { opacity: 0; }
-  .buddy.is-thinking .buddy-thinking { opacity: 1; animation: buddy-think 0.9s steps(3) infinite; }
-  .buddy.is-thinking .buddy-think-ring { opacity: 0.6; animation: buddy-ring 1.4s linear infinite; }
-  @keyframes buddy-think {
-    0% { transform: translateX(-4px); }
-    100% { transform: translateX(4px); }
-  }
-  @keyframes buddy-ring {
-    0% { stroke-dashoffset: 0; transform: rotate(0deg); }
-    100% { stroke-dashoffset: -56; transform: rotate(360deg); }
-  }
-
-  /* Popover with capability list */
-  .buddy-popover {
-    position: absolute; right: 0; bottom: calc(100% + 10px);
-    background: rgba(12,16,24,0.97); border: 1px solid var(--sw-border);
-    border-radius: 10px; padding: 12px 14px;
-    width: 230px;
-    box-shadow: 0 18px 50px -20px rgba(0,0,0,0.7);
-  }
-  .buddy-pop-eyebrow {
-    font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--sw-magenta); font-weight: 700; margin-bottom: 8px;
-  }
-  .buddy-pop-list { list-style: none; margin: 0; padding: 0; }
-  .buddy-pop-list li {
-    font-size: 12px; color: var(--sw-text); padding: 4px 0;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .buddy-pop-list li::before { content: "✓"; color: var(--sw-cyan); font-weight: 700; }
-  .buddy-pop-list li.locked { color: var(--sw-text-dim); }
-  .buddy-pop-list li.locked::before { content: "·"; color: var(--sw-text-dim); }
+  .api-theater.is-error .api-theater-foot { color: var(--sw-magenta); }
+  .api-theater.is-error .api-theater-foot .check-badge { background: rgba(247,42,114,0.16); color: var(--sw-magenta); }
 
   /* ============ ACTION RECEIPTS — persistent souvenir of what worked ============ */
   .receipts-section {
@@ -288,8 +259,8 @@
   .receipts-head {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
     padding: 14px 20px;
-    background: rgba(4,76,246,0.08);
-    border: 1px solid rgba(4,76,246,0.25); border-radius: 12px;
+    background: rgba(4,78,244,0.08);
+    border: 1px solid rgba(4,78,244,0.25); border-radius: 12px;
     cursor: pointer;
   }
   .receipts-head h3 {
@@ -339,7 +310,7 @@
   .receipt-tag {
     display: inline-flex; align-items: center; gap: 4px;
     padding: 2px 7px; border-radius: 999px;
-    background: rgba(4,76,246,0.12); color: var(--sw-blue); font-weight: 700;
+    background: rgba(4,78,244,0.12); color: var(--sw-blue); font-weight: 700;
     letter-spacing: 0.04em; font-size: 9.5px;
   }
   .receipt-tag.fabric { background: rgba(247,42,114,0.14); color: #ad2557; }
@@ -365,7 +336,7 @@
     position: fixed; top: 50px; left: 50%;
     transform: translateX(-50%) translateY(-12px);
     z-index: 75; opacity: 0;
-    background: linear-gradient(135deg, rgba(4,76,246,0.95), rgba(247,42,114,0.92));
+    background: linear-gradient(135deg, rgba(4,78,244,0.95), rgba(247,42,114,0.92));
     color: #fff; padding: 12px 22px; border-radius: 999px;
     box-shadow: 0 18px 48px -16px rgba(247,42,114,0.55);
     display: inline-flex; align-items: center; gap: 12px;
@@ -419,9 +390,9 @@
   .hero {
     padding: 92px 24px 64px;
     background:
-      radial-gradient(ellipse 60% 50% at 18% 22%, rgba(4,76,246,0.42) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 18% 22%, rgba(4,78,244,0.42) 0%, transparent 60%),
       radial-gradient(ellipse 50% 40% at 84% 18%, rgba(247,42,114,0.30) 0%, transparent 60%),
-      radial-gradient(ellipse 70% 30% at 50% 100%, rgba(4,76,246,0.12) 0%, transparent 70%),
+      radial-gradient(ellipse 70% 30% at 50% 100%, rgba(4,78,244,0.12) 0%, transparent 70%),
       var(--sw-dark);
     border-bottom: 1px solid var(--sw-border);
     position: relative;
@@ -468,7 +439,7 @@
     transition: all 0.2s;
   }
   .milestone.done .milestone-dot {
-    background: rgba(56,189,248,0.15); border-color: var(--sw-cyan); color: var(--sw-cyan);
+    background: rgba(64,224,208,0.15); border-color: var(--sw-cyan); color: var(--sw-cyan);
   }
   .milestone.active .milestone-dot {
     background: linear-gradient(135deg, var(--sw-blue), var(--sw-magenta));
@@ -491,11 +462,11 @@
   .wizard-card {
     margin: 36px auto 0;
     max-width: 720px;
-    background: linear-gradient(180deg, rgba(4,76,246,0.06) 0%, var(--sw-card) 50%);
-    border: 1px solid rgba(4,76,246,0.3);
+    background: linear-gradient(180deg, rgba(4,78,244,0.06) 0%, var(--sw-card) 50%);
+    border: 1px solid rgba(4,78,244,0.3);
     border-radius: 18px;
     padding: 36px 36px 32px;
-    box-shadow: 0 24px 60px -20px rgba(4,76,246,0.4), 0 8px 30px -10px rgba(247,42,114,0.15);
+    box-shadow: 0 24px 60px -20px rgba(4,78,244,0.4), 0 8px 30px -10px rgba(247,42,114,0.15);
     position: relative;
   }
   .wizard-eyebrow {
@@ -516,32 +487,45 @@
   }
 
   /* big URL card inside wizard */
+  /* url-card — secondary "advanced" affordance: copy the raw SWML URL.
+     Deliberately quiet; most attendees just point the number (above). */
   .url-card {
-    margin-top: 24px;
-    background: rgba(10,22,40,0.7);
-    backdrop-filter: blur(8px);
-    border: 1px solid var(--sw-border);
-    border-radius: 12px;
-    padding: 16px 18px;
-    display: flex; align-items: center; gap: 14px;
+    margin-top: 16px;
+    background: transparent;
+    border: 1px dashed var(--sw-border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex; align-items: center; gap: 12px;
+    opacity: 0.65;
+    transition: opacity 0.2s ease;
   }
+  .url-card:hover { opacity: 1; }
   .url-meta { flex: 1; min-width: 0; }
   .url-label {
-    font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--sw-text-dim); font-weight: 600; margin-bottom: 6px;
+    font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--sw-text-dim); font-weight: 600; margin-bottom: 4px;
   }
   .url-text {
-    font-family: 'SF Mono', 'JetBrains Mono', monospace; font-size: 14.5px;
-    color: var(--sw-text-bright); overflow-x: auto; white-space: nowrap;
+    font-family: 'SF Mono', 'JetBrains Mono', monospace; font-size: 12px;
+    color: var(--sw-text-dim); overflow-x: auto; white-space: nowrap;
   }
   .url-text .scheme { color: var(--sw-text-dim); }
-  .url-text .step { color: var(--sw-magenta); font-weight: 700; }
+  .url-text .step { color: var(--sw-text); font-weight: 600; }
+  /* base .btn-copy stays primary (used by "Save credentials") */
   .btn-copy {
     background: var(--sw-blue); border: none; color: white;
     padding: 11px 22px; border-radius: 8px; font-weight: 600;
     font-size: 13.5px; cursor: pointer; white-space: nowrap;
-    box-shadow: 0 4px 12px rgba(4,76,246,0.35);
+    box-shadow: 0 4px 12px rgba(4,78,244,0.35);
   }
+  /* but the copy-URL button inside a url-card is demoted to a quiet ghost */
+  .url-card .btn-copy {
+    background: transparent; border: 1px solid var(--sw-border); color: var(--sw-text-dim);
+    padding: 6px 12px; border-radius: 7px; font-weight: 500;
+    font-size: 12px; box-shadow: none;
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+  .url-card .btn-copy:hover { color: var(--sw-text-bright); border-color: var(--sw-text-dim); }
 
   /* dashboard preview */
   .dashboard-hint {
@@ -586,8 +570,8 @@
   /* === New auto-setup wizard === */
   .sdk-badge {
     display: inline-block; font-size: 10.5px; padding: 2px 8px; border-radius: 999px;
-    background: rgba(4,76,246,0.18); color: var(--sw-blue);
-    border: 1px solid rgba(4,76,246,0.4); letter-spacing: 0.02em;
+    background: rgba(4,78,244,0.18); color: var(--sw-blue);
+    border: 1px solid rgba(4,78,244,0.4); letter-spacing: 0.02em;
     font-weight: 600; vertical-align: 2px; margin: 0 4px;
   }
 
@@ -599,7 +583,7 @@
     text-decoration: none;
     background:
       radial-gradient(ellipse 80% 120% at 0% 0%, rgba(247,42,114,0.22), transparent 60%),
-      linear-gradient(135deg, rgba(4,76,246,0.4), rgba(247,42,114,0.28));
+      linear-gradient(135deg, rgba(4,78,244,0.4), rgba(247,42,114,0.28));
     border: 1px solid rgba(247,42,114,0.4);
     color: var(--sw-text-bright);
     box-shadow: 0 18px 50px -18px rgba(247,42,114,0.45);
@@ -661,7 +645,7 @@
     letter-spacing: 0;
   }
   .creds-grid input::placeholder { color: var(--sw-text-dim); opacity: 0.55; }
-  .creds-grid input:focus { outline: none; border-color: var(--sw-blue); box-shadow: 0 0 0 2px rgba(4,76,246,0.25); }
+  .creds-grid input:focus { outline: none; border-color: var(--sw-blue); box-shadow: 0 0 0 2px rgba(4,78,244,0.25); }
 
   .number-grid {
     display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 18px 0 8px;
@@ -672,8 +656,8 @@
     text-align: left; cursor: pointer; transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
     color: var(--sw-text-bright);
   }
-  .number-card:hover { border-color: var(--sw-cyan); transform: translateY(-2px); box-shadow: 0 14px 30px -18px rgba(56,189,248,0.4); }
-  .number-card.existing { border-color: rgba(56,189,248,0.35); }
+  .number-card:hover { border-color: var(--sw-cyan); transform: translateY(-2px); box-shadow: 0 14px 30px -18px rgba(64,224,208,0.4); }
+  .number-card.existing { border-color: rgba(64,224,208,0.35); }
   .number-card.available { border-color: rgba(247,42,114,0.35); }
   .number-card.available:hover { border-color: var(--sw-magenta); box-shadow: 0 14px 30px -18px rgba(247,42,114,0.4); }
   .number-card-num {
@@ -721,7 +705,7 @@
   }
   .loading-spinner {
     width: 14px; height: 14px; border-radius: 50%;
-    border: 2px solid rgba(56,189,248,0.25); border-top-color: var(--sw-cyan);
+    border: 2px solid rgba(64,224,208,0.25); border-top-color: var(--sw-cyan);
     animation: sw-spin 0.8s linear infinite;
   }
   @keyframes sw-spin { to { transform: rotate(360deg); } }
@@ -737,29 +721,140 @@
     margin: 18px 0 10px;
   }
 
-  /* === "Point my phone number here" button inside step sections === */
+  /* === "Point my phone number here" — the primary action in each step === */
   .step-aim {
-    margin-top: 18px; padding: 14px 16px;
-    border: 1px solid var(--sw-border); border-radius: 12px;
-    background: rgba(4,76,246,0.06);
-    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    margin-top: 24px; padding: 22px 24px;
+    border: 1px solid rgba(4,78,244,0.45); border-radius: 16px;
+    background:
+      radial-gradient(130% 150% at 0% 0%, rgba(4,78,244,0.18), transparent 62%),
+      rgba(4,78,244,0.08);
+    box-shadow: 0 14px 48px -18px rgba(4,78,244,0.6);
+    display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
   }
   .step-aim .step-aim-label {
-    flex: 1; font-size: 13px; color: var(--sw-text); min-width: 200px;
+    flex: 1; font-size: 16px; line-height: 1.45; color: var(--sw-text-bright); min-width: 230px;
   }
-  .step-aim .step-aim-label strong { color: var(--sw-text-bright); font-family: 'SF Mono', monospace; }
+  .step-aim .step-aim-label strong { color: #fff; font-family: 'SF Mono', monospace; }
+  .step-aim-eyebrow {
+    display: block; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--sw-blue); font-weight: 700; margin-bottom: 6px;
+  }
   .step-aim button {
-    background: transparent; border: 1px solid var(--sw-blue); color: var(--sw-blue);
-    padding: 9px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--sw-blue); border: none; color: #fff;
+    padding: 16px 30px; border-radius: 12px; cursor: pointer;
+    font-weight: 700; font-size: 16px; letter-spacing: 0.01em;
+    box-shadow: 0 8px 22px rgba(4,78,244,0.5);
+    transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+    animation: aim-pulse 2.6s ease-in-out infinite;
   }
-  .step-aim button:hover { background: var(--sw-blue); color: white; }
-  .step-aim button:disabled { opacity: 0.55; cursor: not-allowed; }
-  .step-aim.is-current { border-color: var(--sw-cyan); background: rgba(56,189,248,0.08); }
-  .step-aim.is-current button { border-color: var(--sw-cyan); color: var(--sw-cyan); }
-  .step-aim.is-current button:hover { background: var(--sw-cyan); color: white; }
-  .step-aim-status { font-size: 12px; color: var(--sw-text-dim); margin-left: 8px; }
+  .step-aim button::before { content: "📞"; font-size: 18px; }
+  .step-aim button:hover:not(:disabled) {
+    transform: translateY(-2px); background: var(--sw-blue-deep);
+    box-shadow: 0 12px 32px rgba(4,78,244,0.7);
+  }
+  @keyframes aim-pulse {
+    0%, 100% { box-shadow: 0 8px 22px rgba(4,78,244,0.5); }
+    50% { box-shadow: 0 8px 30px rgba(4,78,244,0.85); }
+  }
+  .step-aim button:disabled {
+    cursor: default; animation: none;
+    background: rgba(64,224,208,0.16); color: var(--sw-cyan);
+    box-shadow: none;
+  }
+  .step-aim button:disabled::before { content: "✓"; }
+  .step-aim.is-current {
+    border-color: rgba(64,224,208,0.4);
+    background: rgba(64,224,208,0.07);
+    box-shadow: none;
+  }
+  .step-aim.is-current .step-aim-label strong { color: var(--sw-cyan); }
+  .step-aim-status { flex-basis: 100%; font-size: 13px; color: var(--sw-text-dim); }
   .step-aim-status.ok { color: var(--sw-cyan); }
   .step-aim-status.err { color: var(--sw-magenta); }
+
+  /* === Power-up code spotlight: the real code change for each level === */
+  .powerup {
+    margin-top: 18px;
+    border: 1px solid rgba(247,42,114,0.35);
+    border-radius: 14px;
+    background:
+      radial-gradient(130% 150% at 100% 0%, rgba(247,42,114,0.12), transparent 60%),
+      var(--sw-card);
+    overflow: hidden;
+  }
+  .powerup-head {
+    width: 100%; display: flex; align-items: center; gap: 14px;
+    background: transparent; border: none; cursor: pointer; text-align: left;
+    padding: 14px 18px; color: var(--sw-text-bright); font-family: inherit;
+  }
+  .powerup-bolt {
+    font-size: 20px; flex-shrink: 0;
+    filter: drop-shadow(0 0 6px rgba(255,215,0,0.6));
+    animation: powerup-bolt 2.4s ease-in-out infinite;
+  }
+  @keyframes powerup-bolt { 0%,100% { transform: scale(1); } 50% { transform: scale(1.18) rotate(-6deg); } }
+  .powerup-titles { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .powerup-eyebrow {
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--sw-magenta); font-weight: 700;
+  }
+  .powerup-power { font-size: 15px; font-weight: 600; color: var(--sw-text-bright); }
+  .powerup-toggle {
+    flex-shrink: 0; font-size: 12.5px; color: var(--sw-cyan); font-weight: 600;
+    display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  }
+  .powerup-chev { transition: transform 0.2s ease; display: inline-block; }
+  .powerup.is-open .powerup-chev { transform: rotate(180deg); }
+  .powerup-body { display: none; padding: 0 18px 18px; grid-template-columns: 1.3fr 1fr; gap: 16px; }
+  .powerup.is-open .powerup-body { display: grid; }
+  @media (max-width: 720px) { .powerup-body { grid-template-columns: 1fr; } }
+  .powerup-code {
+    background: #1e1e1f; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; overflow: hidden; min-width: 0;
+  }
+  .powerup-code-head {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  .powerup-dot { width: 9px; height: 9px; border-radius: 50%; background: #3a3a40; }
+  .powerup-lang {
+    margin-left: 8px; font-family: 'JetBrains Mono','SF Mono',monospace;
+    font-size: 11px; color: var(--sw-text-dim);
+  }
+  .powerup-newtag {
+    margin-left: auto; font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em;
+    color: var(--sw-magenta); text-transform: uppercase;
+  }
+  .powerup-pre {
+    margin: 0; padding: 12px 6px; overflow-x: auto;
+    font-family: 'JetBrains Mono','SF Mono',monospace; font-size: 12.5px; line-height: 1.7;
+    color: #d4d4d8;
+  }
+  .powerup-pre .cl { display: block; padding: 0 8px; border-radius: 4px; }
+  .powerup-pre .cl.is-new {
+    background: rgba(247,42,114,0.16);
+    box-shadow: inset 2px 0 0 var(--sw-magenta);
+    color: #fff;
+    animation: powerup-glow 2.2s ease-in-out infinite;
+  }
+  @keyframes powerup-glow {
+    0%,100% { background: rgba(247,42,114,0.12); }
+    50% { background: rgba(247,42,114,0.22); }
+  }
+  .powerup-aside { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .buddy-quote {
+    display: flex; gap: 9px; align-items: flex-start;
+    background: rgba(64,224,208,0.08); border: 1px solid rgba(64,224,208,0.28);
+    border-radius: 10px; padding: 11px 13px;
+    font-size: 13px; line-height: 1.5; color: var(--sw-text-bright);
+  }
+  .buddy-quote-icon { flex-shrink: 0; }
+  .powerup-why { font-size: 12.5px; color: var(--sw-text-dim); line-height: 1.5; }
+  .powerup-why-label {
+    display: block; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--sw-blue); font-weight: 700; margin-bottom: 4px;
+  }
 
   /* doc-links - small reference list inside cards */
   .doc-links {
@@ -915,11 +1010,11 @@
   /* ===== Workshop state ===== */
   .status-pill {
     display: inline-flex; align-items: center; gap: 10px;
-    background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.3);
+    background: rgba(64,224,208,0.1); border: 1px solid rgba(64,224,208,0.3);
     color: var(--sw-cyan); padding: 6px 14px; border-radius: 999px;
     font-size: 12.5px; font-weight: 600; letter-spacing: 0.02em;
   }
-  .status-pill .sep { color: rgba(56,189,248,0.4); }
+  .status-pill .sep { color: rgba(64,224,208,0.4); }
   .status-pill a { color: var(--sw-cyan); text-decoration: underline; text-underline-offset: 3px; }
   .status-pill a:hover { color: var(--sw-text-bright); }
 
@@ -956,7 +1051,7 @@
     transition: all 0.2s;
   }
   .timeline-node.visited .timeline-circle {
-    background: rgba(56,189,248,0.15); border-color: var(--sw-cyan); color: var(--sw-cyan);
+    background: rgba(64,224,208,0.15); border-color: var(--sw-cyan); color: var(--sw-cyan);
   }
   .timeline-node.active .timeline-circle {
     background: linear-gradient(135deg, var(--sw-blue), var(--sw-magenta));
@@ -996,7 +1091,7 @@
     cursor: pointer;
   }
   .step-section.visited:not(.active) { opacity: 0.78; }
-  .step-section:hover:not(.active) { opacity: 0.9; border-color: rgba(56,189,248,0.35); }
+  .step-section:hover:not(.active) { opacity: 0.9; border-color: rgba(64,224,208,0.35); }
   .step-section.active {
     opacity: 1; filter: none; cursor: default;
     border-color: rgba(247,42,114,0.45);
@@ -1118,8 +1213,6 @@
     .signup-invite { flex-direction: column; align-items: stretch; text-align: left; padding: 18px 18px; }
     .signup-invite-cta { width: 100%; justify-content: center; text-align: center; padding: 14px 18px; }
 
-    /* Mobile: hide Buddy (small screens get crowded) */
-    .buddy-stage { display: none; }
     /* Mobile: API log moves to bottom-right but shrinks */
     .bottom-right-stack { right: 10px; bottom: 10px; gap: 8px; }
     .api-log { width: 280px; }
@@ -1170,10 +1263,10 @@
 
   /* ===== Shared credentials panel (feeds BOTH pillars) ===== */
   .creds-panel {
-    background: linear-gradient(180deg, rgba(4,76,246,0.08) 0%, var(--sw-card) 60%);
-    border: 1px solid rgba(4,76,246,0.35);
+    background: linear-gradient(180deg, rgba(4,78,244,0.08) 0%, var(--sw-card) 60%);
+    border: 1px solid rgba(4,78,244,0.35);
     border-radius: 16px; padding: 22px 24px; margin-bottom: 22px;
-    box-shadow: 0 16px 40px -22px rgba(4,76,246,0.5);
+    box-shadow: 0 16px 40px -22px rgba(4,78,244,0.5);
   }
   .creds-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
   .creds-eyebrow {
@@ -1186,8 +1279,20 @@
     font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 999px;
     border: 1px solid var(--sw-border); color: var(--sw-text-dim); white-space: nowrap;
   }
-  .creds-status.ok { background: rgba(56,189,248,0.12); border-color: var(--sw-cyan); color: var(--sw-cyan); }
-  .creds-status.warn { background: rgba(255,145,0,0.12); border-color: var(--sw-orange); color: var(--sw-orange); }
+  .creds-status.ok { background: rgba(64,224,208,0.12); border-color: var(--sw-cyan); color: var(--sw-cyan); }
+  .creds-status.warn { background: rgba(255,215,0,0.12); border-color: var(--sw-orange); color: var(--sw-orange); }
+  /* Already provided in the setup wizard? Collapse the form, don't re-ask. */
+  .creds-ready { display: none; align-items: center; gap: 12px; margin-top: 14px; font-size: 13.5px; color: var(--sw-text); flex-wrap: wrap; }
+  .creds-ready-icon { color: var(--sw-cyan); font-weight: 700; }
+  .creds-replace {
+    background: transparent; border: 1px solid var(--sw-border); color: var(--sw-text-dim);
+    padding: 6px 12px; border-radius: 7px; font-size: 12px; cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+  .creds-replace:hover { color: var(--sw-text-bright); border-color: var(--sw-text-dim); }
+  .creds-panel.is-configured:not(.is-editing) .creds-fields { display: none; }
+  .creds-panel.is-configured:not(.is-editing) .creds-sub { display: none; }
+  .creds-panel.is-configured:not(.is-editing) .creds-ready { display: flex; }
   .creds-fields { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-top: 16px; }
   .creds-fields label {
     display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 170px;
@@ -1197,7 +1302,7 @@
     background: var(--sw-dark); border: 1px solid var(--sw-border); color: var(--sw-text-bright);
     padding: 10px 12px; border-radius: 8px; font-size: 14px; font-family: 'SF Mono', monospace;
   }
-  .creds-fields input:focus { outline: none; border-color: var(--sw-blue); box-shadow: 0 0 0 2px rgba(4,76,246,0.25); }
+  .creds-fields input:focus { outline: none; border-color: var(--sw-blue); box-shadow: 0 0 0 2px rgba(4,78,244,0.25); }
 
   /* ===== Flow strip: the pipeline at a glance ===== */
   .flow-strip { display: flex; align-items: stretch; gap: 10px; margin-bottom: 22px; flex-wrap: wrap; }
@@ -1249,63 +1354,6 @@
     </div>
   </div>
 
-  <div class="buddy-stage" id="buddy-stage" hidden>
-    <button type="button" class="buddy-frame" id="buddy-frame" aria-label="Buddy the robot" title="Buddy">
-      <svg class="buddy" viewBox="0 0 120 150" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <!-- HALO (step 11) -->
-        <g class="buddy-part" data-part="halo">
-          <ellipse class="buddy-halo" cx="60" cy="6" rx="22" ry="5" fill="none"/>
-        </g>
-        <!-- HEAD (step 04) -->
-        <g class="buddy-part" data-part="head">
-          <line class="buddy-antenna" x1="60" y1="14" x2="60" y2="24"/>
-          <circle class="buddy-antenna-tip" cx="60" cy="11" r="3"/>
-          <rect class="buddy-head-shape" x="32" y="24" width="56" height="44" rx="9"/>
-          <circle class="buddy-eye left" cx="46" cy="44" r="3.5"/>
-          <circle class="buddy-eye right" cx="74" cy="44" r="3.5"/>
-          <rect class="buddy-mouth" x="48" y="56" width="24" height="3" rx="1.5"/>
-        </g>
-        <!-- TORSO (step 06) -->
-        <g class="buddy-part" data-part="torso">
-          <rect class="buddy-torso-shape" x="34" y="72" width="52" height="42" rx="7"/>
-          <rect class="buddy-torso-panel" x="42" y="80" width="36" height="26" rx="3"/>
-        </g>
-        <!-- LEFT ARM (step 07) -->
-        <g class="buddy-part" data-part="arm-left">
-          <line class="buddy-arm" x1="34" y1="82" x2="20" y2="98"/>
-          <circle class="buddy-hand" cx="18" cy="100" r="4"/>
-        </g>
-        <!-- RIGHT ARM (step 08) -->
-        <g class="buddy-part" data-part="arm-right">
-          <line class="buddy-arm" x1="86" y1="82" x2="100" y2="98"/>
-          <circle class="buddy-hand" cx="102" cy="100" r="4"/>
-        </g>
-        <!-- CHEST LED (step 09) -->
-        <g class="buddy-part" data-part="chest-led">
-          <circle class="buddy-chest-led" cx="60" cy="93" r="3.5"/>
-        </g>
-        <!-- LEGS (step 10) -->
-        <g class="buddy-part" data-part="legs">
-          <rect class="buddy-leg" x="44" y="114" width="8" height="24" rx="2"/>
-          <rect class="buddy-leg" x="68" y="114" width="8" height="24" rx="2"/>
-          <rect class="buddy-foot" x="40" y="138" width="16" height="5" rx="2"/>
-          <rect class="buddy-foot" x="64" y="138" width="16" height="5" rx="2"/>
-        </g>
-        <!-- THINKING DOTS (shown when API call in flight) -->
-        <g class="buddy-thinking">
-          <circle class="buddy-think-dot" cx="50" cy="44" r="1.5"/>
-          <circle class="buddy-think-dot" cx="60" cy="44" r="1.5"/>
-          <circle class="buddy-think-dot" cx="70" cy="44" r="1.5"/>
-        </g>
-        <!-- THINKING RING (shown when API call in flight) -->
-        <circle class="buddy-think-ring" cx="60" cy="44" r="28" fill="none"/>
-      </svg>
-    </button>
-    <div class="buddy-popover" id="buddy-popover" hidden>
-      <div class="buddy-pop-eyebrow">BUDDY · CAPABILITIES</div>
-      <ul class="buddy-pop-list" id="buddy-pop-list"></ul>
-    </div>
-  </div>
 </div>
 
 <div class="topbar">
@@ -1334,8 +1382,22 @@
 const STEPS_META = [
   {
     route: "/step04",
-    step: "Step 4",
+    step: "Lv.1",
     name: "Hello Agent",
+    tagline: "Buddy comes online",
+    codeSpotlight: {
+      power: "Buddy wakes up and can hold a conversation",
+      lang: "step04_hello.py",
+      lines: [
+        { t: "class HelloAgent(AgentBase):" },
+        { t: "    def __init__(self):" },
+        { t: '        self.add_language("English", "en-US", "rime.spore")', new: true },
+        { t: '        self.prompt_add_section("Personality",', new: true },
+        { t: '            "You are Buddy, a friendly phone assistant.")', new: true },
+      ],
+      buddy: "prompt_add_section is literally my personality. Change that text and you change who I am.",
+      why: "AgentBase plus one prompt section equals a working voice agent.",
+    },
     stem: "step04_hello",
     desc: "The simplest possible agent. Call your number and have a basic conversation with Buddy. Proves everything works end to end.",
     whatsNew: "Foundation: AgentBase, add_language(), prompt_add_section(), post-prompt summaries",
@@ -1352,8 +1414,23 @@ const STEPS_META = [
   },
   {
     route: "/step06",
-    step: "Step 6",
+    step: "Lv.2",
     name: "Hardcoded Jokes",
+    tagline: "Buddy learns jokes",
+    codeSpotlight: {
+      power: "Buddy can reach for a joke mid-call",
+      lang: "step06_hardcoded_jokes.py",
+      lines: [
+        { t: "self.define_tool(", new: true },
+        { t: '    "tell_joke", "Tell the caller a joke",', new: true },
+        { t: "    handler=self.on_tell_joke)", new: true },
+        { t: "" },
+        { t: "def on_tell_joke(self, args, raw_data):" },
+        { t: "    return FunctionResult(random.choice(JOKES))", new: true },
+      ],
+      buddy: "define_tool() hands me a new ability the AI can call on its own, whenever a caller asks.",
+      why: "One define_tool() call equals one new skill the AI can invoke.",
+    },
     stem: "step06_hardcoded_jokes",
     desc: "Teaches the AI to tell jokes using a SWAIG function. The handler picks a random joke from a hardcoded list.",
     whatsNew: "First SWAIG function: define_tool() with a custom handler that returns FunctionResult",
@@ -1370,8 +1447,22 @@ const STEPS_META = [
   },
   {
     route: "/step07",
-    step: "Step 7",
+    step: "Lv.3",
     name: "Live API Jokes",
+    tagline: "Buddy calls a live API",
+    codeSpotlight: {
+      power: "Buddy fetches a fresh joke from the internet",
+      lang: "step07_api_jokes.py",
+      lines: [
+        { t: "def on_tell_joke(self, args, raw_data):" },
+        { t: '    resp = requests.get("https://icanhazdadjoke.com/",', new: true },
+        { t: '        headers={"Accept": "application/json"})', new: true },
+        { t: '    joke = resp.json()["joke"]', new: true },
+        { t: '    return FunctionResult(f"Dad joke: {joke}")' },
+      ],
+      buddy: "Same tool, but now I call out to the internet for a brand new joke every single time.",
+      why: "Your handler runs on your server, so it can call any API you like.",
+    },
     stem: "step07_api_jokes",
     desc: "Replaces hardcoded jokes with fresh ones from the API Ninjas Dad Jokes API. Every call gets a different joke.",
     whatsNew: "Calling an external REST API from a custom function handler",
@@ -1387,8 +1478,22 @@ const STEPS_META = [
   },
   {
     route: "/step08",
-    step: "Step 8",
+    step: "Lv.4",
     name: "Weather + Jokes",
+    tagline: "Buddy checks the weather",
+    codeSpotlight: {
+      power: "Buddy checks the weather without touching your server",
+      lang: "step08_weather.py",
+      lines: [
+        { t: "self._register_joke_function()" },
+        { t: "self._register_weather_datamap()", new: true },
+        { t: "" },
+        { t: "# DataMap runs ON SignalWire, not your server" },
+        { t: 'DataMap("get_weather").webhook("GET", WEATHER_URL)', new: true },
+      ],
+      buddy: "DataMap lets SignalWire make the API call for me. define_tool runs on your box; DataMap runs on theirs.",
+      why: "Two ways to add tools: your server (define_tool) or SignalWire's edge (DataMap).",
+    },
     stem: "step08_weather",
     desc: "Adds weather lookups using DataMap - a serverless approach where SignalWire calls the weather API directly.",
     whatsNew: "DataMap: declare an API call and SignalWire executes it. Your server never handles the weather request.",
@@ -1405,8 +1510,22 @@ const STEPS_META = [
   },
   {
     route: "/step09",
-    step: "Step 9",
+    step: "Lv.5",
     name: "Polished Agent",
+    tagline: "Buddy gets polished",
+    codeSpotlight: {
+      power: "Buddy gets a personality and tuned timing",
+      lang: "step09_polish.py",
+      lines: [
+        { t: "self.set_params({", new: true },
+        { t: '    "ai_volume": 5,', new: true },
+        { t: '    "end_of_speech_timeout": 500,', new: true },
+        { t: "})", new: true },
+        { t: 'self.prompt_add_section("Personality", "...")' },
+      ],
+      buddy: "set_params is my dials: how fast I respond, how I sound. This is where I stop sounding like a robot.",
+      why: "Behavior tuning lives in set_params plus layered prompt sections.",
+    },
     stem: "step09_polish",
     desc: "Same capabilities as Step 8, but with a much better conversation experience. Better personality, timing, and speech recognition.",
     whatsNew: "UX tuning: set_params() for timing, add_hints() for speech recognition, richer prompts, varied fillers",
@@ -1423,8 +1542,20 @@ const STEPS_META = [
   },
   {
     route: "/step10",
-    step: "Step 10",
+    step: "Lv.6",
     name: "Agent with Skills",
+    tagline: "Buddy gains skills",
+    codeSpotlight: {
+      power: "Buddy gains date/time and math in two lines",
+      lang: "step10_skills.py",
+      lines: [
+        { t: 'self.add_skill("datetime",', new: true },
+        { t: '    {"default_timezone": "America/New_York"})', new: true },
+        { t: 'self.add_skill("math")', new: true },
+      ],
+      buddy: "add_skill() is the cheat code. One line and I can do a whole new thing, with no handler to write.",
+      why: "Prebuilt skills are instant capabilities, one line each.",
+    },
     stem: "step10_skills",
     desc: "Adds date/time and math capabilities with just two lines of code. Skills are pre-built capabilities that ship with the SDK.",
     whatsNew: "Built-in skills: add_skill() for instant capabilities with zero handler code",
@@ -1441,8 +1572,22 @@ const STEPS_META = [
   },
   {
     route: "/step11",
-    step: "Step 11",
+    step: "Lv.7",
     name: "Complete Agent",
+    tagline: "Buddy goes production-ready",
+    codeSpotlight: {
+      power: "Buddy is reorganized into clean, production-ready methods",
+      lang: "step11_complete.py",
+      lines: [
+        { t: "def __init__(self):" },
+        { t: "    self._configure_voice()", new: true },
+        { t: "    self._configure_prompts()", new: true },
+        { t: "    self._register_joke_function()", new: true },
+        { t: "    self._register_skills()", new: true },
+      ],
+      buddy: "Same me, just tidy. Everything split into _configure_* and _register_* methods so I'm easy to grow.",
+      why: "Production pattern: small focused setup methods instead of one giant __init__.",
+    },
     stem: "step11_complete",
     desc: "Everything polished and organized into clean private methods. The production-ready pattern for building larger agents.",
     whatsNew: "Production organization: _configure_*() and _register_*() method pattern for clean, maintainable code",
@@ -1463,7 +1608,7 @@ const PILLAR_CARDS = [
   {
     pillar: "rest",
     kind: "sse",
-    step: "Step 12",
+    step: "Bonus 1",
     name: "REST pillar - subscriber token",
     stem: "step12_rest_demo",
     desc: "Use the REST API to provision the AI agent as a dialable Fabric resource and mint a short-lived subscriber token for the browser.",
@@ -1477,11 +1622,11 @@ const PILLAR_CARDS = [
   {
     pillar: "relay",
     kind: "call",
-    step: "Step 13",
+    step: "Bonus 2",
     name: "RELAY pillar - click to call",
     stem: "step13_relay_client",
     sourceFile: "relay-client.js",
-    desc: "Click one button and talk to Buddy in your browser. The @signalwire/js SDK dials the agent using the subscriber token from step 12. No phone needed.",
+    desc: "Click one button and talk to Buddy in your browser. The @signalwire/js SDK dials the agent using the subscriber token from the REST pillar. No phone needed.",
     callLabel: "Call Buddy",
     docs: [
       { label: "Call Fabric", url: "/platform/call-fabric" },
@@ -1728,17 +1873,9 @@ const receipts = (() => {
     return meta ? `${meta.step} · ${meta.name}` : route;
   }
   function toast(r) {
-    let el = document.getElementById("receipt-toast");
-    if (!el) {
-      el = document.createElement("div");
-      el.id = "receipt-toast";
-      el.className = "receipt-toast";
-      document.body.appendChild(el);
-    }
-    el.innerHTML = renderReceiptCard(r);
-    requestAnimationFrame(() => el.classList.add("is-visible"));
-    clearTimeout(toast._t);
-    toast._t = setTimeout(() => el.classList.remove("is-visible"), 3500);
+    // Paper-receipt toast retired: the live API execution theater is the
+    // in-the-moment feedback now. The persisted list is kept silently so the
+    // floating activity log still has history.
   }
   function init() {
     apiBus.on(ev => {
@@ -1766,92 +1903,117 @@ function renderReceiptCard(r) {
 }
 
 function renderReceiptsSection() {
-  const list = receipts.all();
-  if (!list.length) return `<section id="receipts-section" hidden></section>`;
-  const collapsed = localStorage.getItem("chicago2026.receipts.collapsed") === "true";
-  return `
-    <section id="receipts-section" class="receipts-section" data-collapsed="${collapsed}">
-      <div class="receipts-head" id="receipts-head" role="button" tabindex="0" aria-expanded="${!collapsed}">
-        <h3>Your workshop receipts</h3>
-        <span class="receipts-head-meta">${list.length} stamp${list.length === 1 ? "" : "s"}</span>
-      </div>
-      <div class="receipts-body">
-        ${list.slice().reverse().map(renderReceiptCard).join("")}
-      </div>
-    </section>`;
+  // Retired: the perforated-paper receipt tray is replaced by the live API
+  // execution theater (apiTheater). Render nothing so the layout stays clean.
+  return `<section id="receipts-section" hidden></section>`;
 }
+
+/* =========================================================================
+ *  API execution theater — plays the live REST call (and its SignalWire
+ *  sub-calls) as an interactive sequence, and holds the UI on that moment
+ *  until the call resolves. Callers await apiTheater.whenIdle() before
+ *  advancing so the user watches the API work before the section jumps.
+ * ========================================================================= */
+const apiTheater = (() => {
+  const MUTATING = {
+    "/api/setup/route":  { title: "Repointing your phone number", icon: "📞" },
+    "/api/setup/select": { title: "Provisioning your phone number", icon: "📞" },
+    "/api/credentials":  { title: "Connecting your SignalWire Space", icon: "🔑" },
+  };
+  let el = null;
+  let idle = Promise.resolve();
+  let resolveIdle = null;
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+  function ensure() {
+    if (el) return el;
+    el = document.createElement("div");
+    el.className = "api-theater";
+    el.id = "api-theater";
+    document.body.appendChild(el);
+    return el;
+  }
+  function open(meta, ev) {
+    ensure();
+    el.classList.remove("is-error");
+    el.innerHTML = `
+      <div class="api-theater-panel" role="status" aria-live="polite">
+        <div class="api-theater-head">
+          <div class="api-theater-icon">${meta.icon}</div>
+          <div class="api-theater-title">${escapeHtml(meta.title)}</div>
+        </div>
+        <div class="api-theater-req">
+          <span class="verb">${escapeHtml(ev.method)}</span>
+          <span class="path">${escapeHtml(ev.path)}</span>
+          <span class="api-theater-spinner" id="theater-spinner"></span>
+        </div>
+        <div class="api-theater-steps" id="theater-steps"></div>
+        <div class="api-theater-foot" id="theater-foot">
+          <span class="check-badge" id="theater-foot-badge">✓</span>
+          <span id="theater-foot-text">Done</span>
+        </div>
+      </div>`;
+    requestAnimationFrame(() => el.classList.add("is-open"));
+  }
+  async function finish(ev) {
+    if (!el) return;
+    const spinner = document.getElementById("theater-spinner");
+    if (spinner) spinner.remove();
+    const stepsEl = document.getElementById("theater-steps");
+    // The mutating endpoints attach a _trace of the real SignalWire REST
+    // sub-calls (LaML / Fabric) with per-call latency. Reveal them one by one.
+    const trace = (ev.subcalls && ev.subcalls.length)
+      ? ev.subcalls
+      : [{ api: "REST", op: ev.path, ms: ev.ms }];
+    for (const s of trace) {
+      if (!stepsEl) break;
+      const isFabric = (s.api || "").toLowerCase() === "fabric";
+      const row = document.createElement("div");
+      row.className = "api-theater-step";
+      row.innerHTML = `
+        <span class="tag ${isFabric ? "fabric" : ""}">${escapeHtml(s.api || "REST")}</span>
+        <span class="label">${escapeHtml(s.op || "")}</span>
+        <span class="ms">${s.ms != null ? s.ms + "ms" : ""}</span>
+        <span class="check">${ev.ok ? "✓" : "✕"}</span>`;
+      stepsEl.appendChild(row);
+      requestAnimationFrame(() => row.classList.add("is-in"));
+      await sleep(360);
+    }
+    el.classList.toggle("is-error", !ev.ok);
+    const badge = document.getElementById("theater-foot-badge");
+    const footText = document.getElementById("theater-foot-text");
+    if (badge) badge.textContent = ev.ok ? "✓" : "✕";
+    if (footText) {
+      footText.textContent = ev.ok
+        ? "Done over the SignalWire REST API"
+        : (ev.error || "Request failed");
+    }
+    const foot = document.getElementById("theater-foot");
+    if (foot) foot.classList.add("is-in");
+    await sleep(ev.ok ? 750 : 1500);
+    el.classList.remove("is-open");
+    await sleep(260);
+  }
+  function init() {
+    apiBus.on(ev => {
+      const meta = MUTATING[ev.path];
+      if (!meta) return;
+      if (ev.kind === "start") {
+        idle = new Promise(r => (resolveIdle = r));
+        open(meta, ev);
+      } else {
+        finish(ev).then(() => { if (resolveIdle) resolveIdle(); });
+      }
+    });
+  }
+  // whenIdle resolves once the current playback (if any) has finished.
+  return { init, whenIdle: () => idle };
+})();
 
 /* =========================================================================
  *  Step-unlock celebrations
  * ========================================================================= */
-/* =========================================================================
- *  Buddy — geometric robot that gains parts as the user reaches new agents
- * ========================================================================= */
-const buddy = (() => {
-  const stage = () => document.getElementById("buddy-stage");
-  const svg = () => stage()?.querySelector(".buddy");
-  const pop = () => document.getElementById("buddy-popover");
-  const popList = () => document.getElementById("buddy-pop-list");
-  let pending = 0;
-  let popOpen = false;
-
-  function visited() {
-    return (typeof state !== "undefined" && state.visited) ? state.visited : [];
-  }
-  function progressString() {
-    return visited().map(r => r.replace("/", "")).join(" ");
-  }
-  function syncProgress() {
-    const s = svg(); const st = stage();
-    if (!s || !st) return;
-    const visits = visited();
-    if (visits.length === 0) {
-      st.hidden = true;
-      return;
-    }
-    st.hidden = false;
-    s.setAttribute("data-progress", progressString());
-  }
-  function setThinking(on) {
-    const s = svg(); if (!s) return;
-    s.classList.toggle("is-thinking", on);
-  }
-  function renderPopover() {
-    const list = popList(); if (!list) return;
-    const visits = visited();
-    const items = (typeof STEPS_META !== "undefined" ? STEPS_META : []).map(step => {
-      const has = visits.includes(step.route);
-      const newCap = step.newCapabilities?.[0] || step.capabilities?.[0] || "";
-      return `<li class="${has ? '' : 'locked'}">${escapeHtml(step.step)} · ${escapeHtml(newCap)}</li>`;
-    }).join("");
-    list.innerHTML = items;
-  }
-  function togglePopover(force) {
-    popOpen = (force !== undefined) ? !!force : !popOpen;
-    const p = pop(); if (!p) return;
-    if (popOpen) renderPopover();
-    p.hidden = !popOpen;
-  }
-  function init() {
-    const frame = document.getElementById("buddy-frame");
-    if (frame) frame.addEventListener("click", e => { e.stopPropagation(); togglePopover(); });
-    document.addEventListener("click", e => {
-      if (popOpen && !e.target.closest("#buddy-stage")) togglePopover(false);
-    });
-    apiBus.on(ev => {
-      if (ev.kind === "start") {
-        pending++;
-        setThinking(pending > 0);
-      } else {
-        pending = Math.max(0, pending - 1);
-        setThinking(pending > 0);
-      }
-    });
-  }
-  return { init, syncProgress };
-})();
-
-const PALETTE = ["#044cf6", "#f72a72", "#38bdf8", "#ffd166", "#10b981"];
+const PALETTE = ["#044EF4", "#F72A72", "#40E0D0", "#FFD700", "#601BE6"];
 
 function celebrateUnlock(route) {
   const meta = (typeof STEPS_META !== "undefined") ? STEPS_META.find(s => s.route === route) : null;
@@ -2233,10 +2395,10 @@ function renderMilestoneDone() {
   return `
     <div class="wizard-card wizard-card-success">
       <div class="wizard-eyebrow">Step 3 of 3 · You're live</div>
-      <h2>Call Buddy at your new number.</h2>
+      <h2>Your AI agent Buddy is connected.</h2>
       <div class="big-number">${escapeHtml(formatPhone(phone))}</div>
-      <p class="lead">${sourceLabel === 'purchased' ? 'Purchased and pointed at' : 'Pointed at'} <strong>Step 4 · Hello Agent</strong> over the SignalWire REST API. Dial from any phone — Buddy will pick up.</p>
-      <p class="wizard-helper">Once you've talked to Buddy, jump into the seven agents below. Each one has a <strong>"Point my phone number here"</strong> button so you can swap which agent your number dials with one click.</p>
+      <p class="lead">Buddy is live at <strong>Lv.1 · Hello Agent</strong>, ${sourceLabel === 'purchased' ? 'on the number you just purchased' : 'on your number'}, wired up over the SignalWire REST API. Dial from any phone — Buddy will pick up and say hello.</p>
+      <p class="wizard-helper">Once you've talked to Buddy, level him up below. Each level adds a new capability, and a one-click <strong>"Point my phone number here"</strong> button swaps which version your number dials.</p>
       <div class="wizard-nav">
         <button class="btn-secondary" id="wiz-restart">Start over</button>
         <span class="step-counter">Done</span>
@@ -2369,6 +2531,8 @@ async function selectNumber(payload) {
   wizard.setup = r.data?.setup;
   state.milestone = 3;
   persist();
+  // Let the API execution theater play the provisioning call before advancing.
+  await apiTheater.whenIdle();
   renderAll();
 }
 
@@ -2431,12 +2595,12 @@ function renderLockedPreviews() {
       </div>
       <div class="pillars-grid">
         <div class="pillar-card rest locked" aria-disabled="true">
-          <div class="pillar-eyebrow">REST pillar · Step 12</div>
+          <div class="pillar-eyebrow">REST pillar · Bonus 1</div>
           <div class="pillar-name">Subscriber token</div>
           <div class="pillar-desc">Use the REST API to provision the AI agent as a dialable Fabric resource and mint a short-lived subscriber token for the browser.</div>
         </div>
         <div class="pillar-card relay locked" aria-disabled="true">
-          <div class="pillar-eyebrow">RELAY pillar · Step 13</div>
+          <div class="pillar-eyebrow">RELAY pillar · Bonus 2</div>
           <div class="pillar-name">Click to call</div>
           <div class="pillar-desc">Click one button and talk to the agent in your browser with the @signalwire/js SDK. No phone, no dialed number.</div>
         </div>
@@ -2473,8 +2637,8 @@ function renderWorkshop() {
     <section class="preview-section">
       <div class="preview-inner">
         <div class="preview-head">
-          <h2>The seven agents</h2>
-          <p>Each one adds a capability to the last. Scroll, use ← → keys, or click any node.</p>
+          <h2>Level up your AI agent</h2>
+          <p>Buddy starts by just answering the phone, then gains a new capability at every level — all the way to production-ready. Scroll, use ← → keys, or click any node.</p>
         </div>
       </div>
       <div class="timeline-sticky"><div class="timeline-sticky-inner">${renderTimeline()}</div></div>
@@ -2510,6 +2674,11 @@ function renderWorkshop() {
           </label>
           <button class="btn-copy" id="cred-save">Save credentials</button>
           <button class="src-btn" id="cred-clear">Clear</button>
+        </div>
+        <div class="creds-ready">
+          <span class="creds-ready-icon">✓</span>
+          <span>Using the SignalWire credentials from your setup above. Both pillars are ready to run.</span>
+          <button class="creds-replace" id="cred-replace" type="button">Replace</button>
         </div>
       </div>
 
@@ -2600,6 +2769,14 @@ function renderWorkshop() {
       setActiveStep(e.currentTarget.dataset.stepRoute);
     });
   });
+  document.querySelectorAll(".powerup-head").forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.stopPropagation(); // do not let a non-active section's click navigate
+      const pu = btn.closest(".powerup");
+      const open = pu.classList.toggle("is-open");
+      btn.setAttribute("aria-expanded", String(open));
+    });
+  });
   document.querySelectorAll("[data-copy-swml]").forEach(b => {
     b.addEventListener("click", e => copyUrl(e.currentTarget, getSwmlUrl(e.currentTarget.dataset.copySwml)));
   });
@@ -2684,6 +2861,41 @@ function renderStepsStack() {
   }</div>`;
 }
 
+// Playful "power-up" callout that spotlights the real code change at each
+// level: new lines glow, Buddy explains it, plus a one-line "why it matters".
+function renderCodeSpotlight(step) {
+  const cs = step.codeSpotlight;
+  if (!cs) return "";
+  const code = cs.lines.map(l =>
+    `<span class="cl${l.new ? " is-new" : ""}">${escapeHtml(l.t) || " "}</span>`
+  ).join("\n");
+  return `
+    <div class="powerup">
+      <button type="button" class="powerup-head" aria-expanded="false">
+        <span class="powerup-bolt">⚡</span>
+        <span class="powerup-titles">
+          <span class="powerup-eyebrow">Power-up · ${escapeHtml(step.step)}</span>
+          <span class="powerup-power">${escapeHtml(cs.power)}</span>
+        </span>
+        <span class="powerup-toggle">Peek at the code <span class="powerup-chev">▾</span></span>
+      </button>
+      <div class="powerup-body">
+        <div class="powerup-code">
+          <div class="powerup-code-head">
+            <span class="powerup-dot"></span><span class="powerup-dot"></span><span class="powerup-dot"></span>
+            <span class="powerup-lang">${escapeHtml(cs.lang)}</span>
+            <span class="powerup-newtag">✨ new this level</span>
+          </div>
+          <pre class="powerup-pre">${code}</pre>
+        </div>
+        <div class="powerup-aside">
+          <div class="buddy-quote"><span class="buddy-quote-icon">💬</span><span>${escapeHtml(cs.buddy)}</span></div>
+          <div class="powerup-why"><span class="powerup-why-label">Why it matters</span>${escapeHtml(cs.why)}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
 function renderStepSection(step, i) {
   const isActive = step.route === state.activeStep;
   const isVisited = state.visited.includes(step.route);
@@ -2696,16 +2908,16 @@ function renderStepSection(step, i) {
   }).join("");
   const cls = ["step-section", isActive ? "active" : "", isVisited ? "visited" : ""].filter(Boolean).join(" ");
   const eyebrow = isActive
-    ? `Now active · ${escapeHtml(step.step)}`
-    : `${escapeHtml(step.step)} · ${isVisited ? "visited" : "upcoming"}`;
+    ? `Now active · ${escapeHtml(step.step)} · ${escapeHtml(step.name)}`
+    : `${escapeHtml(step.step)} · ${escapeHtml(step.name)} · ${isVisited ? "unlocked" : "locked"}`;
   const teaser = `<div class="step-teaser">${escapeHtml(step.desc.split(". ")[0])}.</div>`;
   const isCurrentDialTarget = wizard.setup?.route === step.route;
   const aim = wizard.setup?.phone_number ? `
     <div class="step-aim ${isCurrentDialTarget ? 'is-current' : ''}">
       <div class="step-aim-label">
         ${isCurrentDialTarget
-          ? `<strong>${escapeHtml(formatPhone(wizard.setup.phone_number))}</strong> currently dials <strong>${escapeHtml(step.step)}</strong>.`
-          : `Dial <strong>${escapeHtml(formatPhone(wizard.setup.phone_number))}</strong> at this agent instead?`}
+          ? `<strong>${escapeHtml(formatPhone(wizard.setup.phone_number))}</strong> currently dials <strong>${escapeHtml(step.name)}</strong>.`
+          : `<span class="step-aim-eyebrow">Recommended · one REST API call</span>Point <strong>${escapeHtml(formatPhone(wizard.setup.phone_number))}</strong> at <strong>${escapeHtml(step.name)}</strong> and call it right now.`}
       </div>
       <button data-aim-route="${escapeHtml(step.route)}"${isCurrentDialTarget ? ' disabled' : ''}>
         ${isCurrentDialTarget ? 'Pointed here' : 'Point my phone number here'}
@@ -2716,6 +2928,7 @@ function renderStepSection(step, i) {
     <div class="step-detail-body">
       <p class="desc">${escapeHtml(step.desc)}</p>
       ${aim}
+      ${renderCodeSpotlight(step)}
       ${renderTrySaying(step.prompts)}
       <div class="detail-grid">
         <div class="detail-tile">
@@ -2751,7 +2964,7 @@ function renderStepSection(step, i) {
   return `
     <section id="step-${step.route.slice(1)}" class="${cls}" data-route="${step.route}">
       <div class="eyebrow">${eyebrow}</div>
-      <h2>${escapeHtml(step.name)}</h2>
+      <h2>${escapeHtml(step.tagline || step.name)}</h2>
       ${teaser}
       ${body}
     </section>`;
@@ -2793,7 +3006,10 @@ async function aimPhoneNumberAt(route, btn) {
   }
   wizard.setup = r.data?.setup;
   if (statusEl) { statusEl.textContent = "✓ phone now dials this agent"; statusEl.className = "step-aim-status ok"; }
-  setTimeout(() => renderAll(), 600);
+  // Hold until the API execution theater finishes playing the REST call,
+  // then re-render so the section updates after the user watches it work.
+  await apiTheater.whenIdle();
+  renderAll();
 }
 
 let _workshopKeysWired = false;
@@ -2822,7 +3038,6 @@ function renderAll() {
   } else {
     renderOnboarding();
   }
-  buddy.syncProgress();
 }
 
 const activePillarStreams = new Map();
@@ -2833,11 +3048,17 @@ async function wireCredsPanel() {
   const spaceEl = document.getElementById("cred-space");
   if (!statusEl) return;
 
+  const panelEl = statusEl.closest(".creds-panel");
+
   function paint(s) {
     // WHY prefill only when blank: do not clobber what the user is typing.
     if (s.fields && s.fields.SIGNALWIRE_SPACE && spaceEl && !spaceEl.value) {
       spaceEl.value = s.fields.SIGNALWIRE_SPACE;
     }
+    // WHY collapse when configured: the credentials were already entered in the
+    // setup wizard above. Re-prompting with empty fields here is redundant, so
+    // show a compact "ready" confirmation instead (with a Replace escape hatch).
+    if (panelEl) panelEl.classList.toggle("is-configured", !!s.configured);
     if (s.configured) {
       statusEl.textContent = "Credentials set - both pillars ready";
       statusEl.className = "creds-status ok";
@@ -2867,9 +3088,17 @@ async function wireCredsPanel() {
       body: JSON.stringify(body),
     });
     paint(await r.json());
+    // Collapse back to the ready state once saved.
+    if (panelEl) panelEl.classList.remove("is-editing");
     // WHY clear secrets from the DOM: do not leave the token in an input.
     projectEl.value = "";
     tokenEl.value = "";
+  });
+
+  // "Replace" reveals the form again for someone who wants to swap credentials.
+  document.getElementById("cred-replace")?.addEventListener("click", () => {
+    if (panelEl) panelEl.classList.add("is-editing");
+    projectEl?.focus();
   });
 
   document.getElementById("cred-clear")?.addEventListener("click", async () => {
@@ -2881,6 +3110,7 @@ async function wireCredsPanel() {
     if (projectEl) projectEl.value = "";
     if (tokenEl) tokenEl.value = "";
     if (spaceEl) spaceEl.value = "";
+    if (panelEl) panelEl.classList.remove("is-editing");
     paint(await r.json());
   });
 
@@ -2939,7 +3169,7 @@ async function runPillar(pillar) {
 
 apiLog.init();
 receipts.init();
-buddy.init();
+apiTheater.init();
 loadConfig();
 </script>
 </body>
