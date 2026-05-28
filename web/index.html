@@ -67,8 +67,8 @@
     transition: background 0.2s ease;
   }
   .api-ticker.is-active .api-ticker-dot {
-    background: var(--sw-cyan);
-    box-shadow: 0 0 0 3px rgba(64,224,208,0.2);
+    background: var(--sw-magenta);
+    box-shadow: 0 0 0 3px rgba(247,42,114,0.2);
     animation: tick-pulse 1.2s ease-in-out infinite;
   }
   .api-ticker.is-error .api-ticker-dot { background: var(--sw-magenta); box-shadow: 0 0 0 3px rgba(247,42,114,0.2); }
@@ -137,8 +137,8 @@
     transition: background 0.2s ease;
   }
   .api-log.is-active .api-log-toggle-dot {
-    background: var(--sw-cyan);
-    box-shadow: 0 0 0 4px rgba(64,224,208,0.2);
+    background: var(--sw-magenta);
+    box-shadow: 0 0 0 4px rgba(247,42,114,0.2);
     animation: tick-pulse 1.2s ease-in-out infinite;
   }
   .api-log-toggle-text { flex: 1; text-align: left; padding-left: 8px; color: var(--sw-text); font-weight: 600; letter-spacing: 0.04em; text-transform: none; font-size: 11.5px; }
@@ -216,7 +216,7 @@
   .api-theater-req .path { color: var(--sw-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .api-theater-spinner {
     margin-left: auto; width: 14px; height: 14px; flex-shrink: 0; border-radius: 50%;
-    border: 2px solid var(--sw-border); border-top-color: var(--sw-cyan);
+    border: 2px solid var(--sw-border); border-top-color: var(--sw-magenta);
     animation: theater-spin 0.7s linear infinite;
   }
   @keyframes theater-spin { to { transform: rotate(360deg); } }
@@ -439,7 +439,7 @@
     transition: all 0.2s;
   }
   .milestone.done .milestone-dot {
-    background: rgba(64,224,208,0.15); border-color: var(--sw-cyan); color: var(--sw-cyan);
+    background: rgba(4,78,244,0.18); border-color: var(--sw-blue); color: var(--sw-text-bright);
   }
   .milestone.active .milestone-dot {
     background: linear-gradient(135deg, var(--sw-blue), var(--sw-magenta));
@@ -456,7 +456,7 @@
     flex: 1; height: 2px; background: var(--sw-border);
     margin: 0 -2px; align-self: flex-start; margin-top: 19px;
   }
-  .milestone-connector.done { background: var(--sw-cyan); }
+  .milestone-connector.done { background: var(--sw-blue); }
 
   /* ============ ACTIVE WIZARD CARD ============ */
   .wizard-card {
@@ -656,8 +656,8 @@
     text-align: left; cursor: pointer; transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
     color: var(--sw-text-bright);
   }
-  .number-card:hover { border-color: var(--sw-cyan); transform: translateY(-2px); box-shadow: 0 14px 30px -18px rgba(64,224,208,0.4); }
-  .number-card.existing { border-color: rgba(64,224,208,0.35); }
+  .number-card:hover { border-color: var(--sw-magenta); transform: translateY(-2px); box-shadow: 0 14px 30px -18px rgba(247,42,114,0.4); }
+  .number-card.existing { border-color: rgba(247,42,114,0.35); }
   .number-card.available { border-color: rgba(247,42,114,0.35); }
   .number-card.available:hover { border-color: var(--sw-magenta); box-shadow: 0 14px 30px -18px rgba(247,42,114,0.4); }
   .number-card-num {
@@ -670,7 +670,7 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .number-card-cta {
-    margin-top: 12px; font-size: 12.5px; color: var(--sw-cyan); font-weight: 600;
+    margin-top: 12px; font-size: 12.5px; color: var(--sw-magenta); font-weight: 600;
   }
   .number-card.available .number-card-cta { color: var(--sw-magenta); }
 
@@ -697,7 +697,7 @@
   .wizard-error:not(:empty) { display: block; }
 
   .wizard-helper { margin-top: 14px; font-size: 12.5px; color: var(--sw-text-dim); }
-  .wizard-helper a { color: var(--sw-cyan); text-decoration: underline; text-underline-offset: 2px; }
+  .wizard-helper a { color: var(--sw-magenta); text-decoration: underline; text-underline-offset: 2px; }
 
   .loading-row {
     display: flex; align-items: center; gap: 10px;
@@ -705,7 +705,7 @@
   }
   .loading-spinner {
     width: 14px; height: 14px; border-radius: 50%;
-    border: 2px solid rgba(64,224,208,0.25); border-top-color: var(--sw-cyan);
+    border: 2px solid rgba(247,42,114,0.25); border-top-color: var(--sw-magenta);
     animation: sw-spin 0.8s linear infinite;
   }
   @keyframes sw-spin { to { transform: rotate(360deg); } }
@@ -716,7 +716,7 @@
   .big-number {
     font-family: 'SF Mono', 'JetBrains Mono', monospace;
     font-size: 44px; font-weight: 700; letter-spacing: -0.02em;
-    background: linear-gradient(135deg, var(--sw-cyan), var(--sw-magenta));
+    background: linear-gradient(135deg, var(--sw-blue), var(--sw-magenta));
     -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
     margin: 18px 0 10px;
   }
@@ -801,7 +801,7 @@
   }
   .powerup-power { font-size: 15px; font-weight: 600; color: var(--sw-text-bright); }
   .powerup-toggle {
-    flex-shrink: 0; font-size: 12.5px; color: var(--sw-cyan); font-weight: 600;
+    flex-shrink: 0; font-size: 12.5px; color: var(--sw-magenta); font-weight: 600;
     display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
   }
   .powerup-chev { transition: transform 0.2s ease; display: inline-block; }
@@ -845,7 +845,7 @@
   .powerup-aside { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
   .buddy-quote {
     display: flex; gap: 9px; align-items: flex-start;
-    background: rgba(64,224,208,0.08); border: 1px solid rgba(64,224,208,0.28);
+    background: rgba(247,42,114,0.08); border: 1px solid rgba(247,42,114,0.28);
     border-radius: 10px; padding: 11px 13px;
     font-size: 13px; line-height: 1.5; color: var(--sw-text-bright);
   }
@@ -998,7 +998,7 @@
     font-weight: 700; margin-bottom: 8px;
   }
   .pillar-card.rest .pillar-eyebrow { color: var(--sw-orange); }
-  .pillar-card.relay .pillar-eyebrow { color: var(--sw-cyan); }
+  .pillar-card.relay .pillar-eyebrow { color: var(--sw-magenta); }
   .pillar-name { font-size: 18px; color: var(--sw-text-bright); font-weight: 600; margin-bottom: 8px; }
   .pillar-desc { font-size: 13.5px; color: var(--sw-text); }
 
@@ -1010,12 +1010,12 @@
   /* ===== Workshop state ===== */
   .status-pill {
     display: inline-flex; align-items: center; gap: 10px;
-    background: rgba(64,224,208,0.1); border: 1px solid rgba(64,224,208,0.3);
-    color: var(--sw-cyan); padding: 6px 14px; border-radius: 999px;
+    background: rgba(247,42,114,0.1); border: 1px solid rgba(247,42,114,0.3);
+    color: var(--sw-magenta); padding: 6px 14px; border-radius: 999px;
     font-size: 12.5px; font-weight: 600; letter-spacing: 0.02em;
   }
-  .status-pill .sep { color: rgba(64,224,208,0.4); }
-  .status-pill a { color: var(--sw-cyan); text-decoration: underline; text-underline-offset: 3px; }
+  .status-pill .sep { color: rgba(247,42,114,0.4); }
+  .status-pill a { color: var(--sw-magenta); text-decoration: underline; text-underline-offset: 3px; }
   .status-pill a:hover { color: var(--sw-text-bright); }
 
   .workshop-hero { text-align: center; }
@@ -1051,7 +1051,7 @@
     transition: all 0.2s;
   }
   .timeline-node.visited .timeline-circle {
-    background: rgba(64,224,208,0.15); border-color: var(--sw-cyan); color: var(--sw-cyan);
+    background: rgba(4,78,244,0.18); border-color: var(--sw-blue); color: var(--sw-text-bright);
   }
   .timeline-node.active .timeline-circle {
     background: linear-gradient(135deg, var(--sw-blue), var(--sw-magenta));
@@ -1062,7 +1062,7 @@
   .timeline-node.visited .timeline-label { color: var(--sw-text); }
   .timeline-node.active .timeline-label { color: var(--sw-text-bright); font-weight: 600; }
   .timeline-connector { flex: 1; height: 2px; background: var(--sw-border); margin: 0 -2px; align-self: flex-start; margin-top: 20px; }
-  .timeline-connector.visited { background: var(--sw-cyan); }
+  .timeline-connector.visited { background: var(--sw-blue); }
 
   /* Sticky timeline that follows the user down the journey */
   .timeline-sticky {
@@ -1091,7 +1091,7 @@
     cursor: pointer;
   }
   .step-section.visited:not(.active) { opacity: 0.78; }
-  .step-section:hover:not(.active) { opacity: 0.9; border-color: rgba(64,224,208,0.35); }
+  .step-section:hover:not(.active) { opacity: 0.9; border-color: rgba(247,42,114,0.35); }
   .step-section.active {
     opacity: 1; filter: none; cursor: default;
     border-color: rgba(247,42,114,0.45);
@@ -1317,14 +1317,14 @@
   }
   .flow-step strong { color: var(--sw-text-bright); font-size: 13.5px; }
   .flow-step p { color: var(--sw-text-dim); font-size: 12px; margin-top: 3px; line-height: 1.45; }
-  .flow-step em, .callout em { color: var(--sw-cyan); font-style: normal; font-weight: 600; }
+  .flow-step em, .callout em { color: var(--sw-magenta); font-style: normal; font-weight: 600; }
   .flow-arrow { align-self: center; color: var(--sw-text-dim); font-size: 18px; }
 
   /* ===== Behind-the-scenes callout inside a pillar card ===== */
   .callout {
     margin-top: 14px; padding: 12px 14px; border-radius: 10px;
     background: rgba(255,255,255,0.03); border: 1px solid var(--sw-border);
-    border-left: 3px solid var(--sw-cyan);
+    border-left: 3px solid var(--sw-blue);
     font-size: 12.5px; color: var(--sw-text); line-height: 1.5;
   }
   .callout .co-label {
