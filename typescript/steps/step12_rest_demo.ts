@@ -16,7 +16,8 @@ function creds(): { project: string; token: string; space: string } {
   return { project, token, space };
 }
 
-// WHY raw fetch: the Fabric REST API is not exposed by the LaML client.
+// WHY raw fetch here: this reference mirrors the underlying REST calls in one
+// place. The Python runtime uses the SignalWire SDK's REST client instead.
 async function fabric(method: string, path: string, body?: unknown): Promise<any> {
   const { project, token, space } = creds();
   const auth = Buffer.from(`${project}:${token}`).toString("base64");
@@ -37,13 +38,15 @@ export async function ensureAgentHandler(): Promise<string> {
   const base = (process.env["PUBLIC_BASE"] || process.env["SWML_PROXY_URL_BASE"] || "").replace(/\/$/, "");
   if (!base) throw new Error("no public base URL; set SWML_PROXY_URL_BASE or PUBLIC_BASE");
 
-  const listing = await fabric("GET", "/api/fabric/resources/external_swml_handlers");
+  const listing = await fabric("GET", "/api/fabric/resources/swml_webhooks");
   let handlerId: string;
-  const existing = (listing.data || []).find((h: any) => h.name === HANDLER_NAME);
+  const existing = (listing.data || []).find(
+    (h: any) => h.name === HANDLER_NAME || h.display_name === HANDLER_NAME
+  );
   if (existing) {
     handlerId = existing.id;
   } else {
-    const created = await fabric("POST", "/api/fabric/resources/external_swml_handlers", {
+    const created = await fabric("POST", "/api/fabric/resources/swml_webhooks", {
       name: HANDLER_NAME,
       used_for: "calling",
       primary_request_url: `${base}${AGENT_PATH}`,
@@ -51,7 +54,7 @@ export async function ensureAgentHandler(): Promise<string> {
     });
     handlerId = created.id;
   }
-  const addrs = await fabric("GET", `/api/fabric/resources/external_swml_handlers/${handlerId}/addresses`);
+  const addrs = await fabric("GET", `/api/fabric/resources/swml_webhooks/${handlerId}/addresses`);
   return addrs.data[0].channels.audio;
 }
 
