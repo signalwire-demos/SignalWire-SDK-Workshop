@@ -216,6 +216,184 @@
   .skip-link a { color: var(--sw-text-dim); text-decoration: underline; text-underline-offset: 3px; }
   .skip-link a:hover { color: var(--sw-text-bright); }
 
+  /* === New auto-setup wizard === */
+  .sdk-badge {
+    display: inline-block; font-size: 10.5px; padding: 2px 8px; border-radius: 999px;
+    background: rgba(4,76,246,0.18); color: var(--sw-blue);
+    border: 1px solid rgba(4,76,246,0.4); letter-spacing: 0.02em;
+    font-weight: 600; vertical-align: 2px; margin: 0 4px;
+  }
+
+  /* Loud, inviting signup invite — primary CTA for new users */
+  .signup-invite {
+    display: flex; align-items: center; justify-content: space-between; gap: 18px;
+    margin: 22px 0 6px; padding: 22px 24px;
+    border-radius: 14px;
+    text-decoration: none;
+    background:
+      radial-gradient(ellipse 80% 120% at 0% 0%, rgba(247,42,114,0.22), transparent 60%),
+      linear-gradient(135deg, rgba(4,76,246,0.4), rgba(247,42,114,0.28));
+    border: 1px solid rgba(247,42,114,0.4);
+    color: var(--sw-text-bright);
+    box-shadow: 0 18px 50px -18px rgba(247,42,114,0.45);
+    transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .signup-invite:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 24px 60px -16px rgba(247,42,114,0.55);
+    border-color: var(--sw-magenta);
+  }
+  .signup-invite-text { flex: 1; min-width: 0; }
+  .signup-invite-eyebrow {
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: rgba(255,255,255,0.7); font-weight: 700; margin-bottom: 6px;
+  }
+  .signup-invite-headline {
+    font-size: 20px; font-weight: 700; color: var(--sw-text-bright);
+    letter-spacing: -0.01em; line-height: 1.2;
+  }
+  .signup-invite-sub {
+    font-size: 13.5px; color: rgba(255,255,255,0.78); margin-top: 4px;
+  }
+  .signup-invite-cta {
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--sw-blue), var(--sw-magenta));
+    color: white; font-weight: 700; font-size: 14.5px;
+    padding: 14px 22px; border-radius: 10px;
+    box-shadow: 0 10px 24px -10px rgba(247,42,114,0.7);
+    display: inline-flex; align-items: center; gap: 8px;
+    white-space: nowrap;
+  }
+
+  /* Divider between the signup invite and the credentials inputs */
+  .creds-divider {
+    position: relative; text-align: center; margin: 26px 0 18px;
+  }
+  .creds-divider::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 50%;
+    height: 1px; background: var(--sw-border);
+  }
+  .creds-divider span {
+    position: relative; background: var(--sw-card);
+    padding: 0 14px; font-size: 12px; color: var(--sw-text-dim);
+    letter-spacing: 0.02em;
+  }
+  .creds-grid {
+    display: flex; flex-direction: column; gap: 16px; margin-top: 18px;
+  }
+  .creds-grid label {
+    display: flex; flex-direction: column; gap: 8px;
+    font-size: 14px; letter-spacing: 0; text-transform: none;
+    color: var(--sw-text-bright); font-weight: 600;
+  }
+  .creds-grid input {
+    width: 100%; box-sizing: border-box;
+    background: var(--sw-dark); border: 1px solid var(--sw-border); color: var(--sw-text-bright);
+    padding: 12px 14px; border-radius: 8px;
+    font-size: 14px; font-family: 'SF Mono', 'JetBrains Mono', monospace;
+    letter-spacing: 0;
+  }
+  .creds-grid input::placeholder { color: var(--sw-text-dim); opacity: 0.55; }
+  .creds-grid input:focus { outline: none; border-color: var(--sw-blue); box-shadow: 0 0 0 2px rgba(4,76,246,0.25); }
+
+  .number-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 18px 0 8px;
+  }
+  .number-card {
+    background: var(--sw-dark); border: 1px solid var(--sw-border);
+    border-radius: 12px; padding: 16px 16px 14px;
+    text-align: left; cursor: pointer; transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    color: var(--sw-text-bright);
+  }
+  .number-card:hover { border-color: var(--sw-cyan); transform: translateY(-2px); box-shadow: 0 14px 30px -18px rgba(56,189,248,0.4); }
+  .number-card.existing { border-color: rgba(56,189,248,0.35); }
+  .number-card.available { border-color: rgba(247,42,114,0.35); }
+  .number-card.available:hover { border-color: var(--sw-magenta); box-shadow: 0 14px 30px -18px rgba(247,42,114,0.4); }
+  .number-card-num {
+    font-size: 15.5px; font-weight: 700; font-family: 'SF Mono', 'JetBrains Mono', monospace;
+    color: var(--sw-text-bright); letter-spacing: -0.01em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .number-card-meta {
+    font-size: 12px; color: var(--sw-text-dim); margin-top: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .number-card-cta {
+    margin-top: 12px; font-size: 12.5px; color: var(--sw-cyan); font-weight: 600;
+  }
+  .number-card.available .number-card-cta { color: var(--sw-magenta); }
+
+  .search-form {
+    display: flex; gap: 12px; align-items: flex-end; margin-top: 18px; flex-wrap: wrap;
+  }
+  .search-form label {
+    display: flex; flex-direction: column; gap: 5px; flex: 0 0 220px;
+    font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--sw-text-dim); font-weight: 600;
+  }
+  .search-form input {
+    background: var(--sw-dark); border: 1px solid var(--sw-border); color: var(--sw-text-bright);
+    padding: 10px 12px; border-radius: 8px; font-size: 14px; font-family: 'SF Mono', monospace;
+  }
+  .search-form .optional { font-size: 9.5px; color: var(--sw-text-dim); font-weight: 400; text-transform: none; letter-spacing: 0; }
+
+  .wizard-error {
+    margin-top: 14px; padding: 10px 14px;
+    background: rgba(247,42,114,0.08); border: 1px solid rgba(247,42,114,0.35);
+    border-radius: 8px; color: #fda4af; font-size: 13px;
+    display: none;
+  }
+  .wizard-error:not(:empty) { display: block; }
+
+  .wizard-helper { margin-top: 14px; font-size: 12.5px; color: var(--sw-text-dim); }
+  .wizard-helper a { color: var(--sw-cyan); text-decoration: underline; text-underline-offset: 2px; }
+
+  .loading-row {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--sw-text); font-size: 14px; margin-top: 16px;
+  }
+  .loading-spinner {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid rgba(56,189,248,0.25); border-top-color: var(--sw-cyan);
+    animation: sw-spin 0.8s linear infinite;
+  }
+  @keyframes sw-spin { to { transform: rotate(360deg); } }
+
+  .wizard-card-success { text-align: center; }
+  .wizard-card-success .lead, .wizard-card-success .wizard-helper { text-align: center; }
+  .wizard-card-success .wizard-nav { justify-content: space-between; }
+  .big-number {
+    font-family: 'SF Mono', 'JetBrains Mono', monospace;
+    font-size: 44px; font-weight: 700; letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--sw-cyan), var(--sw-magenta));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    margin: 18px 0 10px;
+  }
+
+  /* === "Point my phone number here" button inside step sections === */
+  .step-aim {
+    margin-top: 18px; padding: 14px 16px;
+    border: 1px solid var(--sw-border); border-radius: 12px;
+    background: rgba(4,76,246,0.06);
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .step-aim .step-aim-label {
+    flex: 1; font-size: 13px; color: var(--sw-text); min-width: 200px;
+  }
+  .step-aim .step-aim-label strong { color: var(--sw-text-bright); font-family: 'SF Mono', monospace; }
+  .step-aim button {
+    background: transparent; border: 1px solid var(--sw-blue); color: var(--sw-blue);
+    padding: 9px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;
+  }
+  .step-aim button:hover { background: var(--sw-blue); color: white; }
+  .step-aim button:disabled { opacity: 0.55; cursor: not-allowed; }
+  .step-aim.is-current { border-color: var(--sw-cyan); background: rgba(56,189,248,0.08); }
+  .step-aim.is-current button { border-color: var(--sw-cyan); color: var(--sw-cyan); }
+  .step-aim.is-current button:hover { background: var(--sw-cyan); color: white; }
+  .step-aim-status { font-size: 12px; color: var(--sw-text-dim); margin-left: 8px; }
+  .step-aim-status.ok { color: var(--sw-cyan); }
+  .step-aim-status.err { color: var(--sw-magenta); }
+
   /* doc-links - small reference list inside cards */
   .doc-links {
     margin-top: 22px;
@@ -340,7 +518,7 @@
   }
   .pillars-head p { color: var(--sw-text); margin-top: 8px; max-width: 560px; margin-left: auto; margin-right: auto; font-size: 14.5px; }
 
-  .pillars-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .pillars-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
   .pillar-card {
     background: var(--sw-card); border: 1px solid var(--sw-border);
     border-radius: 16px; padding: 28px;
@@ -424,19 +602,61 @@
   .timeline-connector { flex: 1; height: 2px; background: var(--sw-border); margin: 0 -2px; align-self: flex-start; margin-top: 20px; }
   .timeline-connector.visited { background: var(--sw-cyan); }
 
-  /* Active step detail */
-  .active-detail {
+  /* Sticky timeline that follows the user down the journey */
+  .timeline-sticky {
+    position: sticky; top: 0; z-index: 40;
+    padding: 14px 0 14px;
+    background: rgba(11,11,11,0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--sw-border);
+  }
+  .timeline-sticky-inner { max-width: 1080px; margin: 0 auto; }
+
+  /* Vertical stack of all seven step sections */
+  .steps-stack {
+    display: flex; flex-direction: column; gap: 18px;
+    max-width: 1180px; margin: 28px auto 0; padding: 0 8px;
+  }
+
+  /* Each step section (full-width card, active vs muted) */
+  .step-section {
     background: var(--sw-card); border: 1px solid var(--sw-border);
-    border-radius: 16px; padding: 32px;
-    max-width: 900px; margin: 40px auto 0;
-    box-shadow: 0 24px 60px -20px rgba(247,42,114,0.15);
+    border-radius: 16px; padding: 26px 32px;
+    opacity: 0.55; filter: saturate(0.7);
+    transition: opacity 0.3s ease, filter 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, padding 0.3s ease;
+    scroll-margin-top: 110px;
+    cursor: pointer;
   }
-  .active-detail .eyebrow {
+  .step-section.visited:not(.active) { opacity: 0.78; }
+  .step-section:hover:not(.active) { opacity: 0.9; border-color: rgba(56,189,248,0.35); }
+  .step-section.active {
+    opacity: 1; filter: none; cursor: default;
+    border-color: rgba(247,42,114,0.45);
+    box-shadow: 0 32px 80px -24px rgba(247,42,114,0.35), 0 0 0 1px rgba(247,42,114,0.18);
+    padding: 36px 36px 32px;
+  }
+  .step-section .eyebrow {
     font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--sw-magenta); font-weight: 700;
+    color: var(--sw-text-dim); font-weight: 700;
   }
-  .active-detail h2 { font-size: 26px; color: var(--sw-text-bright); margin-top: 6px; }
-  .active-detail .desc { font-size: 15px; color: var(--sw-text); margin-top: 8px; }
+  .step-section.active .eyebrow { color: var(--sw-magenta); }
+  .step-section h2 { font-size: 21px; color: var(--sw-text-bright); margin-top: 4px; font-weight: 700; letter-spacing: -0.01em; }
+  .step-section.active h2 { font-size: 28px; margin-top: 6px; }
+  .step-section .desc { font-size: 15px; color: var(--sw-text); margin-top: 10px; line-height: 1.55; }
+  .step-teaser { font-size: 13.5px; color: var(--sw-text-dim); margin-top: 6px; }
+  .step-section.active .step-teaser { display: none; }
+  .step-section:not(.active) .step-detail-body { display: none; }
+
+  /* Big advance CTA pinned to bottom of the active section */
+  .step-advance {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--sw-border);
+    flex-wrap: wrap;
+  }
+  .step-advance .btn-primary { font-size: 14.5px; padding: 12px 20px; }
+  .step-advance .btn-secondary { font-size: 13.5px; padding: 10px 16px; }
+  .step-advance-done { font-size: 13.5px; color: var(--sw-text-dim); }
   .detail-grid {
     margin-top: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
   }
@@ -470,6 +690,16 @@
   .agent-nav .btn-primary { display: inline-flex; align-items: center; gap: 8px; }
   .agent-nav-done { font-size: 13px; color: var(--sw-text-dim); margin-left: auto; text-align: right; }
 
+  /* Narrow desktop / tablet landscape */
+  @media (max-width: 1024px) {
+    .step-section { padding: 22px 24px; }
+    .step-section.active { padding: 28px 26px 24px; }
+    .steps-stack { padding: 0 16px; }
+    .preview-section { padding: 48px 16px 32px; }
+    .pillars-section { padding: 48px 20px; }
+  }
+
+  /* Tablet / large phone */
   @media (max-width: 768px) {
     .topbar { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
     .topbar nav a { margin-left: 12px; font-size: 12px; }
@@ -492,14 +722,59 @@
     .agent-nav { flex-direction: column; align-items: stretch; gap: 10px; }
     .agent-nav-done { text-align: center; margin-left: 0; }
 
-    .timeline, .preview-timeline { flex-wrap: wrap; gap: 14px; justify-content: center; }
+    .timeline, .preview-timeline { flex-wrap: wrap; gap: 10px 12px; justify-content: center; }
     .timeline-connector, .preview-connector { display: none; }
+    .timeline-circle { width: 34px; height: 34px; font-size: 12px; }
+    .timeline-label { font-size: 10px; }
+    .timeline-sticky { padding: 10px 0; }
 
     .detail-grid, .pillars-grid { grid-template-columns: 1fr; }
 
     .workshop-hero h1 { font-size: 26px; }
-    .active-detail { padding: 22px; }
-    .active-detail h2 { font-size: 22px; }
+    .preview-section { padding: 32px 12px 24px; }
+    .pillars-section { padding: 32px 14px; }
+    .pillar-card { padding: 22px 20px; }
+    .step-section { padding: 18px 18px; scroll-margin-top: 170px; }
+    .step-section.active { padding: 22px 18px 20px; }
+    .step-section h2 { font-size: 19px; }
+    .step-section.active h2 { font-size: 22px; }
+    .step-section .desc { font-size: 14px; }
+    .steps-stack { padding: 0 10px; gap: 12px; max-width: 100%; }
+    .step-advance { flex-direction: column-reverse; align-items: stretch; gap: 10px; }
+    .step-advance .btn-primary, .step-advance .btn-secondary { width: 100%; justify-content: center; }
+    .flow-strip { gap: 8px; }
+    .flow-arrow { display: none; }
+    .creds-fields label { min-width: 100%; }
+
+    .creds-grid { grid-template-columns: 1fr; }
+    .number-grid { grid-template-columns: 1fr; }
+    .signup-invite { flex-direction: column; align-items: stretch; text-align: left; padding: 18px 18px; }
+    .signup-invite-cta { width: 100%; justify-content: center; text-align: center; padding: 14px 18px; }
+    .big-number { font-size: 32px; }
+    .step-aim { flex-direction: column; align-items: stretch; gap: 10px; }
+    .step-aim button { width: 100%; }
+  }
+
+  /* Small phone */
+  @media (max-width: 480px) {
+    .topbar { padding: 10px 12px; }
+    .topbar nav a { margin-left: 8px; font-size: 11.5px; }
+    .hero { padding: 76px 14px 32px; }
+    .hero h1 { font-size: 26px; }
+
+    .timeline { gap: 8px 10px; }
+    .timeline-circle { width: 30px; height: 30px; font-size: 11px; }
+    .timeline-label { font-size: 9.5px; }
+
+    .preview-head h2 { font-size: 22px; }
+    .preview-head p { font-size: 13px; }
+
+    .step-section { padding: 14px 14px; scroll-margin-top: 200px; }
+    .step-section.active { padding: 18px 14px 18px; }
+    .step-section.active h2 { font-size: 20px; }
+    .steps-stack { padding: 0 8px; }
+    .url-text { font-size: 13px; }
+    .pillar-card { padding: 18px 16px; }
   }
 
   a:focus-visible, button:focus-visible, .timeline-node:focus-visible, .milestone:focus-visible {
@@ -821,6 +1096,25 @@ async function loadConfig() {
       if (cfg.auth_pass) authPass = cfg.auth_pass;
     }
   } catch (e) { /* keep defaults */ }
+  // Hydrate wizard.setup from server so a returning user sees their number
+  // without having to walk the wizard again.
+  try {
+    const r = await fetch("/api/setup/status");
+    if (r.ok) {
+      const d = await r.json();
+      if (d?.setup?.phone_number) {
+        wizard.setup = d.setup;
+        // If the user landed on Done from a previous session, keep them there.
+        if (state.milestone === 3 && !state.onboardingComplete) {
+          // ok, already in the right place
+        }
+      } else if (state.milestone === 3) {
+        // milestone says Done but no setup persisted (fresh server, stale localStorage)
+        state.milestone = 1;
+        persist();
+      }
+    }
+  } catch (e) { /* best effort */ }
   renderAll();
 }
 
@@ -851,7 +1145,7 @@ function copyUrl(btn, text) {
 /* ---- Persistent state ---- */
 const state = {
   onboardingComplete: localStorage.getItem("chicago2026.onboardingComplete") === "1",
-  milestone: Math.min(4, Math.max(1, parseInt(localStorage.getItem("chicago2026.milestone") || "1", 10) || 1)),
+  milestone: Math.min(3, Math.max(1, parseInt(localStorage.getItem("chicago2026.milestone") || "1", 10) || 1)),
   visited: JSON.parse(localStorage.getItem("chicago2026.visited") || "[]"),
   activeStep: localStorage.getItem("chicago2026.activeStep") || "/step04",
 };
@@ -878,8 +1172,8 @@ function renderOnboarding() {
     <section class="hero">
       <div class="hero-inner">
         <div style="text-align:center;"><div class="hero-eyebrow">Chicago Roadshow 2026 · 60-minute workshop</div></div>
-        <h1>Build your first <span class="accent">AI phone agent</span> in four steps.</h1>
-        <p class="hero-sub">No code, no servers, no ngrok. Just a URL, your phone, and about five minutes.</p>
+        <h1>Build your first <span class="accent">AI phone agent</span> in three steps.</h1>
+        <p class="hero-sub">No dashboard clicks, no ngrok. Paste your SignalWire credentials and we'll provision the phone number for you over the REST API.</p>
         ${renderMilestones()}
         <div id="wizard-card-host">${renderWizardCard()}</div>
         <div class="skip-link">
@@ -902,11 +1196,20 @@ function renderOnboarding() {
 }
 
 const MILESTONES = [
-  { key: 1, label: "Account" },
-  { key: 2, label: "Create script" },
-  { key: 3, label: "Connect number" },
-  { key: 4, label: "Call it" },
+  { key: 1, label: "Credentials" },
+  { key: 2, label: "Phone number" },
+  { key: 3, label: "Call it" },
 ];
+
+/* Wizard runtime cache — populated as the user moves through the steps. */
+const wizard = {
+  numbers: null,        // existing numbers fetched from /api/setup/numbers
+  searched: null,       // available numbers from /api/setup/search
+  searchedAreaCode: "",
+  pending: false,       // request in-flight (disables buttons)
+  errorMsg: "",
+  setup: null,          // configured phone number after /api/setup/select
+};
 
 function renderMilestones() {
   const m = state.milestone;
@@ -930,104 +1233,147 @@ function renderMilestones() {
 
 function renderWizardCard() {
   switch (state.milestone) {
-    case 1: return renderMilestone1();
-    case 2: return renderMilestone2();
-    case 3: return renderMilestone3();
-    case 4: return renderMilestone4();
-    default: return renderMilestone3();
+    case 1: return renderMilestoneCreds();
+    case 2: return renderMilestoneNumber();
+    case 3: return renderMilestoneDone();
+    default: return renderMilestoneCreds();
   }
 }
 
-function renderMilestone1() {
+function sdkBadge(label) {
+  return `<span class="sdk-badge" title="${escapeHtml(label)}">${escapeHtml(label)}</span>`;
+}
+
+function renderMilestoneCreds() {
   return `
     <div class="wizard-card">
-      <div class="wizard-eyebrow">Step 1 of 4 · SignalWire account</div>
-      <h2>Do you have a SignalWire account?</h2>
-      <p class="lead">You'll need one to receive a real phone call. The free tier covers everything in this workshop.</p>
-      ${renderDocLinks(MILESTONE_DOCS[1])}
+      <div class="wizard-eyebrow">Step 1 of 3 · SignalWire credentials</div>
+      <h2>Let's get you talking to your first AI agent.</h2>
+      <p class="lead">First, you'll need a SignalWire Space. Brand new? Start here — it's free and takes about a minute.</p>
+
+      <a href="https://signalwire.com/signup" target="_blank" rel="noopener noreferrer" class="signup-invite">
+        <div class="signup-invite-text">
+          <div class="signup-invite-eyebrow">New to SignalWire?</div>
+          <div class="signup-invite-headline">Create your free Space</div>
+          <div class="signup-invite-sub">Free trial credits included — no card required.</div>
+        </div>
+        <div class="signup-invite-cta">Sign up free <span aria-hidden="true">→</span></div>
+      </a>
+
+      <div class="creds-divider"><span>Already have a Space? Paste your credentials below</span></div>
+
+      <div class="creds-grid">
+        <label>Project ID
+          <input type="text" id="wiz-project" autocomplete="off" spellcheck="false" placeholder="PXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+        </label>
+        <label>API Token
+          <input type="text" id="wiz-token" autocomplete="off" spellcheck="false" placeholder="PTxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+        </label>
+        <label>Space URL
+          <input type="text" id="wiz-space" autocomplete="off" placeholder="your-space.signalwire.com" />
+        </label>
+      </div>
+      <p class="wizard-error" id="wiz-creds-error">${wizard.errorMsg ? escapeHtml(wizard.errorMsg) : ""}</p>
+      ${renderDocLinks([
+        { label: "Where's my API token?", url: "/rest/getting-started/authentication" },
+        { label: "What is a Space?", url: "/platform/getting-started" },
+      ])}
       <div class="wizard-nav">
-        <a href="https://id.signalwire.com/onboarding" target="_blank" class="btn-secondary" id="ms1-signup">Sign up - opens new tab</a>
-        <span class="step-counter">Step 1 of 4</span>
-        <button class="btn-primary" id="ms1-yes">Yes, I have one →</button>
+        <span></span>
+        <span class="step-counter">Step 1 of 3</span>
+        <button class="btn-primary" id="wiz-creds-next"${wizard.pending ? ' disabled' : ''}>${wizard.pending ? 'Checking…' : 'Save & continue →'}</button>
       </div>
     </div>`;
 }
 
-function renderMilestone2() {
-  const swmlUrl = getSwmlUrl("/step04");
+function renderMilestoneNumber() {
+  const existing = wizard.numbers;
+  const searched = wizard.searched;
+  let body;
+  if (wizard.pending && !existing && !searched) {
+    body = `<p class="loading-row"><span class="loading-spinner"></span> Looking on your project ${sdkBadge("LaML REST · incoming_phone_numbers.list")}…</p>`;
+  } else if (existing && existing.length > 0) {
+    body = `
+      <p class="lead">Found ${existing.length} number${existing.length === 1 ? '' : 's'} already on your project. Pick one and we'll point it at <strong>Step 4 · Hello Agent</strong>. ${sdkBadge("LaML REST · IncomingPhoneNumber.update")}</p>
+      <div class="number-grid">
+        ${existing.map((n, i) => `
+          <button class="number-card existing" data-existing-sid="${escapeHtml(n.sid)}">
+            <div class="number-card-num">${escapeHtml(formatPhone(n.phone_number))}</div>
+            <div class="number-card-meta">${escapeHtml(n.friendly_name || 'no name')}</div>
+            <div class="number-card-cta">Use this number →</div>
+          </button>`).join("")}
+      </div>
+      <p class="wizard-helper">Different number? <a href="#" id="wiz-buy-instead">Search and purchase a new one →</a></p>`;
+  } else if (searched && searched.length > 0) {
+    body = `
+      <p class="lead">No phone numbers on your project yet — here are three available US local numbers. Pick one to purchase. ${sdkBadge("LaML REST · IncomingPhoneNumber.create")}</p>
+      <div class="number-grid">
+        ${searched.map(n => `
+          <button class="number-card available" data-buy-number="${escapeHtml(n.phone_number)}">
+            <div class="number-card-num">${escapeHtml(formatPhone(n.phone_number))}</div>
+            <div class="number-card-meta">${escapeHtml((n.locality || n.region) ? `${n.locality}${n.locality && n.region ? ', ' : ''}${n.region}` : 'US local')}</div>
+            <div class="number-card-cta">Purchase &amp; use →</div>
+          </button>`).join("")}
+      </div>
+      <p class="wizard-helper">Purchasing a number will add a small monthly charge to your SignalWire account (typically ~$1/mo). <a href="#" id="wiz-search-again">Search a different area code →</a></p>`;
+  } else if (searched && searched.length === 0) {
+    body = `
+      <p class="lead">No available numbers found${wizard.searchedAreaCode ? ` for area code <strong>${escapeHtml(wizard.searchedAreaCode)}</strong>` : ''}. Try a different area code.</p>
+      ${renderSearchForm()}`;
+  } else {
+    // No existing numbers — show search form
+    body = `
+      <p class="lead">No numbers on your project yet. Search for an available US local number to purchase — optionally filter by area code. ${sdkBadge("LaML REST · available_phone_numbers")}</p>
+      ${renderSearchForm()}`;
+  }
+  const error = wizard.errorMsg ? `<p class="wizard-error">${escapeHtml(wizard.errorMsg)}</p>` : "";
   return `
     <div class="wizard-card">
-      <div class="wizard-eyebrow">Step 2 of 4 · Create the SWML script</div>
-      <h2>Create a SWML Script in your dashboard, then paste this URL.</h2>
-      <p class="lead">A SWML Script tells SignalWire how to handle a call. You'll point it at the Hello Agent URL below - SignalWire fetches that URL whenever a call comes in.</p>
-      <div class="url-card">
-        <div class="url-meta">
-          <div class="url-label">Step 4 · Hello Agent · your first SWML URL</div>
-          <div class="url-text" id="ms2-url-text">${escapeHtml(swmlUrl)}</div>
-        </div>
-        <button class="btn-copy" id="ms2-copy">Copy URL</button>
-      </div>
-      <div class="dashboard-hint">
-        <div class="hint-step">
-          <div class="hint-num">A</div>
-          <h4>Open the SWML Scripts page</h4>
-          <p>In the dashboard, go to <strong>Resources</strong> → <strong>+ Add</strong> → <strong>SWML Script</strong>.</p>
-        </div>
-        <div class="hint-step">
-          <div class="hint-num">B</div>
-          <h4>Paste the URL and save</h4>
-          <p>Under <strong>Handle Calls Using</strong>, pick <strong>External URL</strong>. Paste the URL above into <strong>Primary Script URL</strong>, then click <strong>Create</strong>.</p>
-        </div>
-      </div>
-      ${renderDocLinks(MILESTONE_DOCS[2])}
+      <div class="wizard-eyebrow">Step 2 of 3 · Phone number</div>
+      <h2>Connect a phone number to Buddy.</h2>
+      ${body}
+      ${error}
       <div class="wizard-nav">
-        <button class="btn-secondary" id="ms2-back">← Back</button>
-        <span class="step-counter">Step 2 of 4</span>
-        <button class="btn-primary" id="ms2-next">I've done it →</button>
+        <button class="btn-secondary" id="wiz-num-back">← Back to credentials</button>
+        <span class="step-counter">Step 2 of 3</span>
+        <span></span>
       </div>
     </div>`;
 }
 
-function renderMilestone3() {
+function renderSearchForm() {
   return `
-    <div class="wizard-card">
-      <div class="wizard-eyebrow">Step 3 of 4 · Connect a phone number</div>
-      <h2>Attach a phone number to your script.</h2>
-      <p class="lead">After you saved the script, you should be on its detail page. From there you can attach any number - buy a new one if you don't have one yet. Trial credits cover it.</p>
-      <div class="dashboard-hint">
-        <div class="hint-step">
-          <div class="hint-num">A</div>
-          <h4>Open the Addresses tab</h4>
-          <p>On your script's page, click the <strong>Addresses & Phone Numbers</strong> tab.</p>
-        </div>
-        <div class="hint-step">
-          <div class="hint-num">B</div>
-          <h4>Add a number</h4>
-          <p>Click <strong>+ Add</strong>, then pick an existing number - or buy a new one. Any local number works.</p>
-        </div>
-      </div>
-      ${renderDocLinks(MILESTONE_DOCS[3])}
+    <form class="search-form" id="wiz-search-form">
+      <label>Area code <span class="optional">(optional)</span>
+        <input type="text" id="wiz-area-code" inputmode="numeric" pattern="[0-9]{3}" maxlength="3" placeholder="e.g. 312" value="${escapeHtml(wizard.searchedAreaCode || '')}" />
+      </label>
+      <button type="submit" class="btn-primary"${wizard.pending ? ' disabled' : ''}>${wizard.pending ? 'Searching…' : 'Search available numbers'}</button>
+    </form>`;
+}
+
+function renderMilestoneDone() {
+  const phone = wizard.setup?.phone_number || "";
+  const source = wizard.setup?.source || "configured";
+  const sourceLabel = source === "purchased" ? "purchased" : "reusing existing";
+  return `
+    <div class="wizard-card wizard-card-success">
+      <div class="wizard-eyebrow">Step 3 of 3 · You're live</div>
+      <h2>Call Buddy at your new number.</h2>
+      <div class="big-number">${escapeHtml(formatPhone(phone))}</div>
+      <p class="lead">${sourceLabel === 'purchased' ? 'Purchased and pointed at' : 'Pointed at'} <strong>Step 4 · Hello Agent</strong> over the SignalWire REST API. Dial from any phone — Buddy will pick up.</p>
+      <p class="wizard-helper">Once you've talked to Buddy, jump into the seven agents below. Each one has a <strong>"Point my phone number here"</strong> button so you can swap which agent your number dials with one click.</p>
       <div class="wizard-nav">
-        <button class="btn-secondary" id="ms3-back">← Back</button>
-        <span class="step-counter">Step 3 of 4</span>
-        <button class="btn-primary" id="ms3-next">I've done it →</button>
+        <button class="btn-secondary" id="wiz-restart">Start over</button>
+        <span class="step-counter">Done</span>
+        <button class="btn-primary" id="wiz-finish">Open the workshop →</button>
       </div>
     </div>`;
 }
 
-function renderMilestone4() {
-  return `
-    <div class="wizard-card">
-      <div class="wizard-eyebrow">Step 4 of 4 · Call your number</div>
-      <h2>Dial your SignalWire number now.</h2>
-      <p class="lead">Buddy will answer and chat with you. Ask anything - "How are you?", "Tell me about yourself." When you hear her, you're done with setup.</p>
-      ${renderDocLinks(MILESTONE_DOCS[4])}
-      <div class="wizard-nav">
-        <button class="btn-secondary" id="ms4-back">← Back</button>
-        <span class="step-counter">Step 4 of 4</span>
-        <button class="btn-primary" id="ms4-done">It worked! →</button>
-      </div>
-    </div>`;
+function formatPhone(p) {
+  if (!p) return "";
+  const m = String(p).match(/^\+?1?(\d{3})(\d{3})(\d{4})$/);
+  return m ? `+1 (${m[1]}) ${m[2]}-${m[3]}` : p;
 }
 
 function escapeHtml(s) {
@@ -1038,28 +1384,170 @@ function attachWizardHandlers() {
   const m = state.milestone;
   const on = (id, ev, fn) => document.getElementById(id)?.addEventListener(ev, fn);
   if (m === 1) {
-    on("ms1-yes", "click", () => advanceMilestone());
+    on("wiz-creds-next", "click", () => submitCredentials());
   } else if (m === 2) {
-    on("ms2-back", "click", () => backMilestone());
-    on("ms2-next", "click", () => advanceMilestone());
-    on("ms2-copy", "click", e => copyUrl(e.currentTarget, getSwmlUrl("/step04")));
+    on("wiz-num-back", "click", () => { wizard.errorMsg = ""; backMilestone(); });
+    on("wiz-buy-instead", "click", e => { e.preventDefault(); wizard.numbers = []; wizard.errorMsg = ""; rerenderWizard(); });
+    on("wiz-search-again", "click", e => { e.preventDefault(); wizard.searched = null; wizard.searchedAreaCode = ""; rerenderWizard(); });
+    document.getElementById("wiz-search-form")?.addEventListener("submit", e => {
+      e.preventDefault();
+      const code = document.getElementById("wiz-area-code")?.value.trim() || "";
+      runSearch(code);
+    });
+    document.querySelectorAll("[data-existing-sid]").forEach(b => {
+      b.addEventListener("click", () => selectNumber({ sid: b.dataset.existingSid }));
+    });
+    document.querySelectorAll("[data-buy-number]").forEach(b => {
+      b.addEventListener("click", () => selectNumber({ phone_number: b.dataset.buyNumber }));
+    });
+    // First entry: load existing numbers
+    if (wizard.numbers === null && !wizard.pending) loadExistingNumbers();
   } else if (m === 3) {
-    on("ms3-back", "click", () => backMilestone());
-    on("ms3-next", "click", () => advanceMilestone());
-  } else if (m === 4) {
-    on("ms4-back", "click", () => backMilestone());
-    on("ms4-done", "click", () => completeOnboarding());
+    on("wiz-restart", "click", () => restartWizard());
+    on("wiz-finish", "click", () => completeOnboarding());
   }
 }
 
-function advanceMilestone() {
-  if (state.milestone < 4) {
-    state.milestone += 1;
+function rerenderWizard() {
+  const host = document.getElementById("wizard-card-host");
+  if (host) {
+    host.innerHTML = renderWizardCard();
+    attachWizardHandlers();
+  }
+}
+
+async function submitCredentials() {
+  const project = document.getElementById("wiz-project")?.value.trim() || "";
+  const token = document.getElementById("wiz-token")?.value.trim() || "";
+  const space = document.getElementById("wiz-space")?.value.trim() || "";
+  if (!project || !token || !space) {
+    wizard.errorMsg = "All three fields are required.";
+    rerenderWizard();
+    return;
+  }
+  wizard.pending = true; wizard.errorMsg = "";
+  rerenderWizard();
+  try {
+    const resp = await fetch("/api/credentials", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        SIGNALWIRE_PROJECT_ID: project,
+        SIGNALWIRE_TOKEN: token,
+        SIGNALWIRE_SPACE: space,
+      }),
+    });
+    const data = await resp.json();
+    if (!resp.ok || !data.configured) {
+      wizard.pending = false;
+      wizard.errorMsg = data.error || "Could not save credentials.";
+      rerenderWizard();
+      return;
+    }
+    wizard.pending = false;
+    state.milestone = 2;
+    wizard.numbers = null; wizard.searched = null;
     persist();
     renderAll();
-  } else {
-    completeOnboarding();
+  } catch (e) {
+    wizard.pending = false;
+    wizard.errorMsg = e.message || "Network error.";
+    rerenderWizard();
   }
+}
+
+async function loadExistingNumbers() {
+  wizard.pending = true;
+  rerenderWizard();
+  try {
+    const resp = await fetch("/api/setup/numbers");
+    const data = await resp.json();
+    if (!resp.ok) {
+      wizard.pending = false;
+      wizard.errorMsg = data.error || "Could not list numbers.";
+      wizard.numbers = [];
+      rerenderWizard();
+      return;
+    }
+    wizard.pending = false;
+    wizard.numbers = data.numbers || [];
+    rerenderWizard();
+  } catch (e) {
+    wizard.pending = false;
+    wizard.errorMsg = e.message || "Network error.";
+    wizard.numbers = [];
+    rerenderWizard();
+  }
+}
+
+async function runSearch(areaCode) {
+  wizard.pending = true; wizard.errorMsg = "";
+  wizard.searchedAreaCode = areaCode;
+  rerenderWizard();
+  try {
+    const resp = await fetch("/api/setup/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ area_code: areaCode || null }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      wizard.pending = false;
+      wizard.errorMsg = data.error || "Search failed.";
+      rerenderWizard();
+      return;
+    }
+    wizard.pending = false;
+    wizard.searched = data.numbers || [];
+    rerenderWizard();
+  } catch (e) {
+    wizard.pending = false;
+    wizard.errorMsg = e.message || "Network error.";
+    rerenderWizard();
+  }
+}
+
+async function selectNumber(payload) {
+  if (payload.phone_number) {
+    if (!confirm(`Purchase ${formatPhone(payload.phone_number)} on your SignalWire project?\n\nThis adds a recurring charge (typically ~$1/mo) to your account.`)) return;
+  }
+  wizard.pending = true; wizard.errorMsg = "";
+  rerenderWizard();
+  try {
+    const resp = await fetch("/api/setup/select", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...payload, route: "/step04" }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      wizard.pending = false;
+      wizard.errorMsg = data.error || "Could not configure the number.";
+      rerenderWizard();
+      return;
+    }
+    wizard.pending = false;
+    wizard.setup = data.setup;
+    state.milestone = 3;
+    persist();
+    renderAll();
+  } catch (e) {
+    wizard.pending = false;
+    wizard.errorMsg = e.message || "Network error.";
+    rerenderWizard();
+  }
+}
+
+async function restartWizard() {
+  if (!confirm("Forget the configured phone number? This won't release the number from your SignalWire account — it just resets the workshop wizard.")) return;
+  try {
+    await fetch("/api/setup/reset", { method: "POST" });
+  } catch (e) { /* best effort */ }
+  wizard.numbers = null; wizard.searched = null; wizard.setup = null; wizard.errorMsg = "";
+  state.milestone = 1;
+  state.onboardingComplete = false;
+  persist();
+  renderAll();
 }
 
 function backMilestone() {
@@ -1104,7 +1592,7 @@ function renderLockedPreviews() {
       </div>
     </section>
 
-    <section class="pillars-section">
+    <section class="pillars-section" id="pillars-section">
       <div class="pillars-head">
         <div class="label">After the basics</div>
         <h2>Two more pillars beyond the AI agent</h2>
@@ -1155,14 +1643,14 @@ function renderWorkshop() {
       <div class="preview-inner">
         <div class="preview-head">
           <h2>The seven agents</h2>
-          <p>Each one adds a capability to the last. Click any node to make it active.</p>
+          <p>Each one adds a capability to the last. Scroll, use ← → keys, or click any node.</p>
         </div>
-        ${renderTimeline()}
-        ${renderActiveDetail()}
       </div>
+      <div class="timeline-sticky"><div class="timeline-sticky-inner">${renderTimeline()}</div></div>
+      ${renderStepsStack()}
     </section>
 
-    <section class="pillars-section">
+    <section class="pillars-section" id="pillars-section">
       <div class="pillars-head">
         <div class="label">After the basics</div>
         <h2>Two more pillars beyond the AI agent</h2>
@@ -1179,10 +1667,10 @@ function renderWorkshop() {
         </div>
         <div class="creds-fields">
           <label>Project ID
-            <input type="password" id="cred-project" autocomplete="off" placeholder="PXxxxxxxxx" />
+            <input type="text" id="cred-project" autocomplete="off" spellcheck="false" placeholder="PXxxxxxxxx" />
           </label>
           <label>API Token
-            <input type="password" id="cred-token" autocomplete="off" placeholder="PTxxxxxxxx" />
+            <input type="text" id="cred-token" autocomplete="off" spellcheck="false" placeholder="PTxxxxxxxx" />
           </label>
           <label>Space URL
             <input type="text" id="cred-space" autocomplete="off" placeholder="your-space.signalwire.com" />
@@ -1245,7 +1733,6 @@ function renderWorkshop() {
             </div>
             ${renderDocLinks(p.docs, "Docs")}
             <div class="callout"><span class="co-label">Behind the scenes</span>HTTP Basic auth against <em>api/fabric</em> provisions your agent as an <em>external SWML handler</em> (a dialable Call Fabric address) and mints a short-lived <em>subscriber token</em>. Programmable telephony, fully API-driven.</div>
-            <div class="run-inputs" data-pillar="${p.pillar}" hidden style="margin-top:12px;"></div>
             <pre class="run-log" data-pillar="${p.pillar}" style="margin-top:12px;background:var(--sw-dark);border:1px solid var(--sw-border);border-radius:8px;padding:12px;font-size:12px;color:var(--sw-text);min-height:0;max-height:280px;overflow:auto;font-family:'SF Mono',monospace;"></pre>
           </div>`;
         }).join("")}
@@ -1274,9 +1761,29 @@ function renderWorkshop() {
     node.addEventListener("click", () => setActiveStep(node.dataset.route));
   });
   document.getElementById("pinned-copy")?.addEventListener("click", e => copyUrl(e.currentTarget, getSwmlUrl(state.activeStep)));
-  document.getElementById("detail-url-copy")?.addEventListener("click", e => copyUrl(e.currentTarget, getSwmlUrl(state.activeStep)));
-  document.getElementById("detail-prev")?.addEventListener("click", e => setActiveStep(e.currentTarget.dataset.route));
-  document.getElementById("detail-next")?.addEventListener("click", e => setActiveStep(e.currentTarget.dataset.route));
+  document.querySelectorAll("[data-step-route]").forEach(b => {
+    b.addEventListener("click", e => {
+      e.stopPropagation();
+      setActiveStep(e.currentTarget.dataset.stepRoute);
+    });
+  });
+  document.querySelectorAll("[data-copy-swml]").forEach(b => {
+    b.addEventListener("click", e => copyUrl(e.currentTarget, getSwmlUrl(e.currentTarget.dataset.copySwml)));
+  });
+  document.querySelectorAll(".step-section:not(.active)").forEach(sec => {
+    sec.addEventListener("click", e => {
+      if (e.target.closest("a,button")) return;
+      setActiveStep(sec.dataset.route);
+    });
+  });
+  document.querySelectorAll("[data-aim-route]").forEach(b => {
+    b.addEventListener("click", async e => {
+      e.stopPropagation();
+      const route = e.currentTarget.dataset.aimRoute;
+      await aimPhoneNumberAt(route, e.currentTarget);
+    });
+  });
+  wireWorkshopKeys();
   document.querySelectorAll("[data-run]").forEach(btn => {
     btn.addEventListener("click", () => runPillar(btn.dataset.run));
   });
@@ -1337,10 +1844,15 @@ function renderTimeline() {
   return html;
 }
 
-function renderActiveDetail() {
-  const idx = STEPS_META.findIndex(s => s.route === state.activeStep);
-  const i = idx >= 0 ? idx : 0;
-  const step = STEPS_META[i];
+function renderStepsStack() {
+  return `<div class="steps-stack" id="steps-stack">${
+    STEPS_META.map((step, i) => renderStepSection(step, i)).join("")
+  }</div>`;
+}
+
+function renderStepSection(step, i) {
+  const isActive = step.route === state.activeStep;
+  const isVisited = state.visited.includes(step.route);
   const prev = i > 0 ? STEPS_META[i - 1] : null;
   const next = i < STEPS_META.length - 1 ? STEPS_META[i + 1] : null;
   const swmlUrl = getSwmlUrl(step.route);
@@ -1348,11 +1860,28 @@ function renderActiveDetail() {
     const isNew = step.newCapabilities.includes(c);
     return `<span class="pill${isNew ? ' new' : ''}">${escapeHtml(c)}</span>`;
   }).join("");
-  return `
-    <div class="active-detail">
-      <div class="eyebrow">Now active · ${escapeHtml(step.step)}</div>
-      <h2>${escapeHtml(step.name)}</h2>
+  const cls = ["step-section", isActive ? "active" : "", isVisited ? "visited" : ""].filter(Boolean).join(" ");
+  const eyebrow = isActive
+    ? `Now active · ${escapeHtml(step.step)}`
+    : `${escapeHtml(step.step)} · ${isVisited ? "visited" : "upcoming"}`;
+  const teaser = `<div class="step-teaser">${escapeHtml(step.desc.split(". ")[0])}.</div>`;
+  const isCurrentDialTarget = wizard.setup?.route === step.route;
+  const aim = wizard.setup?.phone_number ? `
+    <div class="step-aim ${isCurrentDialTarget ? 'is-current' : ''}">
+      <div class="step-aim-label">
+        ${isCurrentDialTarget
+          ? `<strong>${escapeHtml(formatPhone(wizard.setup.phone_number))}</strong> currently dials <strong>${escapeHtml(step.step)}</strong>.`
+          : `Dial <strong>${escapeHtml(formatPhone(wizard.setup.phone_number))}</strong> at this agent instead?`}
+      </div>
+      <button data-aim-route="${escapeHtml(step.route)}"${isCurrentDialTarget ? ' disabled' : ''}>
+        ${isCurrentDialTarget ? 'Pointed here' : 'Point my phone number here'}
+      </button>
+      <span class="step-aim-status" data-aim-status="${escapeHtml(step.route)}"></span>
+    </div>` : "";
+  const body = `
+    <div class="step-detail-body">
       <p class="desc">${escapeHtml(step.desc)}</p>
+      ${aim}
       ${renderTrySaying(step.prompts)}
       <div class="detail-grid">
         <div class="detail-tile">
@@ -1374,17 +1903,24 @@ function renderActiveDetail() {
           <div class="url-label">${escapeHtml(step.step)} · ${escapeHtml(step.name)} · SWML URL</div>
           <div class="url-text">${escapeHtml(swmlUrl)}</div>
         </div>
-        <button class="btn-copy" id="detail-url-copy">Copy URL</button>
+        <button class="btn-copy" data-copy-swml="${escapeHtml(step.route)}">Copy URL</button>
       </div>
-      <div class="agent-nav">
+      <div class="step-advance">
         ${prev
-          ? `<button class="btn-secondary" id="detail-prev" data-route="${prev.route}">← ${escapeHtml(prev.name)}</button>`
+          ? `<button class="btn-secondary" data-step-route="${prev.route}">← ${escapeHtml(prev.name)}</button>`
           : `<span></span>`}
         ${next
-          ? `<button class="btn-primary" id="detail-next" data-route="${next.route}">Next agent: ${escapeHtml(next.name)} →</button>`
-          : `<span class="agent-nav-done">Final agent - explore the REST &amp; RELAY pillars below ↓</span>`}
+          ? `<button class="btn-primary" data-step-route="${next.route}">Continue: ${escapeHtml(next.name)} →</button>`
+          : `<a href="#pillars-section" class="btn-primary">Explore the REST &amp; RELAY pillars ↓</a>`}
       </div>
     </div>`;
+  return `
+    <section id="step-${step.route.slice(1)}" class="${cls}" data-route="${step.route}">
+      <div class="eyebrow">${eyebrow}</div>
+      <h2>${escapeHtml(step.name)}</h2>
+      ${teaser}
+      ${body}
+    </section>`;
 }
 
 function setActiveStep(route) {
@@ -1396,6 +1932,55 @@ function setActiveStep(route) {
   if (!state.visited.includes(route)) state.visited.push(route);
   persist();
   renderAll();
+  // Center the new active section under the sticky timeline.
+  requestAnimationFrame(() => {
+    const target = document.querySelector(".step-section.active");
+    if (target) target.scrollIntoView({ block: "center", behavior: "smooth" });
+  });
+}
+
+async function aimPhoneNumberAt(route, btn) {
+  const original = btn.textContent;
+  const statusEl = document.querySelector(`[data-aim-status="${route}"]`);
+  btn.disabled = true;
+  btn.textContent = "Updating…";
+  if (statusEl) { statusEl.textContent = ""; statusEl.className = "step-aim-status"; }
+  try {
+    const resp = await fetch("/api/setup/route", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ route }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
+    wizard.setup = data.setup;
+    if (statusEl) { statusEl.textContent = "✓ phone now dials this agent"; statusEl.className = "step-aim-status ok"; }
+    // Re-render the stack so every section reflects the new dial target.
+    setTimeout(() => renderAll(), 600);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = original;
+    if (statusEl) { statusEl.textContent = e.message || "failed"; statusEl.className = "step-aim-status err"; }
+  }
+}
+
+let _workshopKeysWired = false;
+function wireWorkshopKeys() {
+  if (_workshopKeysWired) return;
+  _workshopKeysWired = true;
+  document.addEventListener("keydown", e => {
+    if (!state.onboardingComplete) return;
+    const t = e.target;
+    if (t && t.matches && t.matches("input,textarea,[contenteditable]")) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    const idx = STEPS_META.findIndex(s => s.route === state.activeStep);
+    const dir = (e.key === "ArrowDown" || e.key === "ArrowRight") ? 1 : -1;
+    const nextIdx = Math.max(0, Math.min(STEPS_META.length - 1, idx + dir));
+    if (nextIdx === idx) return;
+    e.preventDefault();
+    setActiveStep(STEPS_META[nextIdx].route);
+  });
 }
 
 /* ---- Render dispatcher ---- */
@@ -1471,17 +2056,15 @@ async function wireCredsPanel() {
 
 async function runPillar(pillar) {
   const logPane = document.querySelector(`.run-log[data-pillar="${pillar}"]`);
-  const inputsPane = document.querySelector(`.run-inputs[data-pillar="${pillar}"]`);
-  if (!logPane || !inputsPane) return;
+  if (!logPane) return;
   activePillarStreams.get(pillar)?.close();
   logPane.textContent = "";
 
   const inputsResp = await fetch(`/run/${pillar}/inputs`);
   const inputsInfo = await inputsResp.json();
 
-  // WHY no inline form: credentials live in the shared panel above. If they
-  // are not set yet, point the user there instead of duplicating the inputs.
-  inputsPane.hidden = true;
+  // WHY no inline form here: credentials live in the shared panel above the
+  // pillars. If they are not set yet, point the user there.
   if (inputsInfo.missing && inputsInfo.missing.length > 0) {
     logPane.textContent = "Enter your SignalWire credentials in the panel above, then click Run REST Demo.";
     return;

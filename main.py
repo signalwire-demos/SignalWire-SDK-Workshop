@@ -359,13 +359,20 @@ async def relay_config():
         mint_subscriber_token,
     )
 
+    print("[relay/config] request received", flush=True)
     try:
         reference = os.environ.get("SUBSCRIBER_REFERENCE", DEFAULT_REFERENCE)
+        print(f"[relay/config] reference={reference!r}", flush=True)
+        print("[relay/config] -> ensure_agent_handler", flush=True)
         # WHY to_thread: the helpers use blocking requests; keep the loop free.
         destination = await asyncio.to_thread(ensure_agent_handler, base_url)
-        token, _sub = await asyncio.to_thread(mint_subscriber_token, reference)
+        print(f"[relay/config]    destination={destination}", flush=True)
+        print("[relay/config] -> mint_subscriber_token", flush=True)
+        token, sub_id = await asyncio.to_thread(mint_subscriber_token, reference)
+        print(f"[relay/config]    minted token ({len(token)} chars) for {sub_id}", flush=True)
         return JSONResponse({"token": token, "destination": destination})
     except Exception as e:  # noqa: BLE001 - report a clean error, never a 500 stack
+        print(f"[relay/config] FAILED: {e.__class__.__name__}: {e}", flush=True)
         return JSONResponse({"error": str(e)}, status_code=503)
 
 # ---------------------------------------------------------------------------
@@ -412,6 +419,137 @@ async def set_credentials(request: Request):
             else:
                 os.environ.pop(k, None)  # empty value clears it
     return JSONResponse(_credentials_status())
+
+# ---------------------------------------------------------------------------
+# Workshop setup — automate phone-number + webhook plumbing via REST.
+# Endpoints used by the new onboarding wizard and the per-agent
+# "Point my phone number here" buttons.
+# ---------------------------------------------------------------------------
+
+VALID_AGENT_ROUTES = {r for r, _, _ in STEPS}
+
+
+def _require_creds():
+    missing = [k for k in _CRED_KEYS if not os.environ.get(k)]
+    if missing:
+        raise RuntimeError(f"missing credentials: {', '.join(missing)}")
+
+
+def _require_public_base():
+    if not base_url:
+        raise RuntimeError("no public URL detected; set SWML_PROXY_URL_BASE or REPLIT_DEV_DOMAIN")
+    return base_url
+
+
+def _normalize_route(route: str) -> str:
+    if not route or not route.startswith("/"):
+        raise RuntimeError("route must start with /")
+    if route not in VALID_AGENT_ROUTES:
+        raise RuntimeError(f"unknown agent route: {route}")
+    return route
+
+
+@server.app.get("/api/setup/status")
+async def setup_status():
+    from python.provisioning import setup_status as _status
+    return JSONResponse(_status(base_url or ""))
+
+
+@server.app.get("/api/setup/numbers")
+async def setup_numbers():
+    """Existing IncomingPhoneNumbers on the project (max 3)."""
+    try:
+        _require_creds()
+    except RuntimeError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    from python.provisioning import list_existing_numbers
+    try:
+        nums = await asyncio.to_thread(list_existing_numbers, 3)
+        return JSONResponse({"numbers": nums})
+    except Exception as e:  # noqa: BLE001
+        return JSONResponse({"error": f"{e.__class__.__name__}: {e}"}, status_code=502)
+
+
+@server.app.post("/api/setup/search")
+async def setup_search(request: Request):
+    """Search up to 3 available US local numbers, with optional area_code filter."""
+    try:
+        _require_creds()
+    except RuntimeError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    raw = await request.body()
+    body = json.loads(raw) if raw else {}
+    area_code = body.get("area_code")
+    if area_code and not str(area_code).isdigit():
+        return JSONResponse({"error": "area_code must be digits"}, status_code=400)
+    from python.provisioning import search_available
+    try:
+        nums = await asyncio.to_thread(search_available, str(area_code) if area_code else None, 3)
+        return JSONResponse({"numbers": nums, "area_code": area_code or None})
+    except Exception as e:  # noqa: BLE001
+        return JSONResponse({"error": f"{e.__class__.__name__}: {e}"}, status_code=502)
+
+
+@server.app.post("/api/setup/select")
+async def setup_select(request: Request):
+    """Configure a chosen number — either existing (by sid) or to-be-purchased (by phone_number)."""
+    try:
+        _require_creds()
+        public = _require_public_base()
+    except RuntimeError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    raw = await request.body()
+    body = json.loads(raw) if raw else {}
+    route = body.get("route", "/step04")
+    try:
+        route = _normalize_route(route)
+    except RuntimeError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    sid = body.get("sid")
+    phone_to_buy = body.get("phone_number")
+    if not sid and not phone_to_buy:
+        return JSONResponse({"error": "either sid or phone_number is required"}, status_code=400)
+    from python.provisioning import configure_existing, purchase_and_configure
+    try:
+        if sid:
+            result = await asyncio.to_thread(configure_existing, sid, route, public)
+        else:
+            result = await asyncio.to_thread(purchase_and_configure, phone_to_buy, route, public)
+        return JSONResponse({"setup": result})
+    except Exception as e:  # noqa: BLE001
+        return JSONResponse({"error": f"{e.__class__.__name__}: {e}"}, status_code=502)
+
+
+@server.app.post("/api/setup/route")
+async def setup_route(request: Request):
+    """Re-point the saved number's voice_url at a different agent step."""
+    try:
+        _require_creds()
+        public = _require_public_base()
+    except RuntimeError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    raw = await request.body()
+    body = json.loads(raw) if raw else {}
+    route = body.get("route")
+    try:
+        route = _normalize_route(route)
+    except RuntimeError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    from python.provisioning import repoint_to_route
+    try:
+        result = await asyncio.to_thread(repoint_to_route, route, public)
+        return JSONResponse({"setup": result})
+    except Exception as e:  # noqa: BLE001
+        return JSONResponse({"error": f"{e.__class__.__name__}: {e}"}, status_code=502)
+
+
+@server.app.post("/api/setup/reset")
+async def setup_reset():
+    """Forget the persisted phone number/handler. Does NOT release the number."""
+    from python.provisioning import clear_setup
+    clear_setup()
+    return JSONResponse({"ok": True})
+
 
 # ---------------------------------------------------------------------------
 # Print SWML URLs to console

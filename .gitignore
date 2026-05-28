@@ -14,3 +14,5 @@ build/
 calls/
 *.log
 .superpowers/
+.agent_handler_cache.json
+.workshop_setup.json
