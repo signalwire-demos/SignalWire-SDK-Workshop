@@ -23,18 +23,26 @@ def startup():
     Returns (base_url, auth_user, auth_password).
     """
     # 1. Set the public URL for webhook generation.
-    # Hardcoded to the deployment URL so it works in both dev and production.
-    # REPLIT_DEV_DOMAIN points to a stale *.kirk.replit.dev URL that returns
-    # 404 in production, so we never use it.
+    # Precedence: an explicit SWML_PROXY_URL_BASE override, then the live
+    # per-repl dev domain (REPLIT_DEV_DOMAIN — auto-set, unique per repl, and
+    # reachable now), then a published-deployment fallback. Preferring the dev
+    # domain means the workshop works for the author AND every fork without
+    # editing code, instead of pointing at one hardcoded *.replit.app.
     DEPLOY_URL = "https://chicago-roadshow-2026.replit.app"
+    override = os.getenv("SWML_PROXY_URL_BASE")
+    dev_domain = os.getenv("REPLIT_DEV_DOMAIN")
 
-    if os.getenv("SWML_PROXY_URL_BASE"):
-        base_url = os.getenv("SWML_PROXY_URL_BASE")
+    if override:
+        base_url = override
         print(f"Using SWML_PROXY_URL_BASE from env: {base_url}")
+    elif dev_domain:
+        base_url = f"https://{dev_domain}"
+        os.environ["SWML_PROXY_URL_BASE"] = base_url
+        print(f"Using Replit dev domain: {base_url}")
     else:
         base_url = DEPLOY_URL
         os.environ["SWML_PROXY_URL_BASE"] = base_url
-        print(f"Using hardcoded deploy URL: {base_url}")
+        print(f"Using fallback deploy URL: {base_url}")
 
     # 2. Set auth defaults
     os.environ.setdefault("SWML_BASIC_AUTH_USER", AUTH_USER_DEFAULT)

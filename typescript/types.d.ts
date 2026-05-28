@@ -2,10 +2,8 @@
 // Minimal shim for the SignalWire SDK TypeScript surface.
 //
 // @signalwire/agents does not exist on npm (the SDK is Python-only as of
-// workshop build time). @signalwire/node ships without a top-level types
-// field and exposes a different API surface than the Python signalwire.rest
-// module. This shim documents what conceptual TS equivalents would look like
-// and lets tsc --noEmit pass on the reference-only step files.
+// workshop build time). This shim documents what the conceptual TS equivalents
+// look like and lets tsc --noEmit pass on the reference-only step files.
 //
 // Workshop runtime is Python. These files exist so attendees can read the
 // same agent expressed in TypeScript and understand the conceptual mapping.
@@ -64,54 +62,6 @@ declare module "@signalwire/agents" {
     addSkill(name: string, config?: Record<string, unknown>): void;
     setPostPrompt(prompt: string): void;
     onSummary?(summary: unknown, rawData: unknown): void;
-  }
-}
-
-// @signalwire/node is published on npm but ships without top-level TypeScript
-// declarations in its package.json "types" field. This shim covers the
-// four operations demonstrated in step12_rest_demo.ts.
-declare module "@signalwire/node" {
-  export interface PhoneNumber {
-    sid: string;
-    phoneNumber: string;
-    friendlyName: string;
-  }
-
-  export interface Message {
-    sid: string;
-    status: string;
-  }
-
-  export interface Call {
-    sid: string;
-    from_: string;
-    to: string;
-    status: string;
-    startTime: string;
-  }
-
-  export interface IncomingPhoneNumbersResource {
-    list(opts?: { limit?: number; phoneNumber?: string }): Promise<PhoneNumber[]>;
-    (sid: string): { update(opts: { voiceUrl: string }): Promise<unknown> };
-  }
-
-  export interface MessagesResource {
-    create(opts: { from_: string; to: string; body: string }): Promise<Message>;
-  }
-
-  export interface CallsResource {
-    list(opts?: { limit?: number }): Promise<Call[]>;
-  }
-
-  export class RestClient {
-    constructor(
-      project: string,
-      token: string,
-      opts: { signalwireSpaceUrl: string }
-    );
-    incomingPhoneNumbers: IncomingPhoneNumbersResource;
-    messages: MessagesResource;
-    calls: CallsResource;
   }
 }
 

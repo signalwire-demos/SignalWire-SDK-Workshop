@@ -6,14 +6,19 @@ and streams stdout over SSE). main.py also imports ensure_agent_handler() and
 mint_subscriber_token() so the live click-to-call step (13) uses exactly what
 this lesson teaches.
 
+Everything here uses the SignalWire REST API through the agents SDK's REST
+client (signalwire_agents.rest.client.SignalWireClient): the Fabric namespace
+for SWML webhook resources + subscriber tokens, and the Relay namespace for
+phone numbers.
+
 Capabilities:
-  1. List phone numbers on the project (classic LaML REST client warm-up)
-  2. Provision the AI agent as a dialable Fabric resource (external SWML handler)
+  1. List phone numbers on the project (Relay REST: client.phone_numbers.list)
+  2. Provision the AI agent as a dialable SWML webhook resource (Fabric REST)
   3. Mint a short-lived subscriber token for the browser SDK
 
 Cross-process address cache:
   The REST demo subprocess and the live /api/relay/config in the parent server
-  both call ensure_agent_handler(). To avoid repeating the slow Fabric listing
+  both call ensure_agent_handler(). To avoid repeating the slow resource listing
   call, the resolved audio address is written to a small JSON file keyed by
   space, so whichever runs first warms the cache for the other.
 """
@@ -22,17 +27,15 @@ import json
 import os
 import pathlib
 import sys
-import time
+from urllib.parse import urlsplit, urlunsplit, quote
 
-import requests
-from requests.auth import HTTPBasicAuth
-from signalwire.rest import Client as RestClient
+from signalwire_agents.rest.client import SignalWireClient
+from signalwire_agents.rest._base import SignalWireRestError
 
 HANDLER_NAME = "Chicago Roadshow 2026 Agent"
 DEFAULT_AGENT_PATH = "/step04"
-AGENT_PATH = DEFAULT_AGENT_PATH  # back-compat alias for callers that import this
+AGENT_PATH = DEFAULT_AGENT_PATH  # alias for callers that import this
 DEFAULT_REFERENCE = "roadshow-attendee"
-FABRIC_TIMEOUT = 30  # seconds; the listing call on busy projects can be slow
 
 # WHY in the project root: both the subprocess and the parent server have CWD
 # at the project root when launched as documented, and the resolved path here
@@ -59,30 +62,14 @@ def _creds():
         raise RuntimeError(f"missing required env var: {missing.args[0]}") from None
 
 
-def _fabric(method, path, **kwargs):
-    # WHY raw requests: the Fabric REST API (subscriber tokens, resources) is
-    # not exposed by the signalwire LaML client, so we call it directly.
+def _client():
+    """SignalWire REST client (Fabric + Relay namespaces) from the agents SDK.
+
+    WHY pass token explicitly: the SDK defaults the token env var to
+    SIGNALWIRE_API_TOKEN, but the workshop standardizes on SIGNALWIRE_TOKEN.
+    """
     project, token, space = _creds()
-    url = f"https://{space}{path}"
-    _log(f"{method} {path}")
-    t0 = time.monotonic()
-    try:
-        resp = requests.request(
-            method,
-            url,
-            auth=HTTPBasicAuth(project, token),
-            headers={"Accept": "application/json"},
-            timeout=FABRIC_TIMEOUT,
-            **kwargs,
-        )
-    except requests.RequestException as e:
-        elapsed = time.monotonic() - t0
-        _log(f"{method} {path} -> NETWORK ERROR after {elapsed:.1f}s: {e.__class__.__name__}: {e}")
-        raise
-    elapsed = time.monotonic() - t0
-    _log(f"{method} {path} -> HTTP {resp.status_code} in {elapsed:.2f}s")
-    resp.raise_for_status()
-    return resp.json() if resp.content else {}
+    return SignalWireClient(project=project, token=token, host=space)
 
 
 def _public_base(public_base=None):
@@ -94,6 +81,22 @@ def _public_base(public_base=None):
     if not base:
         raise RuntimeError("no public base URL; set SWML_PROXY_URL_BASE or PUBLIC_BASE")
     return base.rstrip("/")
+
+
+def _authed_url(base, route):
+    """Build the URL SignalWire fetches, with the agent's Basic auth embedded.
+
+    The agent requires Basic auth on its routes, so the SWML webhook's
+    primary_request_url must carry credentials (same as the console output and
+    the agent's own swaig URLs). Without them SignalWire gets 401, not SWML.
+    """
+    user = quote(os.environ.get("SWML_BASIC_AUTH_USER", "workshop"), safe="")
+    pw = quote(os.environ.get("SWML_BASIC_AUTH_PASSWORD", "password"), safe="")
+    parts = urlsplit(base)
+    netloc = f"{user}:{pw}@{parts.hostname}"
+    if parts.port:
+        netloc += f":{parts.port}"
+    return urlunsplit((parts.scheme, netloc, route, "", ""))
 
 
 def _load_cache(space):
@@ -113,16 +116,32 @@ def _save_cache(space, address):
         _log(f"cache write failed: {e}")
 
 
-def ensure_agent_handler(public_base=None, route=None):
-    """Find or create the agent's external SWML handler; return its audio address.
+def _find_swml_webhook(client):
+    """Return (resource_id, primary_request_url) for the agent's SWML webhook.
 
-    If `route` is provided and differs from the existing handler's
-    primary_request_url, the handler is updated in place so PSTN and browser
-    dialing land on the same agent step.
+    Returns (None, None) when no resource named HANDLER_NAME exists yet.
+    """
+    _log("listing SWML webhook resources")
+    listing = client.fabric.swml_webhooks.list()
+    # WHY match both name and display_name: the API takes 'name' on create but
+    # surfaces the value as 'display_name' on the way back out.
+    for h in listing.get("data", []):
+        if HANDLER_NAME in (h.get("name"), h.get("display_name")):
+            cfg = h.get("swml_webhook") or {}
+            return h["id"], cfg.get("primary_request_url") or h.get("primary_request_url")
+    return None, None
+
+
+def ensure_agent_handler(public_base=None, route=None, client=None):
+    """Find or create the agent's SWML webhook resource; return its audio address.
+
+    If `route` is provided and differs from the resource's primary_request_url,
+    the resource is updated in place so PSTN and browser dialing land on the same
+    agent step.
     """
     global _agent_address_cache
     target_route = route or DEFAULT_AGENT_PATH
-    target_url = f"{_public_base(public_base)}{target_route}"
+    target_url = _authed_url(_public_base(public_base), target_route)
 
     if _agent_address_cache and route is None:
         _log("address from process cache")
@@ -135,56 +154,33 @@ def ensure_agent_handler(public_base=None, route=None):
         _agent_address_cache = cached
         return cached
 
-    _log("listing external SWML handlers")
-    listing = _fabric("GET", "/api/fabric/resources/external_swml_handlers")
-    handlers = listing.get("data", [])
-    _log(f"found {len(handlers)} handler(s); matching name/display_name '{HANDLER_NAME}'")
-    # WHY match both: the Fabric API uses 'name' when creating but some
-    # endpoints surface the value as 'display_name' on the way back out.
-    existing = next(
-        (
-            h for h in handlers
-            if h.get("name") == HANDLER_NAME or h.get("display_name") == HANDLER_NAME
-        ),
-        None,
-    )
-    if existing:
-        handler_id = existing["id"]
-        _log(f"matched existing handler id={handler_id}")
-        # If the caller asked for a specific route, keep the handler in sync.
-        current_url = (existing.get("external_swml_handler") or {}).get("primary_request_url") or existing.get("primary_request_url")
+    client = client or _client()
+    resource_id, current_url = _find_swml_webhook(client)
+    if resource_id:
+        _log(f"matched existing SWML webhook id={resource_id}")
+        # If the caller asked for a specific route, keep the resource in sync.
         if route is not None and current_url != target_url:
-            _log(f"updating handler primary_request_url -> {target_url}")
-            _fabric(
-                "PUT",
-                f"/api/fabric/resources/external_swml_handlers/{handler_id}",
-                json={
-                    "name": HANDLER_NAME,
-                    "used_for": "calling",
-                    "primary_request_url": target_url,
-                    "primary_request_method": "POST",
-                },
+            _log(f"updating primary_request_url -> {target_url}")
+            client.fabric.swml_webhooks.update(
+                resource_id,
+                name=HANDLER_NAME,
+                used_for="calling",
+                primary_request_url=target_url,
+                primary_request_method="POST",
             )
     else:
-        _log("no match; creating handler")
-        created = _fabric(
-            "POST",
-            "/api/fabric/resources/external_swml_handlers",
-            json={
-                "name": HANDLER_NAME,
-                "used_for": "calling",
-                "primary_request_url": target_url,
-                "primary_request_method": "POST",
-            },
+        _log("no match; creating SWML webhook")
+        created = client.fabric.swml_webhooks.create(
+            name=HANDLER_NAME,
+            used_for="calling",
+            primary_request_url=target_url,
+            primary_request_method="POST",
         )
-        handler_id = created["id"]
-        _log(f"created handler id={handler_id} -> {target_url}")
+        resource_id = created["id"]
+        _log(f"created SWML webhook id={resource_id} -> {target_url}")
 
-    _log(f"fetching addresses for handler {handler_id}")
-    addrs = _fabric(
-        "GET",
-        f"/api/fabric/resources/external_swml_handlers/{handler_id}/addresses",
-    )
+    _log(f"fetching addresses for SWML webhook {resource_id}")
+    addrs = client.fabric.swml_webhooks.list_addresses(resource_id)
     address = addrs["data"][0]["channels"]["audio"]
     _log(f"agent dial address: {address}")
     _agent_address_cache = address
@@ -192,14 +188,49 @@ def ensure_agent_handler(public_base=None, route=None):
     return address
 
 
-def mint_subscriber_token(reference=DEFAULT_REFERENCE):
+def assign_number_to_agent(e164, public_base=None, route=None, client=None):
+    """Route a PSTN number to the agent's SWML webhook resource (Call Fabric).
+
+    Assigns the number to the SWML webhook Resource as a phone route, exactly
+    like the dashboard's "Assign Resource -> SWML Script (External URL)" flow.
+
+    Returns {"resource_id", "phone_route_id"}.
+    """
+    client = client or _client()
+    # Ensure the resource exists and points at the requested route, then find it.
+    ensure_agent_handler(public_base=public_base, route=route, client=client)
+    resource_id, _ = _find_swml_webhook(client)
+    if not resource_id:
+        raise RuntimeError("agent SWML webhook not found after ensure_agent_handler()")
+
+    # Resolve the number's id (used as phone_route_id) from its E.164 value.
+    _log(f"looking up phone number {e164}")
+    found = client.phone_numbers.list(filter_number=e164)
+    nums = found.get("data", [])
+    if not nums:
+        raise RuntimeError(f"phone number {e164} not found on this space")
+    phone_route_id = nums[0]["id"]
+
+    _log(f"assigning {e164} (route_id={phone_route_id}) -> resource {resource_id}")
+    # Idempotent: re-running setup or repointing to another step re-issues this
+    # call. If the number is already routed to the resource, treat it as success.
+    try:
+        client.fabric.resources.assign_phone_route(
+            resource_id, phone_route_id=phone_route_id, handler="calling"
+        )
+    except SignalWireRestError as e:
+        if e.status_code in (409, 422):
+            _log(f"already assigned (HTTP {e.status_code}); leaving existing route in place")
+        else:
+            raise
+    return {"resource_id": resource_id, "phone_route_id": phone_route_id}
+
+
+def mint_subscriber_token(reference=DEFAULT_REFERENCE, client=None):
     """Mint a short-lived subscriber token. Returns (token, subscriber_id)."""
+    client = client or _client()
     _log(f"minting subscriber token (reference={reference!r})")
-    data = _fabric(
-        "POST",
-        "/api/fabric/subscribers/tokens",
-        json={"reference": reference},
-    )
+    data = client.fabric.tokens.create_subscriber_token(reference=reference)
     sid = data.get("subscriber_id", "")
     _log(f"minted token for subscriber_id={sid}")
     return data["token"], sid
@@ -207,24 +238,23 @@ def mint_subscriber_token(reference=DEFAULT_REFERENCE):
 
 def main():
     try:
-        project, token, space = _creds()
+        client = _client()
     except RuntimeError as e:
         print(f"[error] {e}", file=sys.stderr)
         return 2
 
     print("--- Phone numbers on this project ---")
-    # WHY the classic client here: shows the LaML REST client next to the
-    # newer Fabric API used below. A creds failure here is non-fatal.
+    # Relay REST via the SDK: client.phone_numbers.list(). Non-fatal on failure.
     try:
-        client = RestClient(project, token, signalwire_space_url=space)
-        for num in client.incoming_phone_numbers.list(limit=20):
-            print(num.phone_number, "|", num.friendly_name)
+        listing = client.phone_numbers.list(page_size=20)
+        for num in listing.get("data", []):
+            print(num.get("number"), "|", num.get("name") or "(no name)")
     except Exception as e:  # noqa: BLE001
         print(f"[warn] could not list numbers: {e}", file=sys.stderr)
 
-    print("\n--- Provisioning the agent as a Fabric resource ---")
+    print("\n--- Provisioning the agent as an SWML webhook resource ---")
     try:
-        address = ensure_agent_handler()
+        address = ensure_agent_handler(client=client)
         print("agent dial address:", address)
     except Exception as e:  # noqa: BLE001
         print(f"[error] could not provision agent handler: {e}", file=sys.stderr)
@@ -233,7 +263,7 @@ def main():
     print("\n--- Minting a subscriber token ---")
     try:
         reference = os.environ.get("SUBSCRIBER_REFERENCE", DEFAULT_REFERENCE)
-        tok, sub_id = mint_subscriber_token(reference)
+        tok, sub_id = mint_subscriber_token(reference, client=client)
         print("subscriber_id:", sub_id)
         masked = (tok[:12] + "..." + tok[-6:]) if len(tok) > 20 else "set"
         print("token (masked):", masked)

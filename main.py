@@ -515,14 +515,15 @@ async def setup_select(request: Request):
             result = await asyncio.to_thread(configure_existing, sid, route, public)
         else:
             result = await asyncio.to_thread(purchase_and_configure, phone_to_buy, route, public)
-        return JSONResponse({"setup": result})
+        trace = result.pop("_trace", [])
+        return JSONResponse({"setup": result, "_trace": trace})
     except Exception as e:  # noqa: BLE001
         return JSONResponse({"error": f"{e.__class__.__name__}: {e}"}, status_code=502)
 
 
 @server.app.post("/api/setup/route")
 async def setup_route(request: Request):
-    """Re-point the saved number's voice_url at a different agent step."""
+    """Re-point the saved number at a different agent step (SWML webhook)."""
     try:
         _require_creds()
         public = _require_public_base()
@@ -538,7 +539,8 @@ async def setup_route(request: Request):
     from python.provisioning import repoint_to_route
     try:
         result = await asyncio.to_thread(repoint_to_route, route, public)
-        return JSONResponse({"setup": result})
+        trace = result.pop("_trace", [])
+        return JSONResponse({"setup": result, "_trace": trace})
     except Exception as e:  # noqa: BLE001
         return JSONResponse({"error": f"{e.__class__.__name__}: {e}"}, status_code=502)
 

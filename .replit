@@ -4,7 +4,6 @@ modules = ["python-3.11"]
 
 [env]
 PYTHONUNBUFFERED = "1"
-SWML_PROXY_URL_BASE = "https://chicago-roadshow-2026.replit.app"
 
 [[ports]]
 localPort = 5000
