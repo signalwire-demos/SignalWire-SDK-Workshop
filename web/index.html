@@ -2328,10 +2328,10 @@ function renderMilestoneNumber() {
   const searched = wizard.searched;
   let body;
   if (wizard.pending && !existing && !searched) {
-    body = `<p class="loading-row"><span class="loading-spinner"></span> Looking on your project ${sdkBadge("LaML REST · incoming_phone_numbers.list")}…</p>`;
+    body = `<p class="loading-row"><span class="loading-spinner"></span> Looking on your project ${sdkBadge("SDK · client.phone_numbers.list")}…</p>`;
   } else if (existing && existing.length > 0) {
     body = `
-      <p class="lead">Found ${existing.length} number${existing.length === 1 ? '' : 's'} already on your project. Pick one and we'll point it at <strong>Step 4 · Hello Agent</strong>. ${sdkBadge("LaML REST · IncomingPhoneNumber.update")}</p>
+      <p class="lead">Found ${existing.length} number${existing.length === 1 ? '' : 's'} already on your project. Pick one and we'll point it at <strong>Step 4 · Hello Agent</strong>. ${sdkBadge("SDK · client.fabric.resources.assign_phone_route")}</p>
       <div class="number-grid">
         ${existing.map((n, i) => `
           <button class="number-card existing" data-existing-sid="${escapeHtml(n.sid)}">
@@ -2343,7 +2343,7 @@ function renderMilestoneNumber() {
       <p class="wizard-helper">Different number? <a href="#" id="wiz-buy-instead">Search and purchase a new one →</a></p>`;
   } else if (searched && searched.length > 0) {
     body = `
-      <p class="lead">No phone numbers on your project yet — here are three available US local numbers. Pick one to purchase. ${sdkBadge("LaML REST · IncomingPhoneNumber.create")}</p>
+      <p class="lead">No phone numbers on your project yet — here are three available US local numbers. Pick one to purchase. ${sdkBadge("SDK · client.phone_numbers.create")}</p>
       <div class="number-grid">
         ${searched.map(n => `
           <button class="number-card available" data-buy-number="${escapeHtml(n.phone_number)}">
@@ -2360,7 +2360,7 @@ function renderMilestoneNumber() {
   } else {
     // No existing numbers — show search form
     body = `
-      <p class="lead">No numbers on your project yet. Search for an available US local number to purchase — optionally filter by area code. ${sdkBadge("LaML REST · available_phone_numbers")}</p>
+      <p class="lead">No numbers on your project yet. Search for an available US local number to purchase — optionally filter by area code. ${sdkBadge("SDK · client.phone_numbers.search")}</p>
       ${renderSearchForm()}`;
   }
   const error = wizard.errorMsg ? `<p class="wizard-error">${escapeHtml(wizard.errorMsg)}</p>` : "";

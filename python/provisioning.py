@@ -1,10 +1,10 @@
 """
-Workshop provisioning — does the manual SignalWire dashboard setup for the
-attendee, end-to-end, via the SignalWire REST API.
+Workshop provisioning — does the SignalWire dashboard setup for the attendee,
+end-to-end, via the SignalWire REST API (the agents-SDK Fabric/Relay client).
 
-Two surfaces of the same REST API, same (project, token) credentials:
-  - LaML REST via signalwire.rest.Client  (phone number search/buy/update)
-  - Fabric REST via raw HTTPS              (external_swml_handler resource)
+Everything goes through signalwire_agents.rest.client.SignalWireClient:
+  - phone number search / buy / list / get   (Relay REST: client.phone_numbers)
+  - SWML webhook resource + phone-route assignment (Fabric REST: client.fabric)
 
 The current state of the workshop (selected phone number + handler id) is
 persisted to a small JSON file so a server restart does not lose the user's
@@ -19,34 +19,16 @@ import pathlib
 import time
 from typing import Optional
 
-from signalwire.rest import Client as RestClient
-
 from python.steps.step12_rest_demo import (
     HANDLER_NAME,
     DEFAULT_AGENT_PATH,
-    ensure_agent_handler,
-    _public_base,
+    assign_number_to_agent,
+    _client,
 )
 
 FRIENDLY_NAME = "Chicago Roadshow 2026 — Buddy"
 
 _SETUP_FILE = pathlib.Path(__file__).resolve().parent.parent / ".workshop_setup.json"
-
-
-def _creds():
-    try:
-        return (
-            os.environ["SIGNALWIRE_PROJECT_ID"],
-            os.environ["SIGNALWIRE_TOKEN"],
-            os.environ["SIGNALWIRE_SPACE"],
-        )
-    except KeyError as missing:
-        raise RuntimeError(f"missing required env var: {missing.args[0]}") from None
-
-
-def _client() -> RestClient:
-    project, token, space = _creds()
-    return RestClient(project, token, signalwire_space_url=space)
 
 
 def load_setup() -> dict:
@@ -68,34 +50,34 @@ def clear_setup() -> None:
 
 
 def list_existing_numbers(limit: int = 3) -> list[dict]:
-    """Return up to `limit` IncomingPhoneNumber records already on the project."""
+    """Return up to `limit` phone numbers already on the project (Relay REST)."""
     client = _client()
-    out = []
-    for num in client.incoming_phone_numbers.list(limit=limit):
-        out.append({
-            "sid": num.sid,
-            "phone_number": num.phone_number,
-            "friendly_name": num.friendly_name,
-            "voice_url": num.voice_url or "",
-        })
-    return out
+    listing = client.phone_numbers.list(page_size=limit)
+    return [
+        {
+            "sid": num.get("id"),
+            "phone_number": num.get("number"),
+            "friendly_name": num.get("name") or "",
+        }
+        for num in listing.get("data", [])
+    ]
 
 
 def search_available(area_code: Optional[str] = None, limit: int = 3) -> list[dict]:
-    """Search US local numbers; optionally filter by area code."""
+    """Search US local numbers (Relay REST); optionally filter by area code."""
     client = _client()
-    kwargs = {"limit": limit}
+    params = {"number_type": "local", "max_results": limit}
     if area_code:
-        kwargs["area_code"] = int(area_code)
-    nums = client.available_phone_numbers("US").local.list(**kwargs)
+        params["areacode"] = area_code
+    found = client.phone_numbers.search(**params)
     return [
         {
-            "phone_number": n.phone_number,
-            "friendly_name": n.friendly_name,
-            "locality": getattr(n, "locality", "") or "",
-            "region": getattr(n, "region", "") or "",
+            "phone_number": n.get("number"),
+            "friendly_name": "",
+            "locality": n.get("city") or "",
+            "region": n.get("region") or "",
         }
-        for n in nums
+        for n in found.get("data", [])
     ]
 
 
@@ -109,27 +91,30 @@ def _timed(api: str, op: str, fn, trace: list):
 
 
 def configure_existing(sid: str, route: str, public_base: str) -> dict:
-    """Repoint an existing number's voice_url at `route`. Also sync the Fabric handler."""
-    target_url = f"{public_base.rstrip('/')}{route}"
+    """Assign an existing number (by id) to the agent's SWML webhook for `route`."""
     client = _client()
+    # Provisioning goes through the SWML webhook + Fabric assignment (the fix
+    # branch dropped the LaML compatibility API). _timed wraps each REST call so
+    # the UI's API execution theater still gets per-call latency.
     trace: list = []
-    updated = _timed(
-        "LaML", "IncomingPhoneNumber.update",
-        lambda: client.incoming_phone_numbers(sid).update(voice_url=target_url),
+    num = _timed(
+        "SDK", "phone_numbers.get",
+        lambda: client.phone_numbers.get(sid),
         trace,
     )
-    _timed(
-        "Fabric", "external_swml_handler.put",
-        lambda: ensure_agent_handler(public_base=public_base, route=route),
+    e164 = num.get("number")
+    assignment = _timed(
+        "Fabric", "assign_phone_route",
+        lambda: assign_number_to_agent(e164, public_base=public_base, route=route, client=client),
         trace,
     )
     setup = {
-        "sid": updated.sid,
-        "phone_number": updated.phone_number,
-        "friendly_name": updated.friendly_name,
-        "voice_url": updated.voice_url,
+        "sid": num.get("id"),
+        "phone_number": e164,
+        "friendly_name": num.get("name") or "",
         "route": route,
         "source": "existing",
+        **assignment,
         "_trace": trace,
     }
     save_setup({k: v for k, v in setup.items() if k != "_trace"})
@@ -137,31 +122,28 @@ def configure_existing(sid: str, route: str, public_base: str) -> dict:
 
 
 def purchase_and_configure(phone_number: str, route: str, public_base: str) -> dict:
-    """Buy `phone_number` on the project, set voice_url to `route`, sync handler."""
-    target_url = f"{public_base.rstrip('/')}{route}"
+    """Buy `phone_number` (Relay REST), then assign it to the agent's SWML webhook."""
     client = _client()
     trace: list = []
     bought = _timed(
-        "LaML", "IncomingPhoneNumber.create",
-        lambda: client.incoming_phone_numbers.create(
-            phone_number=phone_number,
-            voice_url=target_url,
-            friendly_name=FRIENDLY_NAME,
-        ),
+        "SDK", "phone_numbers.create",
+        lambda: client.phone_numbers.create(number=phone_number),
         trace,
     )
-    _timed(
-        "Fabric", "external_swml_handler.put",
-        lambda: ensure_agent_handler(public_base=public_base, route=route),
+    e164 = bought.get("number", phone_number)
+    assignment = _timed(
+        "Fabric", "assign_phone_route",
+        lambda: assign_number_to_agent(e164, public_base=public_base, route=route, client=client),
         trace,
     )
     setup = {
-        "sid": bought.sid,
-        "phone_number": bought.phone_number,
-        "friendly_name": bought.friendly_name,
-        "voice_url": bought.voice_url,
+        "sid": bought.get("id"),
+        "phone_number": e164,
+        # The Relay purchase API takes no name; FRIENDLY_NAME is for local display.
+        "friendly_name": bought.get("name") or FRIENDLY_NAME,
         "route": route,
         "source": "purchased",
+        **assignment,
         "_trace": trace,
     }
     save_setup({k: v for k, v in setup.items() if k != "_trace"})
@@ -169,28 +151,23 @@ def purchase_and_configure(phone_number: str, route: str, public_base: str) -> d
 
 
 def repoint_to_route(route: str, public_base: str) -> dict:
-    """Update the saved number's voice_url + Fabric handler primary_request_url to `route`."""
+    """Repoint the saved number to a different step.
+
+    Re-runs the assignment: this updates the SWML webhook's primary_request_url to
+    the new step AND (idempotently) ensures the number is routed to the resource,
+    so it also heals a number that was saved but never assigned.
+    """
     setup = load_setup()
-    sid = setup.get("sid")
-    if not sid:
+    phone_number = setup.get("phone_number")
+    if not phone_number:
         raise RuntimeError("no provisioned number; run setup first")
-    target_url = f"{public_base.rstrip('/')}{route}"
-    client = _client()
     trace: list = []
-    updated = _timed(
-        "LaML", "IncomingPhoneNumber.update",
-        lambda: client.incoming_phone_numbers(sid).update(voice_url=target_url),
+    assignment = _timed(
+        "Fabric", "assign_phone_route",
+        lambda: assign_number_to_agent(phone_number, public_base=public_base, route=route),
         trace,
     )
-    _timed(
-        "Fabric", "external_swml_handler.put",
-        lambda: ensure_agent_handler(public_base=public_base, route=route),
-        trace,
-    )
-    setup.update({
-        "voice_url": updated.voice_url,
-        "route": route,
-    })
+    setup.update({"route": route, **assignment})
     save_setup(setup)
     setup["_trace"] = trace
     return setup

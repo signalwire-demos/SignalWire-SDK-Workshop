@@ -5,7 +5,6 @@ description = "SignalWire workshop covering AI Agent, REST, and RELAY pillars"
 requires-python = ">=3.11"
 dependencies = [
     "signalwire-agents>=1.1.0",
-    "signalwire>=2.0",
     "fastapi>=0.111",
     "uvicorn>=0.30",
     "requests>=2.32",

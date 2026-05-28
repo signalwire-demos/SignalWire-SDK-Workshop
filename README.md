@@ -334,7 +334,7 @@ This `_configure_*` / `_register_*` pattern is the standard way to organize larg
 The REST pillar shows how to provision and authenticate against the SignalWire Call Fabric API. Clicking "Run REST Demo" on the landing page does three things in sequence:
 
 1. **Phone-number warm-up** -- lists every phone number on the project so you can confirm your credentials are valid.
-2. **Provision the AI agent** -- registers the agent as a dialable Call Fabric resource by calling `POST /api/fabric/resources/external_swml_handlers`. The returned dial address is printed to the log pane so attendees can call the agent directly.
+2. **Provision the AI agent** -- registers the agent as a dialable SWML webhook resource via the SDK's `client.fabric.swml_webhooks.create` (`POST /api/fabric/resources/swml_webhooks`). The returned dial address is printed to the log pane so attendees can call the agent directly.
 3. **Mint a subscriber token** -- calls `POST /api/fabric/subscribers/tokens` to create a short-lived token. The token is printed in masked form (first eight characters visible) so attendees can see the flow without exposing credentials.
 
 No `SMS_FROM`, `SMS_TO`, `RELAY_FROM`, or `OUTBOUND_TO` env vars are needed for this step.

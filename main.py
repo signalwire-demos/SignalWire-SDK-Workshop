@@ -523,7 +523,7 @@ async def setup_select(request: Request):
 
 @server.app.post("/api/setup/route")
 async def setup_route(request: Request):
-    """Re-point the saved number's voice_url at a different agent step."""
+    """Re-point the saved number at a different agent step (SWML webhook)."""
     try:
         _require_creds()
         public = _require_public_base()
