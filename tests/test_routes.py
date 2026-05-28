@@ -90,8 +90,7 @@ def test_landing_page():
 
 
 @pytest.mark.parametrize("pillar,required_subset", [
-    ("rest", {"SIGNALWIRE_PROJECT_ID", "SIGNALWIRE_TOKEN", "SIGNALWIRE_SPACE", "SMS_FROM", "SMS_TO"}),
-    ("relay", {"SIGNALWIRE_PROJECT_ID", "SIGNALWIRE_TOKEN"}),
+    ("rest", {"SIGNALWIRE_PROJECT_ID", "SIGNALWIRE_TOKEN", "SIGNALWIRE_SPACE"}),
 ])
 def test_run_inputs_endpoint(pillar, required_subset):
     r = requests.get(f"{BASE_URL}/run/{pillar}/inputs", timeout=5)
@@ -160,7 +159,7 @@ def test_landing_has_wizard_milestones():
     assert "MILESTONES" in text and "renderMilestones" in text
     assert "renderMilestone1" in text and "renderMilestone4" in text
     # No green leftovers
-    assert "#00c853" not in text, "green sneaked back in — use --sw-cyan"
+    assert "#00c853" not in text, "green sneaked back in - use --sw-cyan"
 
 
 def test_landing_has_workshop_renderer():
@@ -180,3 +179,95 @@ def test_landing_references_step_routes():
     text = r.text
     for route in ["/step04", "/step06", "/step07", "/step08", "/step09", "/step10", "/step11"]:
         assert f'"{route}"' in text, f"missing route {route}"
+
+
+def test_step12_main_returns_2_without_creds(monkeypatch):
+    # WHY in-process: this checks the missing-creds guard without any network.
+    for k in ("SIGNALWIRE_PROJECT_ID", "SIGNALWIRE_TOKEN", "SIGNALWIRE_SPACE"):
+        monkeypatch.delenv(k, raising=False)
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from python.steps import step12_rest_demo
+    assert hasattr(step12_rest_demo, "ensure_agent_handler")
+    assert hasattr(step12_rest_demo, "mint_subscriber_token")
+    assert step12_rest_demo.main() == 2
+
+
+def test_relay_pillar_run_inputs_gone():
+    # The relay subprocess pillar was replaced by the browser click-to-call.
+    r = requests.get(f"{BASE_URL}/run/relay/inputs", timeout=5)
+    assert r.status_code == 404
+
+
+def test_relay_config_returns_clean_error_without_creds():
+    # No live creds in CI, so this must report a handled error, never a 500.
+    r = requests.get(f"{BASE_URL}/api/relay/config", timeout=15)
+    assert r.status_code != 500
+    data = r.json()
+    assert "token" in data or "error" in data
+
+
+def test_relay_client_js_served():
+    r = requests.get(f"{BASE_URL}/static/relay-client.js", timeout=5)
+    assert r.status_code == 200
+    body = r.text
+    assert "SignalWire.SignalWire" in body
+    assert ".dial(" in body
+    assert "requestPermissions" in body
+
+
+def test_landing_loads_browser_sdk_and_client():
+    r = requests.get(f"{BASE_URL}/", timeout=5)
+    text = r.text
+    assert "cdn.signalwire.com/@signalwire/js" in text
+    assert "/static/relay-client.js" in text
+
+
+def test_landing_has_relay_call_panel():
+    r = requests.get(f"{BASE_URL}/", timeout=5)
+    text = r.text
+    assert "relay-call-btn" in text
+    assert "relay-hangup-btn" in text
+    assert "relay-root" in text
+    assert "RelayCall" in text
+
+
+def test_credentials_status_shape():
+    r = requests.get(f"{BASE_URL}/api/credentials/status", timeout=5)
+    assert r.status_code == 200
+    data = r.json()
+    assert "configured" in data
+    assert "fields" in data
+    assert set(data["fields"]) == {"SIGNALWIRE_PROJECT_ID", "SIGNALWIRE_TOKEN", "SIGNALWIRE_SPACE"}
+
+
+def test_credentials_shared_across_pillars():
+    # Regression: creds entered once must reach BOTH pillars. Before the fix,
+    # REST-form creds went only to the subprocess, so the relay endpoint
+    # reported "missing required env var". Now a shared server-side store feeds
+    # both the REST subprocess (inherits os.environ) and the relay endpoint.
+    try:
+        r = requests.post(f"{BASE_URL}/api/credentials", json={
+            "SIGNALWIRE_PROJECT_ID": "test-project",
+            "SIGNALWIRE_TOKEN": "test-token",
+            "SIGNALWIRE_SPACE": "test.signalwire.com",
+        }, timeout=5)
+        assert r.status_code == 200
+        assert r.json()["configured"] is True
+
+        # Proof the server process env now holds the creds: the REST pillar's
+        # inputs endpoint (which reads os.environ) reports nothing missing.
+        inputs = requests.get(f"{BASE_URL}/run/rest/inputs", timeout=5).json()
+        assert inputs["missing"] == []
+
+        status = requests.get(f"{BASE_URL}/api/credentials/status", timeout=5).json()
+        assert status["configured"] is True
+        assert status["fields"]["SIGNALWIRE_SPACE"] == "test.signalwire.com"
+        assert status["fields"]["SIGNALWIRE_TOKEN"] is True
+    finally:
+        # WHY clear: the server process is shared across tests in this module;
+        # do not leak creds into later tests that assume an unconfigured env.
+        requests.post(f"{BASE_URL}/api/credentials", json={
+            "SIGNALWIRE_PROJECT_ID": "",
+            "SIGNALWIRE_TOKEN": "",
+            "SIGNALWIRE_SPACE": "",
+        }, timeout=5)

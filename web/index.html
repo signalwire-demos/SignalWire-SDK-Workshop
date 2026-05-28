@@ -216,7 +216,7 @@
   .skip-link a { color: var(--sw-text-dim); text-decoration: underline; text-underline-offset: 3px; }
   .skip-link a:hover { color: var(--sw-text-bright); }
 
-  /* doc-links — small reference list inside cards */
+  /* doc-links - small reference list inside cards */
   .doc-links {
     margin-top: 22px;
     font-size: 12.5px;
@@ -253,7 +253,7 @@
     margin-left: 2px;
   }
 
-  /* try-saying — speakable prompt chips */
+  /* try-saying - speakable prompt chips */
   .try-saying { margin-top: 22px; }
   .try-label {
     font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
@@ -513,6 +513,66 @@
     font: inherit; cursor: pointer;
   }
   .link-button:hover { text-decoration: underline; }
+
+  /* ===== Shared credentials panel (feeds BOTH pillars) ===== */
+  .creds-panel {
+    background: linear-gradient(180deg, rgba(4,76,246,0.08) 0%, var(--sw-card) 60%);
+    border: 1px solid rgba(4,76,246,0.35);
+    border-radius: 16px; padding: 22px 24px; margin-bottom: 22px;
+    box-shadow: 0 16px 40px -22px rgba(4,76,246,0.5);
+  }
+  .creds-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .creds-eyebrow {
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--sw-blue); font-weight: 700; display: flex; align-items: center; gap: 8px;
+  }
+  .creds-eyebrow::before { content: '\1F511'; font-size: 12px; }
+  .creds-sub { font-size: 13px; color: var(--sw-text-dim); margin-top: 6px; max-width: 580px; }
+  .creds-status {
+    font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 999px;
+    border: 1px solid var(--sw-border); color: var(--sw-text-dim); white-space: nowrap;
+  }
+  .creds-status.ok { background: rgba(56,189,248,0.12); border-color: var(--sw-cyan); color: var(--sw-cyan); }
+  .creds-status.warn { background: rgba(255,145,0,0.12); border-color: var(--sw-orange); color: var(--sw-orange); }
+  .creds-fields { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-top: 16px; }
+  .creds-fields label {
+    display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 170px;
+    font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sw-text-dim); font-weight: 600;
+  }
+  .creds-fields input {
+    background: var(--sw-dark); border: 1px solid var(--sw-border); color: var(--sw-text-bright);
+    padding: 10px 12px; border-radius: 8px; font-size: 14px; font-family: 'SF Mono', monospace;
+  }
+  .creds-fields input:focus { outline: none; border-color: var(--sw-blue); box-shadow: 0 0 0 2px rgba(4,76,246,0.25); }
+
+  /* ===== Flow strip: the pipeline at a glance ===== */
+  .flow-strip { display: flex; align-items: stretch; gap: 10px; margin-bottom: 22px; flex-wrap: wrap; }
+  .flow-step {
+    flex: 1; min-width: 210px; display: flex; gap: 12px; align-items: flex-start;
+    background: var(--sw-card); border: 1px solid var(--sw-border); border-radius: 12px; padding: 14px 16px;
+  }
+  .flow-num {
+    flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--sw-blue), var(--sw-magenta)); color: #fff;
+    font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+  .flow-step strong { color: var(--sw-text-bright); font-size: 13.5px; }
+  .flow-step p { color: var(--sw-text-dim); font-size: 12px; margin-top: 3px; line-height: 1.45; }
+  .flow-step em, .callout em { color: var(--sw-cyan); font-style: normal; font-weight: 600; }
+  .flow-arrow { align-self: center; color: var(--sw-text-dim); font-size: 18px; }
+
+  /* ===== Behind-the-scenes callout inside a pillar card ===== */
+  .callout {
+    margin-top: 14px; padding: 12px 14px; border-radius: 10px;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--sw-border);
+    border-left: 3px solid var(--sw-cyan);
+    font-size: 12.5px; color: var(--sw-text); line-height: 1.5;
+  }
+  .callout .co-label {
+    display: block; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--sw-text-dim); font-weight: 700; margin-bottom: 5px;
+  }
+  .pillar-card.rest .callout { border-left-color: var(--sw-orange); }
 </style>
 </head>
 <body>
@@ -530,9 +590,14 @@
   <p style="text-align:center;padding:120px 20px;color:var(--sw-text-dim);">Loading…</p>
 </main>
 
+<!-- Browser SDK for step 13 click-to-call. Loaded before the page script so
+     the global SignalWire and window.RelayCall exist when cards render. -->
+<script src="https://cdn.signalwire.com/@signalwire/js"></script>
+<script src="/static/relay-client.js"></script>
+
 <script>
 /* =========================================================================
- *  Chicago Roadshow 2026 — Landing page state machine
+ *  Chicago Roadshow 2026 - Landing page state machine
  * ========================================================================= */
 
 const STEPS_META = [
@@ -666,28 +731,31 @@ const STEPS_META = [
 const PILLAR_CARDS = [
   {
     pillar: "rest",
+    kind: "sse",
     step: "Step 12",
-    name: "REST pillar - RestClient",
+    name: "REST pillar - subscriber token",
     stem: "step12_rest_demo",
-    desc: "List phone numbers, send SMS, fetch call history, and point the workshop voice handler at the agent.",
+    desc: "Use the REST API to provision the AI agent as a dialable Fabric resource and mint a short-lived subscriber token for the browser.",
     runLabel: "Run REST Demo",
     docs: [
-      { label: "REST API overview", url: "/apis" },
-      { label: "Authorization", url: "/apis/authorization" },
-      { label: "Compatibility API", url: "/compatibility-api" },
+      { label: "REST API overview", url: "/rest" },
+      { label: "Authorization", url: "/rest/getting-started/authentication" },
+      { label: "Call Fabric", url: "/platform/call-fabric" },
     ],
   },
   {
     pillar: "relay",
+    kind: "call",
     step: "Step 13",
-    name: "RELAY pillar - WebSocket client",
-    stem: "step13_relay_demo",
-    desc: "Connect via WebSocket, subscribe to incoming-call events, stream transcripts, and optionally place one outbound call.",
-    runLabel: "Run RELAY Demo",
+    name: "RELAY pillar - click to call",
+    stem: "step13_relay_client",
+    sourceFile: "relay-client.js",
+    desc: "Click one button and talk to Buddy in your browser. The @signalwire/js SDK dials the agent using the subscriber token from step 12. No phone needed.",
+    callLabel: "Call Buddy",
     docs: [
-      { label: "Realtime SDK overview", url: "/server-sdks/guides/relay-client" },
-      { label: "Voice client guide", url: "/server-sdks/guides/relay-client" },
-      { label: "Messaging client guide", url: "/server-sdks/reference/python/relay/message" },
+      { label: "Call Fabric", url: "/platform/call-fabric" },
+      { label: "Browser SDK", url: "/sdks/reference/browser-sdk/relay-js" },
+      { label: "Getting started", url: "/platform/call-fabric/getting-started" },
     ],
   },
 ];
@@ -696,6 +764,7 @@ const REPO = "jongray00/Chicago-Roadshow-2026";
 const BRANCH = "main";
 const pySourceUrl = stem => `https://github.com/${REPO}/blob/${BRANCH}/python/steps/${stem}.py`;
 const tsSourceUrl = stem => `https://github.com/${REPO}/blob/${BRANCH}/typescript/steps/${stem}.ts`;
+const jsSourceUrl = file => `https://github.com/${REPO}/blob/${BRANCH}/web/${file}`;
 
 /* ---- Docs surfacing ---- */
 const DOCS_BASE = "https://signalwire.com/docs";
@@ -877,7 +946,7 @@ function renderMilestone1() {
       <p class="lead">You'll need one to receive a real phone call. The free tier covers everything in this workshop.</p>
       ${renderDocLinks(MILESTONE_DOCS[1])}
       <div class="wizard-nav">
-        <a href="https://id.signalwire.com/onboarding" target="_blank" class="btn-secondary" id="ms1-signup">Sign up — opens new tab</a>
+        <a href="https://id.signalwire.com/onboarding" target="_blank" class="btn-secondary" id="ms1-signup">Sign up - opens new tab</a>
         <span class="step-counter">Step 1 of 4</span>
         <button class="btn-primary" id="ms1-yes">Yes, I have one →</button>
       </div>
@@ -890,7 +959,7 @@ function renderMilestone2() {
     <div class="wizard-card">
       <div class="wizard-eyebrow">Step 2 of 4 · Create the SWML script</div>
       <h2>Create a SWML Script in your dashboard, then paste this URL.</h2>
-      <p class="lead">A SWML Script tells SignalWire how to handle a call. You'll point it at the Hello Agent URL below — SignalWire fetches that URL whenever a call comes in.</p>
+      <p class="lead">A SWML Script tells SignalWire how to handle a call. You'll point it at the Hello Agent URL below - SignalWire fetches that URL whenever a call comes in.</p>
       <div class="url-card">
         <div class="url-meta">
           <div class="url-label">Step 4 · Hello Agent · your first SWML URL</div>
@@ -924,7 +993,7 @@ function renderMilestone3() {
     <div class="wizard-card">
       <div class="wizard-eyebrow">Step 3 of 4 · Connect a phone number</div>
       <h2>Attach a phone number to your script.</h2>
-      <p class="lead">After you saved the script, you should be on its detail page. From there you can attach any number — buy a new one if you don't have one yet. Trial credits cover it.</p>
+      <p class="lead">After you saved the script, you should be on its detail page. From there you can attach any number - buy a new one if you don't have one yet. Trial credits cover it.</p>
       <div class="dashboard-hint">
         <div class="hint-step">
           <div class="hint-num">A</div>
@@ -934,7 +1003,7 @@ function renderMilestone3() {
         <div class="hint-step">
           <div class="hint-num">B</div>
           <h4>Add a number</h4>
-          <p>Click <strong>+ Add</strong>, then pick an existing number — or buy a new one. Any local number works.</p>
+          <p>Click <strong>+ Add</strong>, then pick an existing number - or buy a new one. Any local number works.</p>
         </div>
       </div>
       ${renderDocLinks(MILESTONE_DOCS[3])}
@@ -951,7 +1020,7 @@ function renderMilestone4() {
     <div class="wizard-card">
       <div class="wizard-eyebrow">Step 4 of 4 · Call your number</div>
       <h2>Dial your SignalWire number now.</h2>
-      <p class="lead">Buddy will answer and chat with you. Ask anything — "How are you?", "Tell me about yourself." When you hear her, you're done with setup.</p>
+      <p class="lead">Buddy will answer and chat with you. Ask anything - "How are you?", "Tell me about yourself." When you hear her, you're done with setup.</p>
       ${renderDocLinks(MILESTONE_DOCS[4])}
       <div class="wizard-nav">
         <button class="btn-secondary" id="ms4-back">← Back</button>
@@ -1026,12 +1095,12 @@ function renderLockedPreviews() {
         <div class="preview-head">
           <div class="preview-eyebrow">Unlocks after your first call</div>
           <h2>Seven agents. Each adds one new capability.</h2>
-          <p>Once Buddy answers your phone, swap the URL on your number to try jokes, weather, math, skills — all the way up to a production-ready agent.</p>
+          <p>Once Buddy answers your phone, swap the URL on your number to try jokes, weather, math, skills - all the way up to a production-ready agent.</p>
         </div>
         <div class="preview-timeline" aria-hidden="true">
           ${nodes}
         </div>
-        <p class="preview-blurb">Finish step 4 above to unlock the full journey — including source code in Python and TypeScript for every agent.</p>
+        <p class="preview-blurb">Finish step 4 above to unlock the full journey - including source code in Python and TypeScript for every agent.</p>
       </div>
     </section>
 
@@ -1039,18 +1108,18 @@ function renderLockedPreviews() {
       <div class="pillars-head">
         <div class="label">After the basics</div>
         <h2>Two more pillars beyond the AI agent</h2>
-        <p>SignalWire is more than AI voice. Once you've made your first call, explore REST and RELAY — both runnable from this page without picking up the phone.</p>
+        <p>SignalWire is more than AI voice. Once you've made your first call, explore REST and RELAY - both runnable from this page without picking up the phone.</p>
       </div>
       <div class="pillars-grid">
         <div class="pillar-card rest locked" aria-disabled="true">
           <div class="pillar-eyebrow">REST pillar · Step 12</div>
-          <div class="pillar-name">RestClient demo</div>
-          <div class="pillar-desc">List phone numbers, send SMS, fetch call history, and update a number's voice handler — all from a Python script. No phone call needed.</div>
+          <div class="pillar-name">Subscriber token</div>
+          <div class="pillar-desc">Use the REST API to provision the AI agent as a dialable Fabric resource and mint a short-lived subscriber token for the browser.</div>
         </div>
         <div class="pillar-card relay locked" aria-disabled="true">
           <div class="pillar-eyebrow">RELAY pillar · Step 13</div>
-          <div class="pillar-name">Live WebSocket events</div>
-          <div class="pillar-desc">Open a persistent connection and subscribe to incoming-call events. Stream live transcripts to your browser as calls happen.</div>
+          <div class="pillar-name">Click to call</div>
+          <div class="pillar-desc">Click one button and talk to the agent in your browser with the @signalwire/js SDK. No phone, no dialed number.</div>
         </div>
       </div>
     </section>
@@ -1097,23 +1166,85 @@ function renderWorkshop() {
       <div class="pillars-head">
         <div class="label">After the basics</div>
         <h2>Two more pillars beyond the AI agent</h2>
-        <p>SignalWire is more than AI voice. Both pillars run from your browser without picking up the phone.</p>
+        <p>SignalWire is more than AI voice. It is programmable communications infrastructure: voice, messaging, video, SIP, and Call Fabric. Both pillars below run from your browser, no phone required.</p>
       </div>
+
+      <div class="creds-panel">
+        <div class="creds-head">
+          <div>
+            <div class="creds-eyebrow">SignalWire credentials</div>
+            <div class="creds-sub">Enter these once. Both pillars below authenticate with them against the Call Fabric REST API. Your API token is posted to this app's server only, never stored in the browser.</div>
+          </div>
+          <span class="creds-status" id="creds-status">Checking...</span>
+        </div>
+        <div class="creds-fields">
+          <label>Project ID
+            <input type="password" id="cred-project" autocomplete="off" placeholder="PXxxxxxxxx" />
+          </label>
+          <label>API Token
+            <input type="password" id="cred-token" autocomplete="off" placeholder="PTxxxxxxxx" />
+          </label>
+          <label>Space URL
+            <input type="text" id="cred-space" autocomplete="off" placeholder="your-space.signalwire.com" />
+          </label>
+          <button class="btn-copy" id="cred-save">Save credentials</button>
+          <button class="src-btn" id="cred-clear">Clear</button>
+        </div>
+      </div>
+
+      <div class="flow-strip">
+        <div class="flow-step">
+          <span class="flow-num">1</span>
+          <div><strong>REST mints a token</strong><p>The <em>Call Fabric</em> REST API provisions your AI agent as a dialable resource and issues a short-lived <em>subscriber JWT</em> scoped to voice.</p></div>
+        </div>
+        <div class="flow-arrow" aria-hidden="true">&rarr;</div>
+        <div class="flow-step">
+          <span class="flow-num">2</span>
+          <div><strong>Browser SDK dials</strong><p>The <em>@signalwire/js</em> client opens a <em>WebRTC</em> media session over SignalWire's global edge using that token.</p></div>
+        </div>
+        <div class="flow-arrow" aria-hidden="true">&rarr;</div>
+        <div class="flow-step">
+          <span class="flow-num">3</span>
+          <div><strong>Live AI voice</strong><p>You are talking to your agent in the browser. No phone number, no PSTN, no dialout, fully <em>browser-native</em>.</p></div>
+        </div>
+      </div>
+
       <div class="pillars-grid" id="pillars-host">
         ${PILLAR_CARDS.map(p => {
           const accent = p.pillar;
           const namePart = p.name.includes(" - ") ? p.name.split(" - ").slice(1).join(" - ") : p.name;
-          return `
-          <div class="pillar-card ${accent}">
+          const head = `
             <div class="pillar-eyebrow">${escapeHtml(p.step.toUpperCase())} · ${escapeHtml(p.name.split(" - ")[0])}</div>
             <div class="pillar-name">${escapeHtml(namePart)}</div>
-            <div class="pillar-desc">${escapeHtml(p.desc)}</div>
+            <div class="pillar-desc">${escapeHtml(p.desc)}</div>`;
+          if (p.kind === "call") {
+            // Step 13: live in-browser call panel (no subprocess, no SSE).
+            return `
+            <div class="pillar-card ${accent}">
+              ${head}
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;">
+                <button class="src-btn primary" id="relay-call-btn">📞 ${escapeHtml(p.callLabel)}</button>
+                <button class="src-btn" id="relay-hangup-btn" style="display:none;">Hang up</button>
+                <a href="${jsSourceUrl(p.sourceFile)}" target="_blank" rel="noopener noreferrer" class="src-btn">Client JS source</a>
+                <a href="${tsSourceUrl(p.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">TypeScript source</a>
+              </div>
+              ${renderDocLinks(p.docs, "Docs")}
+              <div class="callout"><span class="co-label">Behind the scenes</span>The <em>subscriber token</em> from step 12 authorizes a <em>WebRTC</em> voice session straight to your AI agent over SignalWire's programmable network. Browser-native, serverless, real-time, no SIP client and no phone number.</div>
+              <div id="relay-status" style="margin-top:12px;font-size:12.5px;color:var(--sw-text-dim);">Click to start an in-browser call with the agent.</div>
+              <div id="relay-root" style="display:none;"></div>
+            </div>`;
+          }
+          // Step 12: subprocess Run button + SSE log pane.
+          return `
+          <div class="pillar-card ${accent}">
+            ${head}
             <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;">
               <button class="src-btn primary" data-run="${p.pillar}">▶ ${escapeHtml(p.runLabel)}</button>
               <a href="${pySourceUrl(p.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">Python source</a>
               <a href="${tsSourceUrl(p.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">TypeScript source</a>
             </div>
             ${renderDocLinks(p.docs, "Docs")}
+            <div class="callout"><span class="co-label">Behind the scenes</span>HTTP Basic auth against <em>api/fabric</em> provisions your agent as an <em>external SWML handler</em> (a dialable Call Fabric address) and mints a short-lived <em>subscriber token</em>. Programmable telephony, fully API-driven.</div>
             <div class="run-inputs" data-pillar="${p.pillar}" hidden style="margin-top:12px;"></div>
             <pre class="run-log" data-pillar="${p.pillar}" style="margin-top:12px;background:var(--sw-dark);border:1px solid var(--sw-border);border-radius:8px;padding:12px;font-size:12px;color:var(--sw-text);min-height:0;max-height:280px;overflow:auto;font-family:'SF Mono',monospace;"></pre>
           </div>`;
@@ -1149,6 +1280,20 @@ function renderWorkshop() {
   document.querySelectorAll("[data-run]").forEach(btn => {
     btn.addEventListener("click", () => runPillar(btn.dataset.run));
   });
+
+  const relayCallBtn = document.getElementById("relay-call-btn");
+  if (relayCallBtn) {
+    const refs = {
+      rootEl: document.getElementById("relay-root"),
+      statusEl: document.getElementById("relay-status"),
+      callBtn: relayCallBtn,
+      hangupBtn: document.getElementById("relay-hangup-btn"),
+    };
+    relayCallBtn.addEventListener("click", () => window.RelayCall && window.RelayCall.start(refs));
+    document.getElementById("relay-hangup-btn")?.addEventListener("click", () => window.RelayCall && window.RelayCall.hangup());
+  }
+
+  wireCredsPanel();
 }
 
 function renderPinnedUrlCard() {
@@ -1237,7 +1382,7 @@ function renderActiveDetail() {
           : `<span></span>`}
         ${next
           ? `<button class="btn-primary" id="detail-next" data-route="${next.route}">Next agent: ${escapeHtml(next.name)} →</button>`
-          : `<span class="agent-nav-done">Final agent — explore the REST &amp; RELAY pillars below ↓</span>`}
+          : `<span class="agent-nav-done">Final agent - explore the REST &amp; RELAY pillars below ↓</span>`}
       </div>
     </div>`;
 }
@@ -1245,6 +1390,8 @@ function renderActiveDetail() {
 function setActiveStep(route) {
   activePillarStreams.forEach(es => es.close());
   activePillarStreams.clear();
+  // WHY: a live call's root element is about to be re-rendered away.
+  if (window.RelayCall) window.RelayCall.hangup();
   state.activeStep = route;
   if (!state.visited.includes(route)) state.visited.push(route);
   persist();
@@ -1261,6 +1408,67 @@ function renderAll() {
 }
 
 const activePillarStreams = new Map();
+async function wireCredsPanel() {
+  const statusEl = document.getElementById("creds-status");
+  const projectEl = document.getElementById("cred-project");
+  const tokenEl = document.getElementById("cred-token");
+  const spaceEl = document.getElementById("cred-space");
+  if (!statusEl) return;
+
+  function paint(s) {
+    // WHY prefill only when blank: do not clobber what the user is typing.
+    if (s.fields && s.fields.SIGNALWIRE_SPACE && spaceEl && !spaceEl.value) {
+      spaceEl.value = s.fields.SIGNALWIRE_SPACE;
+    }
+    if (s.configured) {
+      statusEl.textContent = "Credentials set - both pillars ready";
+      statusEl.className = "creds-status ok";
+    } else {
+      statusEl.textContent = "Not set - enter to enable the pillars";
+      statusEl.className = "creds-status warn";
+    }
+  }
+
+  async function refresh() {
+    try { paint(await (await fetch("/api/credentials/status")).json()); }
+    catch (e) { /* leave status as-is */ }
+  }
+
+  document.getElementById("cred-save")?.addEventListener("click", async () => {
+    statusEl.textContent = "Saving...";
+    statusEl.className = "creds-status";
+    // WHY omit blanks: re-saving after the secret fields self-clear must not
+    // wipe creds already stored on the server. Use Clear to wipe.
+    const body = {};
+    if (projectEl.value.trim()) body.SIGNALWIRE_PROJECT_ID = projectEl.value.trim();
+    if (tokenEl.value.trim()) body.SIGNALWIRE_TOKEN = tokenEl.value.trim();
+    if (spaceEl.value.trim()) body.SIGNALWIRE_SPACE = spaceEl.value.trim();
+    const r = await fetch("/api/credentials", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    paint(await r.json());
+    // WHY clear secrets from the DOM: do not leave the token in an input.
+    projectEl.value = "";
+    tokenEl.value = "";
+  });
+
+  document.getElementById("cred-clear")?.addEventListener("click", async () => {
+    const r = await fetch("/api/credentials", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ SIGNALWIRE_PROJECT_ID: "", SIGNALWIRE_TOKEN: "", SIGNALWIRE_SPACE: "" }),
+    });
+    if (projectEl) projectEl.value = "";
+    if (tokenEl) tokenEl.value = "";
+    if (spaceEl) spaceEl.value = "";
+    paint(await r.json());
+  });
+
+  refresh();
+}
+
 async function runPillar(pillar) {
   const logPane = document.querySelector(`.run-log[data-pillar="${pillar}"]`);
   const inputsPane = document.querySelector(`.run-inputs[data-pillar="${pillar}"]`);
@@ -1271,30 +1479,18 @@ async function runPillar(pillar) {
   const inputsResp = await fetch(`/run/${pillar}/inputs`);
   const inputsInfo = await inputsResp.json();
 
-  let inputs = {};
+  // WHY no inline form: credentials live in the shared panel above. If they
+  // are not set yet, point the user there instead of duplicating the inputs.
+  inputsPane.hidden = true;
   if (inputsInfo.missing && inputsInfo.missing.length > 0) {
-    inputsPane.hidden = false;
-    inputsPane.innerHTML = inputsInfo.missing.map(k =>
-      `<label style="display:inline-flex;flex-direction:column;font-size:11px;color:var(--sw-text-dim);margin-right:10px;">
-         ${escapeHtml(k)}
-         <input name="${escapeHtml(k)}" style="background:var(--sw-dark);border:1px solid var(--sw-border);color:var(--sw-text-bright);padding:6px 10px;border-radius:5px;font-size:13px;margin-top:3px;min-width:180px;" />
-       </label>`
-    ).join("") + ` <button class="src-btn primary submit-inputs" style="margin-left:8px;">Run</button>`;
-    await new Promise(resolve => {
-      inputsPane.querySelector(".submit-inputs").addEventListener("click", () => {
-        inputs = Object.fromEntries(
-          [...inputsPane.querySelectorAll("input")].map(i => [i.name, i.value])
-        );
-        inputsPane.hidden = true;
-        resolve();
-      }, { once: true });
-    });
+    logPane.textContent = "Enter your SignalWire credentials in the panel above, then click Run REST Demo.";
+    return;
   }
 
   const startResp = await fetch(`/run/${pillar}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ inputs }),
+    body: JSON.stringify({ inputs: {} }),
   });
   const { run_id } = await startResp.json();
 

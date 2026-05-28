@@ -1,72 +1,80 @@
-// Step 12: REST pillar - RestClient demo (TypeScript sibling, reference-only)
-// Matches python/steps/step12_rest_demo.py.
-//
-// Runs as a standalone script. Demonstrates four REST capabilities:
-//   1. List phone numbers on the project
-//   2. Send an SMS
-//   3. List recent calls
-//   4. Point the workshop number's voice URL at the agent (step 11)
+// Step 12: REST pillar - subscriber token + agent provisioning
+// (TypeScript sibling, reference-only). Matches python/steps/step12_rest_demo.py.
+// Uses fetch against the Fabric REST API; no SignalWire package import needed.
 
-import { RestClient } from "@signalwire/node";
+const HANDLER_NAME = "Chicago Roadshow 2026 Agent";
+const AGENT_PATH = "/step11";
+const DEFAULT_REFERENCE = "roadshow-attendee";
 
-async function main(): Promise<number> {
+function creds(): { project: string; token: string; space: string } {
   const project = process.env["SIGNALWIRE_PROJECT_ID"];
   const token = process.env["SIGNALWIRE_TOKEN"];
   const space = process.env["SIGNALWIRE_SPACE"];
-  const smsFrom = process.env["SMS_FROM"];
-  const smsTo = process.env["SMS_TO"];
-
-  if (!project || !token || !space || !smsFrom || !smsTo) {
-    const missing = ["SIGNALWIRE_PROJECT_ID", "SIGNALWIRE_TOKEN", "SIGNALWIRE_SPACE", "SMS_FROM", "SMS_TO"]
-      .filter((k) => !process.env[k]);
-    console.error(`[error] missing required env var: ${missing[0]}`);
-    return 2;
+  if (!project || !token || !space) {
+    throw new Error("missing SIGNALWIRE_PROJECT_ID / SIGNALWIRE_TOKEN / SIGNALWIRE_SPACE");
   }
-
-  const agentVoiceUrl = process.env["AGENT_VOICE_URL"];
-
-  const client = new RestClient(project, token, { signalwireSpaceUrl: space });
-
-  console.log("--- Phone numbers on this project ---");
-  // WHY list first: confirms SMS_FROM is owned by this project before
-  // we try to send from it. Catches typos in the dashboard early.
-  const numbers = await client.incomingPhoneNumbers.list({ limit: 20 });
-  for (const num of numbers) {
-    console.log(num.phoneNumber, "|", num.friendlyName);
-  }
-
-  console.log("\n--- Sending SMS ---");
-  const msg = await client.messages.create({
-    from_: smsFrom,
-    to: smsTo,
-    body: "Hello from the Chicago Roadshow 2026 REST demo.",
-  });
-  console.log("sid:", msg.sid, "| status:", msg.status);
-
-  console.log("\n--- Recent calls (last 10) ---");
-  const calls = await client.calls.list({ limit: 10 });
-  for (const call of calls) {
-    console.log(call.sid, call.from_, "->", call.to, "|", call.status, "|", call.startTime);
-  }
-
-  if (agentVoiceUrl) {
-    console.log("\n--- Pointing voice handler at agent URL ---");
-    // WHY last: a misconfigured voiceUrl breaks the live agent route
-    // mid-workshop. Do this only after every other call succeeded.
-    const target = numbers.find((n) => n.phoneNumber === smsFrom);
-    if (!target) {
-      console.log(`[warn] ${smsFrom} not found on project; skipping voice_url update`);
-    } else {
-      await client.incomingPhoneNumbers(target.sid).update({ voiceUrl: agentVoiceUrl });
-      console.log(`Updated ${target.phoneNumber} -> ${agentVoiceUrl}`);
-    }
-  }
-
-  console.log("\n[done]");
-  return 0;
+  return { project, token, space };
 }
 
-main().then((code) => process.exit(code)).catch((err: unknown) => {
-  console.error(err);
-  process.exit(1);
-});
+// WHY raw fetch: the Fabric REST API is not exposed by the LaML client.
+async function fabric(method: string, path: string, body?: unknown): Promise<any> {
+  const { project, token, space } = creds();
+  const auth = Buffer.from(`${project}:${token}`).toString("base64");
+  const resp = await fetch(`https://${space}${path}`, {
+    method,
+    headers: {
+      Authorization: `Basic ${auth}`,
+      Accept: "application/json",
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!resp.ok) throw new Error(`${method} ${path} -> ${resp.status}`);
+  return resp.status === 204 ? {} : resp.json();
+}
+
+export async function ensureAgentHandler(): Promise<string> {
+  const base = (process.env["PUBLIC_BASE"] || process.env["SWML_PROXY_URL_BASE"] || "").replace(/\/$/, "");
+  if (!base) throw new Error("no public base URL; set SWML_PROXY_URL_BASE or PUBLIC_BASE");
+
+  const listing = await fabric("GET", "/api/fabric/resources/external_swml_handlers");
+  let handlerId: string;
+  const existing = (listing.data || []).find((h: any) => h.name === HANDLER_NAME);
+  if (existing) {
+    handlerId = existing.id;
+  } else {
+    const created = await fabric("POST", "/api/fabric/resources/external_swml_handlers", {
+      name: HANDLER_NAME,
+      used_for: "calling",
+      primary_request_url: `${base}${AGENT_PATH}`,
+      primary_request_method: "POST",
+    });
+    handlerId = created.id;
+  }
+  const addrs = await fabric("GET", `/api/fabric/resources/external_swml_handlers/${handlerId}/addresses`);
+  return addrs.data[0].channels.audio;
+}
+
+export async function mintSubscriberToken(
+  reference: string = DEFAULT_REFERENCE
+): Promise<{ token: string; subscriberId: string }> {
+  const data = await fabric("POST", "/api/fabric/subscribers/tokens", { reference });
+  return { token: data.token, subscriberId: data.subscriber_id ?? "" };
+}
+
+async function main(): Promise<number> {
+  try {
+    const address = await ensureAgentHandler();
+    console.log("agent dial address:", address);
+    const ref = process.env["SUBSCRIBER_REFERENCE"] || DEFAULT_REFERENCE;
+    const { token, subscriberId } = await mintSubscriberToken(ref);
+    console.log("subscriber_id:", subscriberId);
+    console.log("token (masked):", token.slice(0, 12) + "...");
+    return 0;
+  } catch (e) {
+    console.error("[error]", e instanceof Error ? e.message : e);
+    return 1;
+  }
+}
+
+main().then((code) => process.exit(code));

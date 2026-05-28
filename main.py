@@ -235,12 +235,12 @@ _INFLIGHT: dict[str, dict] = {}
 
 PILLAR_TO_SCRIPT = {
     "rest": "python/steps/step12_rest_demo.py",
-    "relay": "python/steps/step13_relay_demo.py",
 }
 
+# WHY only project/token/space: step 12 now provisions the agent and mints a
+# subscriber token; it no longer sends SMS, so SMS_FROM/SMS_TO are gone.
 PILLAR_REQUIRED_ENV = {
-    "rest": ["SIGNALWIRE_PROJECT_ID", "SIGNALWIRE_TOKEN", "SIGNALWIRE_SPACE", "SMS_FROM", "SMS_TO"],
-    "relay": ["SIGNALWIRE_PROJECT_ID", "SIGNALWIRE_TOKEN"],
+    "rest": ["SIGNALWIRE_PROJECT_ID", "SIGNALWIRE_TOKEN", "SIGNALWIRE_SPACE"],
 }
 
 
@@ -340,6 +340,78 @@ async def run_stream(pillar: str, run_id: str):
             yield f"event: {item['event']}\ndata: {payload}\n\n"
 
     return StreamingResponse(gen(), media_type="text/event-stream")
+
+# ---------------------------------------------------------------------------
+# Step 13 RELAY: subscriber token + agent address for the browser SDK
+# ---------------------------------------------------------------------------
+
+@server.app.get("/api/relay/config")
+async def relay_config():
+    """Mint a fresh subscriber token and return the agent dial address.
+
+    Reuses the step 12 helpers so the browser gets exactly what the REST
+    lesson teaches. Admin creds never leave the server; only the short-lived
+    subscriber token reaches the page.
+    """
+    from python.steps.step12_rest_demo import (
+        DEFAULT_REFERENCE,
+        ensure_agent_handler,
+        mint_subscriber_token,
+    )
+
+    try:
+        reference = os.environ.get("SUBSCRIBER_REFERENCE", DEFAULT_REFERENCE)
+        # WHY to_thread: the helpers use blocking requests; keep the loop free.
+        destination = await asyncio.to_thread(ensure_agent_handler, base_url)
+        token, _sub = await asyncio.to_thread(mint_subscriber_token, reference)
+        return JSONResponse({"token": token, "destination": destination})
+    except Exception as e:  # noqa: BLE001 - report a clean error, never a 500 stack
+        return JSONResponse({"error": str(e)}, status_code=503)
+
+# ---------------------------------------------------------------------------
+# Shared credentials: one panel above both pillars posts here. Writing into
+# os.environ means BOTH the REST subprocess (it inherits os.environ when spawned
+# by /run/rest) and the RELAY endpoint (it reads os.environ) pick up the same
+# creds. WHY a server-side store: a workshop fork is single-tenant, so holding
+# creds in the process for the session is the simplest way to share them across
+# pillars without ever putting the admin token in the browser.
+# ---------------------------------------------------------------------------
+
+_CRED_KEYS = ("SIGNALWIRE_PROJECT_ID", "SIGNALWIRE_TOKEN", "SIGNALWIRE_SPACE")
+
+
+def _credentials_status():
+    return {
+        "configured": all(os.environ.get(k) for k in _CRED_KEYS),
+        "fields": {
+            "SIGNALWIRE_PROJECT_ID": bool(os.environ.get("SIGNALWIRE_PROJECT_ID")),
+            "SIGNALWIRE_TOKEN": bool(os.environ.get("SIGNALWIRE_TOKEN")),
+            # WHY value not bool: the space is a non-secret domain, so echo it to
+            # prefill the form on reload. Project id and token stay masked.
+            "SIGNALWIRE_SPACE": os.environ.get("SIGNALWIRE_SPACE", ""),
+        },
+    }
+
+
+@server.app.get("/api/credentials/status")
+async def credentials_status():
+    return JSONResponse(_credentials_status())
+
+
+@server.app.post("/api/credentials")
+async def set_credentials(request: Request):
+    raw = await request.body()
+    body = json.loads(raw) if raw else {}
+    if not isinstance(body, dict):
+        return JSONResponse({"error": "expected a JSON object"}, status_code=400)
+    for k in _CRED_KEYS:
+        if k in body:
+            value = str(body[k]).strip()
+            if value:
+                os.environ[k] = value
+            else:
+                os.environ.pop(k, None)  # empty value clears it
+    return JSONResponse(_credentials_status())
 
 # ---------------------------------------------------------------------------
 # Print SWML URLs to console

@@ -19,8 +19,8 @@ Three different ways to add capabilities to an AI agent:
 SignalWire is a programmable communications platform. This workshop teaches three of its pillars:
 
 - **AI Agent** (steps 4-11): build a live AI phone agent using `signalwire-agents`. Includes custom SWAIG functions, serverless DataMap calls, and built-in skills. The caller dials a real phone number; SignalWire routes the call to your Replit-hosted agent.
-- **REST** (step 12): use the SignalWire REST client to list phone numbers on your project, send SMS, fetch recent call history, and programmatically point a phone number's voice handler at the agent URL.
-- **RELAY** (step 13): connect over WebSocket via the Relay client. Subscribe to live incoming-call events, stream transcripts to stdout, and optionally place outbound calls programmatically.
+- **REST** (step 12): use the SignalWire REST API to provision the AI agent as a dialable Call Fabric resource and mint a short-lived subscriber token. The Run button prints the agent dial address and a masked token.
+- **RELAY** (step 13): click-to-call the agent from your browser -- no phone needed. The page gets a token from the server, loads `@signalwire/js` from the CDN, and dials the agent over audio.
 
 Steps 4-11 are phone-call driven (you dial your workshop number). Steps 12 and 13 are Run-button driven on the landing page (the demo executes server-side and streams logs back to your browser).
 
@@ -327,37 +327,35 @@ This `_configure_*` / `_register_*` pattern is the standard way to organize larg
 
 ---
 
-## Step 12: REST pillar - RestClient
+## Step 12: REST pillar - Fabric provisioning
 
 > **Code:** `python/steps/step12_rest_demo.py` | **Run:** Landing page "Run REST Demo" button
 
-The REST client lets you control phone numbers, messages, and calls from outside the agent. This step does four things:
+The REST pillar shows how to provision and authenticate against the SignalWire Call Fabric API. Clicking "Run REST Demo" on the landing page does three things in sequence:
 
-1. Lists every phone number on the project (sanity check that `SMS_FROM` is real)
-2. Sends an SMS from `SMS_FROM` to `SMS_TO`
-3. Lists the last 10 calls
-4. If `AGENT_VOICE_URL` is set, points `SMS_FROM`'s voice handler at it -- so attendees stop having to click around the dashboard to switch which step their number routes to
+1. **Phone-number warm-up** -- lists every phone number on the project so you can confirm your credentials are valid.
+2. **Provision the AI agent** -- registers the agent as a dialable Call Fabric resource by calling `POST /api/fabric/resources/external_swml_handlers`. The returned dial address is printed to the log pane so attendees can call the agent directly.
+3. **Mint a subscriber token** -- calls `POST /api/fabric/subscribers/tokens` to create a short-lived token. The token is printed in masked form (first eight characters visible) so attendees can see the flow without exposing credentials.
 
-`AGENT_VOICE_URL` defaults to the Step 11 URL when unset.
+No `SMS_FROM`, `SMS_TO`, `RELAY_FROM`, or `OUTBOUND_TO` env vars are needed for this step.
 
-> **Try it:** Click "Run REST Demo" on the landing page. If `SMS_FROM` / `SMS_TO` are not set in Secrets, the page will prompt you for them inline. The script's stdout streams back to the log pane below the button.
+> **Try it:** Click "Run REST Demo" on the landing page. The three-step output streams into the log pane beneath the button.
 
 ---
 
-## Step 13: RELAY pillar - WebSocket client
+## Step 13: RELAY pillar - Browser click-to-call
 
-> **Code:** `python/steps/step13_relay_demo.py` | **Run:** Landing page "Run RELAY Demo" button
+> **Code:** `web/relay-client.js` | **TypeScript sibling:** `typescript/steps/step13_relay_client.ts` | **Run:** Landing page "Call Buddy" button
 
-The Relay client opens a persistent WebSocket to SignalWire and gets real-time events: incoming calls, transcripts, call state changes. This step:
+The RELAY pillar lets you call the AI agent directly from a browser tab -- no phone required. The flow is:
 
-1. Connects via the Relay client
-2. Subscribes to incoming-call events and auto-answers each one
-3. Streams the live transcript of each call to stdout
-4. If `OUTBOUND_TO` is set, places one outbound call from `RELAY_FROM` to that number
+1. The page requests a short-lived Fabric subscriber token from `GET /api/relay/config` (served by the workshop server).
+2. `@signalwire/js` is loaded from `https://cdn.signalwire.com/@signalwire/js` -- no npm install needed.
+3. The client dials the agent over audio. Grant the microphone permission when the browser prompts.
 
-The outbound dial is gated on env so you don't accidentally fire a call during a demo.
+> **Try it:** Open the deployed Replit URL and click "Call Buddy". The agent must be publicly reachable (it is on Replit by default). Grant microphone access when prompted, and speak to Buddy as you would on a phone call.
 
-> **Try it:** Click "Run RELAY Demo" on the landing page. The script stays running and prints transcripts as calls happen. Click "Run RELAY Demo" again to restart it (the previous run is SIGTERM'd cleanly).
+For a no-code alternative, SignalWire's `c2c-widget` web component embeds the same calling experience in any HTML page with a single tag. To receive inbound calls in the browser instead of placing them, call `client.online()` after connecting -- the browser will ring when someone dials your subscriber address.
 
 ---
 
