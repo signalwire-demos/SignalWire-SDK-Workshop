@@ -37,7 +37,374 @@
 
   .topbar {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 14px 32px; position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+    padding: 14px 32px; position: absolute; top: 28px; left: 0; right: 0; z-index: 10;
+  }
+
+  /* ============ API ACTIVITY TICKER (full-width, pinned top) ============ */
+  .api-ticker {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 60;
+    height: 28px;
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 18px;
+    background: rgba(8,10,14,0.92);
+    border-bottom: 1px solid var(--sw-border);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    font-family: 'SF Mono', 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: var(--sw-text-dim);
+    overflow: hidden;
+  }
+  .api-ticker-eyebrow {
+    color: var(--sw-text-dim); font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; font-size: 10px; flex-shrink: 0;
+  }
+  .api-ticker-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--sw-text-dim); flex-shrink: 0;
+    transition: background 0.2s ease;
+  }
+  .api-ticker.is-active .api-ticker-dot {
+    background: var(--sw-cyan);
+    box-shadow: 0 0 0 3px rgba(56,189,248,0.2);
+    animation: tick-pulse 1.2s ease-in-out infinite;
+  }
+  .api-ticker.is-error .api-ticker-dot { background: var(--sw-magenta); box-shadow: 0 0 0 3px rgba(247,42,114,0.2); }
+  @keyframes tick-pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.85); }
+  }
+  .api-ticker-text {
+    flex: 1; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: var(--sw-text);
+  }
+  .api-ticker-ok { color: var(--sw-cyan); }
+  .api-ticker-err { color: var(--sw-magenta); }
+  .api-ticker-ms { color: var(--sw-text-dim); margin-left: 6px; }
+  .api-ticker.is-active .api-ticker-text { animation: tick-slide 0.18s ease-out; }
+  @keyframes tick-slide {
+    from { transform: translateX(6px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* ============ BOTTOM-RIGHT STACK: log on top of Buddy ============ */
+  .bottom-right-stack {
+    position: fixed; right: 18px; bottom: 18px; z-index: 55;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 14px;
+    pointer-events: none;
+  }
+  .bottom-right-stack > * { pointer-events: auto; }
+
+  /* ============ FLOATING API LOG (expandable) ============ */
+  .api-log {
+    width: 340px; max-width: calc(100vw - 36px);
+    background: rgba(12,16,24,0.94);
+    border: 1px solid var(--sw-border);
+    border-radius: 12px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 18px 50px -20px rgba(0,0,0,0.6);
+    font-family: 'SF Mono', 'JetBrains Mono', monospace;
+    color: var(--sw-text); font-size: 11.5px;
+    transition: width 0.2s ease, height 0.2s ease, padding 0.2s ease;
+    overflow: hidden;
+  }
+  .api-log.is-collapsed {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    padding: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .api-log-toggle {
+    width: 100%; background: transparent; border: none; color: inherit;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; cursor: pointer;
+    font-family: inherit; font-size: 11px;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--sw-text-dim);
+    border-bottom: 1px solid var(--sw-border);
+  }
+  .api-log.is-collapsed .api-log-toggle {
+    padding: 0; border-bottom: none; justify-content: center;
+  }
+  .api-log.is-collapsed .api-log-toggle-text,
+  .api-log.is-collapsed .api-log-toggle-meta { display: none; }
+  .api-log-toggle-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--sw-text-dim);
+    transition: background 0.2s ease;
+  }
+  .api-log.is-active .api-log-toggle-dot {
+    background: var(--sw-cyan);
+    box-shadow: 0 0 0 4px rgba(56,189,248,0.2);
+    animation: tick-pulse 1.2s ease-in-out infinite;
+  }
+  .api-log-toggle-text { flex: 1; text-align: left; padding-left: 8px; color: var(--sw-text); font-weight: 600; letter-spacing: 0.04em; text-transform: none; font-size: 11.5px; }
+  .api-log-toggle-meta { color: var(--sw-text-dim); }
+  .api-log-body {
+    max-height: 240px; overflow-y: auto; padding: 8px 12px 12px;
+  }
+  .api-log.is-collapsed .api-log-body { display: none; }
+  .api-log-entry {
+    padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,0.04);
+    animation: entry-in 0.18s ease-out;
+  }
+  .api-log-entry:last-child { border-bottom: none; }
+  @keyframes entry-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .api-log-line {
+    display: flex; gap: 8px; align-items: baseline;
+  }
+  .api-log-time { color: var(--sw-text-dim); flex-shrink: 0; font-size: 10.5px; }
+  .api-log-method { color: var(--sw-blue); font-weight: 700; min-width: 36px; flex-shrink: 0; }
+  .api-log-path { color: var(--sw-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+  .api-log-status { color: var(--sw-cyan); flex-shrink: 0; }
+  .api-log-status.err { color: var(--sw-magenta); }
+  .api-log-sub {
+    margin-top: 3px; padding-left: 56px;
+    color: var(--sw-text-dim); font-size: 10.5px;
+  }
+  .api-log-sub .api-tag {
+    display: inline-block; padding: 1px 6px; border-radius: 4px;
+    background: rgba(4,76,246,0.18); color: var(--sw-blue);
+    font-weight: 700; font-size: 9.5px; letter-spacing: 0.04em; margin-right: 4px;
+  }
+  .api-log-sub .api-tag.fabric { background: rgba(247,42,114,0.18); color: var(--sw-magenta); }
+  .api-log-empty {
+    padding: 18px 6px; text-align: center; color: var(--sw-text-dim); font-size: 11px;
+  }
+
+  /* ============ BUDDY THE ROBOT ============ */
+  .buddy-stage { position: relative; }
+  .buddy-frame {
+    background: rgba(12,16,24,0.92);
+    border: 1px solid var(--sw-border); border-radius: 16px;
+    padding: 6px 10px 4px;
+    cursor: pointer; line-height: 0;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 18px 50px -20px rgba(0,0,0,0.6);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+  .buddy-frame:hover { transform: translateY(-2px); border-color: var(--sw-cyan); }
+  .buddy { width: 96px; height: 120px; display: block; }
+
+  /* All parts start hidden, then animate in when their step has been visited */
+  .buddy [data-part] {
+    opacity: 0; transform: scale(0.4); transform-origin: 60px 70px;
+    transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 1.6, 0.3, 1);
+  }
+  .buddy[data-progress~="step04"] [data-part="head"],
+  .buddy[data-progress~="step06"] [data-part="torso"],
+  .buddy[data-progress~="step07"] [data-part="arm-left"],
+  .buddy[data-progress~="step08"] [data-part="arm-right"],
+  .buddy[data-progress~="step09"] [data-part="chest-led"],
+  .buddy[data-progress~="step10"] [data-part="legs"],
+  .buddy[data-progress~="step11"] [data-part="halo"] {
+    opacity: 1; transform: scale(1);
+  }
+
+  /* Geometric strokes & fills */
+  .buddy-head-shape, .buddy-torso-shape {
+    fill: #161b27; stroke: var(--sw-blue); stroke-width: 1.5;
+  }
+  .buddy-torso-panel { fill: #0b1018; stroke: rgba(56,189,248,0.35); stroke-width: 1; }
+  .buddy-antenna { stroke: var(--sw-cyan); stroke-width: 1.5; }
+  .buddy-antenna-tip { fill: var(--sw-magenta); }
+  .buddy-eye { fill: var(--sw-cyan); transition: fill 0.2s ease; }
+  .buddy-mouth { fill: var(--sw-text-dim); }
+  .buddy-arm { stroke: var(--sw-blue); stroke-width: 4; stroke-linecap: round; }
+  .buddy-hand { fill: var(--sw-magenta); }
+  .buddy-chest-led { fill: var(--sw-magenta); filter: drop-shadow(0 0 4px rgba(247,42,114,0.7)); animation: buddy-led 2s ease-in-out infinite; }
+  .buddy-leg { fill: #161b27; stroke: var(--sw-blue); stroke-width: 1.5; }
+  .buddy-foot { fill: var(--sw-blue); }
+  .buddy-halo { stroke: var(--sw-magenta); stroke-width: 2; filter: drop-shadow(0 0 4px rgba(247,42,114,0.8)); }
+
+  /* Idle behaviors */
+  .buddy[data-progress~="step04"] [data-part="head"] .buddy-eye {
+    animation: buddy-blink 5s infinite;
+  }
+  .buddy[data-progress~="step04"] [data-part="head"] {
+    animation: buddy-bob 7s ease-in-out infinite;
+  }
+  @keyframes buddy-blink {
+    0%, 92%, 96%, 100% { transform: scaleY(1); }
+    94% { transform: scaleY(0.1); }
+  }
+  @keyframes buddy-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+  }
+  @keyframes buddy-led {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+  }
+
+  /* Thinking state (during pending API calls) */
+  .buddy-thinking { opacity: 0; transition: opacity 0.18s ease; }
+  .buddy-think-dot { fill: var(--sw-cyan); }
+  .buddy-think-ring {
+    stroke: var(--sw-cyan); stroke-width: 1.5; stroke-dasharray: 8 6; opacity: 0;
+    transform-origin: 60px 44px;
+  }
+  .buddy.is-thinking [data-part="head"] .buddy-eye { opacity: 0; }
+  .buddy.is-thinking .buddy-thinking { opacity: 1; animation: buddy-think 0.9s steps(3) infinite; }
+  .buddy.is-thinking .buddy-think-ring { opacity: 0.6; animation: buddy-ring 1.4s linear infinite; }
+  @keyframes buddy-think {
+    0% { transform: translateX(-4px); }
+    100% { transform: translateX(4px); }
+  }
+  @keyframes buddy-ring {
+    0% { stroke-dashoffset: 0; transform: rotate(0deg); }
+    100% { stroke-dashoffset: -56; transform: rotate(360deg); }
+  }
+
+  /* Popover with capability list */
+  .buddy-popover {
+    position: absolute; right: 0; bottom: calc(100% + 10px);
+    background: rgba(12,16,24,0.97); border: 1px solid var(--sw-border);
+    border-radius: 10px; padding: 12px 14px;
+    width: 230px;
+    box-shadow: 0 18px 50px -20px rgba(0,0,0,0.7);
+  }
+  .buddy-pop-eyebrow {
+    font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--sw-magenta); font-weight: 700; margin-bottom: 8px;
+  }
+  .buddy-pop-list { list-style: none; margin: 0; padding: 0; }
+  .buddy-pop-list li {
+    font-size: 12px; color: var(--sw-text); padding: 4px 0;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .buddy-pop-list li::before { content: "✓"; color: var(--sw-cyan); font-weight: 700; }
+  .buddy-pop-list li.locked { color: var(--sw-text-dim); }
+  .buddy-pop-list li.locked::before { content: "·"; color: var(--sw-text-dim); }
+
+  /* ============ ACTION RECEIPTS — persistent souvenir of what worked ============ */
+  .receipts-section {
+    max-width: 1180px; margin: 24px auto 0; padding: 0 24px;
+  }
+  .receipts-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 14px 20px;
+    background: rgba(4,76,246,0.08);
+    border: 1px solid rgba(4,76,246,0.25); border-radius: 12px;
+    cursor: pointer;
+  }
+  .receipts-head h3 {
+    margin: 0; font-size: 13.5px; color: var(--sw-text-bright); font-weight: 700; letter-spacing: 0.02em;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .receipts-head h3::before { content: "📋"; }
+  .receipts-head-meta { font-size: 12px; color: var(--sw-text-dim); font-family: 'SF Mono', monospace; }
+  .receipts-section[data-collapsed="true"] .receipts-body { display: none; }
+  .receipts-section[data-collapsed="true"] .receipts-head h3::after { content: " ▶"; color: var(--sw-text-dim); margin-left: 6px; font-size: 11px; }
+  .receipts-section[data-collapsed="false"] .receipts-head h3::after { content: " ▼"; color: var(--sw-text-dim); margin-left: 6px; font-size: 11px; }
+  .receipts-body {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px;
+    margin-top: 14px;
+  }
+  .receipt {
+    background: #f7f3e8;
+    color: #1a1a1a;
+    border-radius: 4px;
+    padding: 14px 16px 16px;
+    position: relative;
+    font-family: 'SF Mono', 'JetBrains Mono', monospace;
+    font-size: 12px;
+    box-shadow: 0 6px 14px -6px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3);
+    transform: rotate(var(--receipt-rot, 0deg));
+    transition: transform 0.18s ease;
+  }
+  .receipt::before, .receipt::after {
+    content: ""; position: absolute; left: 0; right: 0; height: 6px;
+    background:
+      radial-gradient(circle at 4px 0, transparent 3px, #f7f3e8 3px) 0 0/8px 6px repeat-x;
+  }
+  .receipt::before { top: -3px; transform: rotate(180deg); }
+  .receipt::after { bottom: -3px; }
+  .receipt:hover { transform: rotate(0) translateY(-2px); }
+  .receipt-time { font-size: 10px; color: #6b6357; letter-spacing: 0.04em; }
+  .receipt-headline {
+    margin-top: 6px; font-size: 13px; font-weight: 700; color: #1a1a1a; line-height: 1.35;
+  }
+  .receipt-sub {
+    margin-top: 8px; font-size: 11px; color: #4a4438; line-height: 1.45;
+  }
+  .receipt-trace {
+    margin-top: 10px; padding-top: 8px; border-top: 1px dashed rgba(0,0,0,0.15);
+    display: flex; flex-wrap: wrap; gap: 6px; font-size: 10px;
+  }
+  .receipt-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 7px; border-radius: 999px;
+    background: rgba(4,76,246,0.12); color: var(--sw-blue); font-weight: 700;
+    letter-spacing: 0.04em; font-size: 9.5px;
+  }
+  .receipt-tag.fabric { background: rgba(247,42,114,0.14); color: #ad2557; }
+  .receipt-tag-ms { color: #6b6357; font-weight: 500; }
+  .receipt-receipt-num { position: absolute; top: 8px; right: 12px; font-size: 9px; color: #8a8275; letter-spacing: 0.06em; }
+
+  /* Receipt toast — pops up briefly when a new receipt is minted */
+  .receipt-toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(110%);
+    z-index: 70; width: min(380px, calc(100vw - 36px));
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1.1);
+    pointer-events: none;
+  }
+  .receipt-toast.is-visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  .receipt-toast .receipt { transform: rotate(0); }
+
+  /* ============ STEP UNLOCK micro-celebrations ============ */
+  .toast-unlock {
+    position: fixed; top: 50px; left: 50%;
+    transform: translateX(-50%) translateY(-12px);
+    z-index: 75; opacity: 0;
+    background: linear-gradient(135deg, rgba(4,76,246,0.95), rgba(247,42,114,0.92));
+    color: #fff; padding: 12px 22px; border-radius: 999px;
+    box-shadow: 0 18px 48px -16px rgba(247,42,114,0.55);
+    display: inline-flex; align-items: center; gap: 12px;
+    font-size: 14px; font-weight: 600; letter-spacing: 0.01em;
+    transition: opacity 0.25s ease, transform 0.35s cubic-bezier(0.2, 1.5, 0.3, 1);
+    pointer-events: none;
+  }
+  .toast-unlock.is-visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast-unlock .toast-unlock-icon { font-size: 18px; }
+  .toast-unlock strong { letter-spacing: 0.06em; font-weight: 700; }
+  .toast-unlock .toast-unlock-sub { color: rgba(255,255,255,0.85); margin-left: 6px; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; }
+
+  .confetti-burst {
+    position: fixed; width: 0; height: 0; z-index: 65; pointer-events: none;
+  }
+  .confetti-particle {
+    position: absolute; width: 8px; height: 8px; border-radius: 2px;
+    transform: translate(-50%, -50%);
+    animation: confetti-fly 1400ms cubic-bezier(0.15, 0.85, 0.4, 1) forwards;
+  }
+  @keyframes confetti-fly {
+    0% { transform: translate(-50%, -50%) translate(0,0) rotate(0deg) scale(1); opacity: 1; }
+    80% { opacity: 1; }
+    100% { transform: translate(-50%, -50%) translate(var(--cx), var(--cy)) rotate(var(--crot)) scale(0.5); opacity: 0; }
+  }
+
+  .step-section.is-just-unlocked {
+    animation: section-pulse 900ms ease-out;
+  }
+  @keyframes section-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(247,42,114,0.0), 0 32px 80px -24px rgba(247,42,114,0.35); }
+    35%  { box-shadow: 0 0 0 8px rgba(247,42,114,0.35), 0 32px 80px -24px rgba(247,42,114,0.6); }
+    100% { box-shadow: 0 0 0 0 rgba(247,42,114,0.0), 0 32px 80px -24px rgba(247,42,114,0.35); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .toast-unlock, .receipt-toast, .step-section, .confetti-particle, .api-ticker-text {
+      animation: none !important; transition: opacity 0.15s ease !important;
+    }
   }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; color: var(--sw-text-bright); font-size: 14px; }
   .brand-mark {
@@ -750,6 +1117,18 @@
     .number-grid { grid-template-columns: 1fr; }
     .signup-invite { flex-direction: column; align-items: stretch; text-align: left; padding: 18px 18px; }
     .signup-invite-cta { width: 100%; justify-content: center; text-align: center; padding: 14px 18px; }
+
+    /* Mobile: hide Buddy (small screens get crowded) */
+    .buddy-stage { display: none; }
+    /* Mobile: API log moves to bottom-right but shrinks */
+    .bottom-right-stack { right: 10px; bottom: 10px; gap: 8px; }
+    .api-log { width: 280px; }
+    .receipts-section { padding: 0 16px; }
+    .receipts-body { grid-template-columns: 1fr; }
+    .receipt { transform: rotate(0) !important; } /* skip rotation on mobile for cleaner stack */
+    /* Ticker tighter on mobile */
+    .api-ticker { height: 24px; font-size: 10.5px; padding: 0 12px; }
+    .topbar { top: 24px; }
     .big-number { font-size: 32px; }
     .step-aim { flex-direction: column; align-items: stretch; gap: 10px; }
     .step-aim button { width: 100%; }
@@ -851,6 +1230,83 @@
 </style>
 </head>
 <body>
+
+<div class="api-ticker" id="api-ticker" aria-live="polite">
+  <span class="api-ticker-eyebrow">SignalWire REST</span>
+  <span class="api-ticker-dot"></span>
+  <span class="api-ticker-text" id="api-ticker-text">idle — waiting for activity</span>
+</div>
+
+<div class="bottom-right-stack" id="bottom-right-stack">
+  <div class="api-log is-collapsed" id="api-log" role="region" aria-label="API activity log">
+    <button class="api-log-toggle" id="api-log-toggle" aria-expanded="false" title="API activity">
+      <span class="api-log-toggle-dot"></span>
+      <span class="api-log-toggle-text">API activity</span>
+      <span class="api-log-toggle-meta" id="api-log-toggle-meta">0</span>
+    </button>
+    <div class="api-log-body" id="api-log-body">
+      <div class="api-log-empty">Waiting for the workshop to make a call…</div>
+    </div>
+  </div>
+
+  <div class="buddy-stage" id="buddy-stage" hidden>
+    <button type="button" class="buddy-frame" id="buddy-frame" aria-label="Buddy the robot" title="Buddy">
+      <svg class="buddy" viewBox="0 0 120 150" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <!-- HALO (step 11) -->
+        <g class="buddy-part" data-part="halo">
+          <ellipse class="buddy-halo" cx="60" cy="6" rx="22" ry="5" fill="none"/>
+        </g>
+        <!-- HEAD (step 04) -->
+        <g class="buddy-part" data-part="head">
+          <line class="buddy-antenna" x1="60" y1="14" x2="60" y2="24"/>
+          <circle class="buddy-antenna-tip" cx="60" cy="11" r="3"/>
+          <rect class="buddy-head-shape" x="32" y="24" width="56" height="44" rx="9"/>
+          <circle class="buddy-eye left" cx="46" cy="44" r="3.5"/>
+          <circle class="buddy-eye right" cx="74" cy="44" r="3.5"/>
+          <rect class="buddy-mouth" x="48" y="56" width="24" height="3" rx="1.5"/>
+        </g>
+        <!-- TORSO (step 06) -->
+        <g class="buddy-part" data-part="torso">
+          <rect class="buddy-torso-shape" x="34" y="72" width="52" height="42" rx="7"/>
+          <rect class="buddy-torso-panel" x="42" y="80" width="36" height="26" rx="3"/>
+        </g>
+        <!-- LEFT ARM (step 07) -->
+        <g class="buddy-part" data-part="arm-left">
+          <line class="buddy-arm" x1="34" y1="82" x2="20" y2="98"/>
+          <circle class="buddy-hand" cx="18" cy="100" r="4"/>
+        </g>
+        <!-- RIGHT ARM (step 08) -->
+        <g class="buddy-part" data-part="arm-right">
+          <line class="buddy-arm" x1="86" y1="82" x2="100" y2="98"/>
+          <circle class="buddy-hand" cx="102" cy="100" r="4"/>
+        </g>
+        <!-- CHEST LED (step 09) -->
+        <g class="buddy-part" data-part="chest-led">
+          <circle class="buddy-chest-led" cx="60" cy="93" r="3.5"/>
+        </g>
+        <!-- LEGS (step 10) -->
+        <g class="buddy-part" data-part="legs">
+          <rect class="buddy-leg" x="44" y="114" width="8" height="24" rx="2"/>
+          <rect class="buddy-leg" x="68" y="114" width="8" height="24" rx="2"/>
+          <rect class="buddy-foot" x="40" y="138" width="16" height="5" rx="2"/>
+          <rect class="buddy-foot" x="64" y="138" width="16" height="5" rx="2"/>
+        </g>
+        <!-- THINKING DOTS (shown when API call in flight) -->
+        <g class="buddy-thinking">
+          <circle class="buddy-think-dot" cx="50" cy="44" r="1.5"/>
+          <circle class="buddy-think-dot" cx="60" cy="44" r="1.5"/>
+          <circle class="buddy-think-dot" cx="70" cy="44" r="1.5"/>
+        </g>
+        <!-- THINKING RING (shown when API call in flight) -->
+        <circle class="buddy-think-ring" cx="60" cy="44" r="28" fill="none"/>
+      </svg>
+    </button>
+    <div class="buddy-popover" id="buddy-popover" hidden>
+      <div class="buddy-pop-eyebrow">BUDDY · CAPABILITIES</div>
+      <ul class="buddy-pop-list" id="buddy-pop-list"></ul>
+    </div>
+  </div>
+</div>
 
 <div class="topbar">
   <div class="brand"><div class="brand-mark"></div>SignalWire · Chicago Roadshow 2026</div>
@@ -1035,6 +1491,432 @@ const PILLAR_CARDS = [
   },
 ];
 
+/* =========================================================================
+ *  API activity bus — every workshop fetch flows through swApi() so the
+ *  ticker, the floating log, and the receipt tray can all subscribe.
+ * ========================================================================= */
+const apiBus = (() => {
+  const listeners = new Set();
+  let nextId = 0;
+  return {
+    on(fn) { listeners.add(fn); return () => listeners.delete(fn); },
+    emit(ev) { listeners.forEach(fn => { try { fn(ev); } catch (e) { console.error(e); } }); },
+    nextId: () => ++nextId,
+  };
+})();
+
+async function swApi(method, path, body, opts = {}) {
+  const id = apiBus.nextId();
+  const startMs = performance.now();
+  apiBus.emit({ id, kind: "start", method, path, label: opts.label || "" });
+  try {
+    const init = { method };
+    if (body !== undefined) {
+      init.headers = { "Content-Type": "application/json" };
+      init.body = JSON.stringify(body);
+    }
+    const resp = await fetch(path, init);
+    let data = null;
+    try { data = await resp.json(); } catch (_) { /* non-json */ }
+    const ms = Math.round(performance.now() - startMs);
+    apiBus.emit({
+      id, kind: "end", method, path,
+      status: resp.status, ok: resp.ok, ms,
+      data, subcalls: (data && data._trace) || [],
+      label: opts.label || "",
+    });
+    return { ok: resp.ok, status: resp.status, data, ms };
+  } catch (e) {
+    const ms = Math.round(performance.now() - startMs);
+    apiBus.emit({
+      id, kind: "end", method, path,
+      status: 0, ok: false, ms,
+      error: e.message || String(e),
+      label: opts.label || "",
+    });
+    return { ok: false, status: 0, error: e.message || String(e), ms };
+  }
+}
+
+/* =========================================================================
+ *  Ticker + floating log — subscribe to apiBus and render activity.
+ * ========================================================================= */
+const apiLog = (() => {
+  const tickerEl = () => document.getElementById("api-ticker");
+  const tickerText = () => document.getElementById("api-ticker-text");
+  const logEl = () => document.getElementById("api-log");
+  const logBody = () => document.getElementById("api-log-body");
+  const toggleMeta = () => document.getElementById("api-log-toggle-meta");
+
+  const recent = []; // last N entries for the widget
+  const MAX_ENTRIES = 20;
+  let idleTimer = null;
+  let pending = 0;
+
+  function fmtTime(ts) {
+    const d = new Date(ts);
+    return d.toTimeString().slice(0, 8);
+  }
+  function setActive(active, error = false) {
+    const t = tickerEl(); const l = logEl();
+    if (!t || !l) return;
+    t.classList.toggle("is-active", active && !error);
+    t.classList.toggle("is-error", error);
+    l.classList.toggle("is-active", active && !error);
+    if (active) {
+      clearTimeout(idleTimer);
+    } else if (!error) {
+      idleTimer = setTimeout(() => {
+        if (pending === 0) {
+          const tt = tickerText();
+          if (tt) tt.textContent = "idle";
+        }
+      }, 3000);
+    }
+  }
+  function renderTicker(ev) {
+    const tt = tickerText();
+    if (!tt) return;
+    if (ev.kind === "start") {
+      tt.innerHTML = `<span>${ev.method}</span> <span>${ev.path}</span> <span class="api-ticker-ms">…</span>`;
+    } else {
+      const cls = ev.ok ? "api-ticker-ok" : "api-ticker-err";
+      const symbol = ev.ok ? "✓" : "✗";
+      tt.innerHTML = `<span>${ev.method}</span> <span>${ev.path}</span> <span class="${cls}">${symbol} ${ev.status || ""}</span> <span class="api-ticker-ms">${ev.ms}ms</span>`;
+    }
+  }
+  function addEntry(ev) {
+    const entry = {
+      id: ev.id, time: Date.now(),
+      method: ev.method, path: ev.path,
+      status: ev.status, ok: ev.ok, ms: ev.ms,
+      subcalls: ev.subcalls || [],
+      error: ev.error,
+    };
+    recent.push(entry);
+    if (recent.length > MAX_ENTRIES) recent.shift();
+    renderWidget();
+  }
+  function renderWidget() {
+    const body = logBody();
+    const meta = toggleMeta();
+    if (!body) return;
+    if (!recent.length) {
+      body.innerHTML = `<div class="api-log-empty">Waiting for the workshop to make a call…</div>`;
+      if (meta) meta.textContent = "0";
+      return;
+    }
+    body.innerHTML = recent.slice().reverse().map(e => {
+      const cls = e.ok ? "" : "err";
+      const sym = e.ok ? "✓" : "✗";
+      let subs = "";
+      if (e.subcalls && e.subcalls.length) {
+        subs = e.subcalls.map(s => {
+          const tagCls = (s.api || "").toLowerCase() === "fabric" ? "api-tag fabric" : "api-tag";
+          return `<div class="api-log-sub"><span class="${tagCls}">${s.api}</span>${s.op} <span class="api-log-time">${s.ms}ms</span></div>`;
+        }).join("");
+      }
+      return `
+        <div class="api-log-entry">
+          <div class="api-log-line">
+            <span class="api-log-time">${fmtTime(e.time)}</span>
+            <span class="api-log-method">${e.method}</span>
+            <span class="api-log-path">${e.path}</span>
+            <span class="api-log-status ${cls}">${sym} ${e.status || ""} <span class="api-log-time">${e.ms}ms</span></span>
+          </div>
+          ${subs}
+        </div>`;
+    }).join("");
+    if (meta) meta.textContent = String(recent.length);
+  }
+  function init() {
+    const toggle = document.getElementById("api-log-toggle");
+    if (toggle) {
+      toggle.addEventListener("click", () => {
+        const log = logEl();
+        const isCollapsed = log.classList.toggle("is-collapsed");
+        toggle.setAttribute("aria-expanded", String(!isCollapsed));
+      });
+    }
+    apiBus.on(ev => {
+      if (ev.kind === "start") {
+        pending++;
+        setActive(true);
+        renderTicker(ev);
+      } else {
+        pending = Math.max(0, pending - 1);
+        renderTicker(ev);
+        addEntry(ev);
+        setActive(pending > 0, !ev.ok);
+      }
+    });
+  }
+  return { init };
+})();
+
+/* =========================================================================
+ *  Receipts — mint a souvenir for successful mutations. Persisted.
+ * ========================================================================= */
+const receipts = (() => {
+  const KEY = "chicago2026.receipts";
+  let list = [];
+  try { list = JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { list = []; }
+  let nextNum = list.length ? (list[list.length - 1].num || list.length) + 1 : 1;
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {}
+  }
+  function add(receipt) {
+    receipt.num = nextNum++;
+    receipt.time = Date.now();
+    receipt.rot = (Math.random() - 0.5) * 1.2; // ±0.6deg
+    list.push(receipt);
+    if (list.length > 50) list.shift();
+    save();
+    toast(receipt);
+    rerender();
+  }
+  function clear() { list = []; nextNum = 1; save(); rerender(); }
+  function all() { return list.slice(); }
+  function rerender() {
+    const section = document.getElementById("receipts-section");
+    if (section) section.outerHTML = renderReceiptsSection();
+    // re-attach toggle handler
+    const head = document.getElementById("receipts-head");
+    if (head) head.addEventListener("click", toggleCollapse);
+  }
+  function toggleCollapse() {
+    const sec = document.getElementById("receipts-section");
+    if (!sec) return;
+    const cur = sec.getAttribute("data-collapsed") === "true";
+    sec.setAttribute("data-collapsed", String(!cur));
+    try { localStorage.setItem(KEY + ".collapsed", String(!cur)); } catch (e) {}
+  }
+  function fromApiEvent(ev) {
+    if (!ev.ok || ev.kind !== "end") return null;
+    const p = ev.path; const d = ev.data || {}; const t = ev.subcalls || [];
+    if (p === "/api/setup/select" && d.setup) {
+      const setup = d.setup;
+      const source = setup.source === "purchased" ? "Purchased" : "Connected";
+      return {
+        headline: `${source} ${formatPhone(setup.phone_number)}`,
+        sub: `Routed to ${routeLabel(setup.route)}`,
+        trace: t,
+      };
+    }
+    if (p === "/api/setup/route" && d.setup) {
+      return {
+        headline: `Pointed ${formatPhone(d.setup.phone_number)}`,
+        sub: `→ ${routeLabel(d.setup.route)}`,
+        trace: t,
+      };
+    }
+    if (p === "/api/credentials" && d.configured) {
+      // Only mint a receipt the first time creds get saved
+      if (list.some(r => r.kind === "creds")) return null;
+      return {
+        kind: "creds",
+        headline: "Credentials accepted",
+        sub: "SignalWire Space connected",
+        trace: [],
+      };
+    }
+    return null;
+  }
+  function routeLabel(route) {
+    const meta = (typeof STEPS_META !== "undefined") ? STEPS_META.find(s => s.route === route) : null;
+    return meta ? `${meta.step} · ${meta.name}` : route;
+  }
+  function toast(r) {
+    let el = document.getElementById("receipt-toast");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "receipt-toast";
+      el.className = "receipt-toast";
+      document.body.appendChild(el);
+    }
+    el.innerHTML = renderReceiptCard(r);
+    requestAnimationFrame(() => el.classList.add("is-visible"));
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => el.classList.remove("is-visible"), 3500);
+  }
+  function init() {
+    apiBus.on(ev => {
+      const r = fromApiEvent(ev);
+      if (r) add(r);
+    });
+  }
+  return { init, all, clear, rerender, toggleCollapse };
+})();
+
+function renderReceiptCard(r) {
+  const time = new Date(r.time).toTimeString().slice(0, 8);
+  const trace = (r.trace || []).map(s => {
+    const cls = (s.api || "").toLowerCase() === "fabric" ? "receipt-tag fabric" : "receipt-tag";
+    return `<span class="${cls}">${escapeHtml(s.api)}<span class="receipt-tag-ms">·${s.ms}ms</span></span>`;
+  }).join("");
+  return `
+    <div class="receipt" style="--receipt-rot: ${r.rot || 0}deg;">
+      <div class="receipt-receipt-num">N° ${String(r.num || 0).padStart(3, "0")}</div>
+      <div class="receipt-time">${time}</div>
+      <div class="receipt-headline">${escapeHtml(r.headline)}</div>
+      ${r.sub ? `<div class="receipt-sub">${escapeHtml(r.sub)}</div>` : ""}
+      ${trace ? `<div class="receipt-trace">${trace}</div>` : ""}
+    </div>`;
+}
+
+function renderReceiptsSection() {
+  const list = receipts.all();
+  if (!list.length) return `<section id="receipts-section" hidden></section>`;
+  const collapsed = localStorage.getItem("chicago2026.receipts.collapsed") === "true";
+  return `
+    <section id="receipts-section" class="receipts-section" data-collapsed="${collapsed}">
+      <div class="receipts-head" id="receipts-head" role="button" tabindex="0" aria-expanded="${!collapsed}">
+        <h3>Your workshop receipts</h3>
+        <span class="receipts-head-meta">${list.length} stamp${list.length === 1 ? "" : "s"}</span>
+      </div>
+      <div class="receipts-body">
+        ${list.slice().reverse().map(renderReceiptCard).join("")}
+      </div>
+    </section>`;
+}
+
+/* =========================================================================
+ *  Step-unlock celebrations
+ * ========================================================================= */
+/* =========================================================================
+ *  Buddy — geometric robot that gains parts as the user reaches new agents
+ * ========================================================================= */
+const buddy = (() => {
+  const stage = () => document.getElementById("buddy-stage");
+  const svg = () => stage()?.querySelector(".buddy");
+  const pop = () => document.getElementById("buddy-popover");
+  const popList = () => document.getElementById("buddy-pop-list");
+  let pending = 0;
+  let popOpen = false;
+
+  function visited() {
+    return (typeof state !== "undefined" && state.visited) ? state.visited : [];
+  }
+  function progressString() {
+    return visited().map(r => r.replace("/", "")).join(" ");
+  }
+  function syncProgress() {
+    const s = svg(); const st = stage();
+    if (!s || !st) return;
+    const visits = visited();
+    if (visits.length === 0) {
+      st.hidden = true;
+      return;
+    }
+    st.hidden = false;
+    s.setAttribute("data-progress", progressString());
+  }
+  function setThinking(on) {
+    const s = svg(); if (!s) return;
+    s.classList.toggle("is-thinking", on);
+  }
+  function renderPopover() {
+    const list = popList(); if (!list) return;
+    const visits = visited();
+    const items = (typeof STEPS_META !== "undefined" ? STEPS_META : []).map(step => {
+      const has = visits.includes(step.route);
+      const newCap = step.newCapabilities?.[0] || step.capabilities?.[0] || "";
+      return `<li class="${has ? '' : 'locked'}">${escapeHtml(step.step)} · ${escapeHtml(newCap)}</li>`;
+    }).join("");
+    list.innerHTML = items;
+  }
+  function togglePopover(force) {
+    popOpen = (force !== undefined) ? !!force : !popOpen;
+    const p = pop(); if (!p) return;
+    if (popOpen) renderPopover();
+    p.hidden = !popOpen;
+  }
+  function init() {
+    const frame = document.getElementById("buddy-frame");
+    if (frame) frame.addEventListener("click", e => { e.stopPropagation(); togglePopover(); });
+    document.addEventListener("click", e => {
+      if (popOpen && !e.target.closest("#buddy-stage")) togglePopover(false);
+    });
+    apiBus.on(ev => {
+      if (ev.kind === "start") {
+        pending++;
+        setThinking(pending > 0);
+      } else {
+        pending = Math.max(0, pending - 1);
+        setThinking(pending > 0);
+      }
+    });
+  }
+  return { init, syncProgress };
+})();
+
+const PALETTE = ["#044cf6", "#f72a72", "#38bdf8", "#ffd166", "#10b981"];
+
+function celebrateUnlock(route) {
+  const meta = (typeof STEPS_META !== "undefined") ? STEPS_META.find(s => s.route === route) : null;
+  if (!meta) return;
+  showUnlockToast(meta);
+  burstConfetti(route);
+  pulseActiveStep();
+}
+
+function showUnlockToast(meta) {
+  let el = document.getElementById("toast-unlock");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "toast-unlock";
+    el.className = "toast-unlock";
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `
+    <span class="toast-unlock-icon">🎉</span>
+    <span><strong>${meta.step}</strong> · ${escapeHtml(meta.name)}<span class="toast-unlock-sub">unlocked</span></span>`;
+  requestAnimationFrame(() => el.classList.add("is-visible"));
+  clearTimeout(showUnlockToast._t);
+  showUnlockToast._t = setTimeout(() => el.classList.remove("is-visible"), 2600);
+}
+
+function burstConfetti(route) {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const node = document.querySelector(`.timeline-node[data-route="${route}"]`)
+    || document.querySelector(".step-section.active");
+  if (!node) return;
+  const rect = node.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const wrap = document.createElement("div");
+  wrap.className = "confetti-burst";
+  wrap.style.left = cx + "px";
+  wrap.style.top = cy + "px";
+  document.body.appendChild(wrap);
+  const N = 16;
+  for (let i = 0; i < N; i++) {
+    const p = document.createElement("div");
+    p.className = "confetti-particle";
+    const angle = (i / N) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
+    const speed = 70 + Math.random() * 70;
+    const dx = Math.cos(angle) * speed;
+    const dy = Math.sin(angle) * speed + 60; // slight downward bias
+    p.style.setProperty("--cx", `${dx}px`);
+    p.style.setProperty("--cy", `${dy}px`);
+    p.style.setProperty("--crot", `${(Math.random() - 0.5) * 720}deg`);
+    p.style.background = PALETTE[i % PALETTE.length];
+    p.style.animationDelay = (Math.random() * 60) + "ms";
+    wrap.appendChild(p);
+  }
+  setTimeout(() => wrap.remove(), 1700);
+}
+
+function pulseActiveStep() {
+  const sec = document.querySelector(".step-section.active");
+  if (!sec) return;
+  sec.classList.remove("is-just-unlocked");
+  void sec.offsetWidth;  // restart animation
+  sec.classList.add("is-just-unlocked");
+  setTimeout(() => sec.classList.remove("is-just-unlocked"), 1000);
+}
+
 const REPO = "jongray00/Chicago-Roadshow-2026";
 const BRANCH = "main";
 const pySourceUrl = stem => `https://github.com/${REPO}/blob/${BRANCH}/python/steps/${stem}.py`;
@@ -1098,23 +1980,16 @@ async function loadConfig() {
   } catch (e) { /* keep defaults */ }
   // Hydrate wizard.setup from server so a returning user sees their number
   // without having to walk the wizard again.
-  try {
-    const r = await fetch("/api/setup/status");
-    if (r.ok) {
-      const d = await r.json();
-      if (d?.setup?.phone_number) {
-        wizard.setup = d.setup;
-        // If the user landed on Done from a previous session, keep them there.
-        if (state.milestone === 3 && !state.onboardingComplete) {
-          // ok, already in the right place
-        }
-      } else if (state.milestone === 3) {
-        // milestone says Done but no setup persisted (fresh server, stale localStorage)
-        state.milestone = 1;
-        persist();
-      }
+  const sr = await swApi("GET", "/api/setup/status", undefined, { label: "hydrate setup state" });
+  if (sr.ok) {
+    const d = sr.data || {};
+    if (d.setup?.phone_number) {
+      wizard.setup = d.setup;
+    } else if (state.milestone === 3) {
+      state.milestone = 1;
+      persist();
     }
-  } catch (e) { /* best effort */ }
+  }
   renderAll();
 }
 
@@ -1427,84 +2302,54 @@ async function submitCredentials() {
   }
   wizard.pending = true; wizard.errorMsg = "";
   rerenderWizard();
-  try {
-    const resp = await fetch("/api/credentials", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        SIGNALWIRE_PROJECT_ID: project,
-        SIGNALWIRE_TOKEN: token,
-        SIGNALWIRE_SPACE: space,
-      }),
-    });
-    const data = await resp.json();
-    if (!resp.ok || !data.configured) {
-      wizard.pending = false;
-      wizard.errorMsg = data.error || "Could not save credentials.";
-      rerenderWizard();
-      return;
-    }
+  const r = await swApi("POST", "/api/credentials", {
+    SIGNALWIRE_PROJECT_ID: project,
+    SIGNALWIRE_TOKEN: token,
+    SIGNALWIRE_SPACE: space,
+  }, { label: "store credentials" });
+  if (!r.ok || !r.data?.configured) {
     wizard.pending = false;
-    state.milestone = 2;
-    wizard.numbers = null; wizard.searched = null;
-    persist();
-    renderAll();
-  } catch (e) {
-    wizard.pending = false;
-    wizard.errorMsg = e.message || "Network error.";
+    wizard.errorMsg = r.data?.error || r.error || "Could not save credentials.";
     rerenderWizard();
+    return;
   }
+  wizard.pending = false;
+  state.milestone = 2;
+  wizard.numbers = null; wizard.searched = null;
+  persist();
+  renderAll();
 }
 
 async function loadExistingNumbers() {
   wizard.pending = true;
   rerenderWizard();
-  try {
-    const resp = await fetch("/api/setup/numbers");
-    const data = await resp.json();
-    if (!resp.ok) {
-      wizard.pending = false;
-      wizard.errorMsg = data.error || "Could not list numbers.";
-      wizard.numbers = [];
-      rerenderWizard();
-      return;
-    }
+  const r = await swApi("GET", "/api/setup/numbers", undefined, { label: "list existing numbers" });
+  if (!r.ok) {
     wizard.pending = false;
-    wizard.numbers = data.numbers || [];
-    rerenderWizard();
-  } catch (e) {
-    wizard.pending = false;
-    wizard.errorMsg = e.message || "Network error.";
+    wizard.errorMsg = r.data?.error || r.error || "Could not list numbers.";
     wizard.numbers = [];
     rerenderWizard();
+    return;
   }
+  wizard.pending = false;
+  wizard.numbers = r.data?.numbers || [];
+  rerenderWizard();
 }
 
 async function runSearch(areaCode) {
   wizard.pending = true; wizard.errorMsg = "";
   wizard.searchedAreaCode = areaCode;
   rerenderWizard();
-  try {
-    const resp = await fetch("/api/setup/search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ area_code: areaCode || null }),
-    });
-    const data = await resp.json();
-    if (!resp.ok) {
-      wizard.pending = false;
-      wizard.errorMsg = data.error || "Search failed.";
-      rerenderWizard();
-      return;
-    }
+  const r = await swApi("POST", "/api/setup/search", { area_code: areaCode || null }, { label: "search available numbers" });
+  if (!r.ok) {
     wizard.pending = false;
-    wizard.searched = data.numbers || [];
+    wizard.errorMsg = r.data?.error || r.error || "Search failed.";
     rerenderWizard();
-  } catch (e) {
-    wizard.pending = false;
-    wizard.errorMsg = e.message || "Network error.";
-    rerenderWizard();
+    return;
   }
+  wizard.pending = false;
+  wizard.searched = r.data?.numbers || [];
+  rerenderWizard();
 }
 
 async function selectNumber(payload) {
@@ -1513,36 +2358,23 @@ async function selectNumber(payload) {
   }
   wizard.pending = true; wizard.errorMsg = "";
   rerenderWizard();
-  try {
-    const resp = await fetch("/api/setup/select", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...payload, route: "/step04" }),
-    });
-    const data = await resp.json();
-    if (!resp.ok) {
-      wizard.pending = false;
-      wizard.errorMsg = data.error || "Could not configure the number.";
-      rerenderWizard();
-      return;
-    }
+  const r = await swApi("POST", "/api/setup/select", { ...payload, route: "/step04" }, { label: "configure phone number" });
+  if (!r.ok) {
     wizard.pending = false;
-    wizard.setup = data.setup;
-    state.milestone = 3;
-    persist();
-    renderAll();
-  } catch (e) {
-    wizard.pending = false;
-    wizard.errorMsg = e.message || "Network error.";
+    wizard.errorMsg = r.data?.error || r.error || "Could not configure the number.";
     rerenderWizard();
+    return;
   }
+  wizard.pending = false;
+  wizard.setup = r.data?.setup;
+  state.milestone = 3;
+  persist();
+  renderAll();
 }
 
 async function restartWizard() {
   if (!confirm("Forget the configured phone number? This won't release the number from your SignalWire account — it just resets the workshop wizard.")) return;
-  try {
-    await fetch("/api/setup/reset", { method: "POST" });
-  } catch (e) { /* best effort */ }
+  await swApi("POST", "/api/setup/reset", undefined, { label: "reset workshop state" });
   wizard.numbers = null; wizard.searched = null; wizard.setup = null; wizard.errorMsg = "";
   state.milestone = 1;
   state.onboardingComplete = false;
@@ -1560,10 +2392,9 @@ function backMilestone() {
 
 function completeOnboarding() {
   state.onboardingComplete = true;
-  if (!state.visited.includes("/step04")) state.visited.push("/step04");
-  state.activeStep = "/step04";
   persist();
-  renderAll();
+  // Route through setActiveStep so the first-visit celebration fires on entry.
+  setActiveStep("/step04");
 }
 
 /* ---- Locked previews (Onboarding state) ---- */
@@ -1649,6 +2480,8 @@ function renderWorkshop() {
       <div class="timeline-sticky"><div class="timeline-sticky-inner">${renderTimeline()}</div></div>
       ${renderStepsStack()}
     </section>
+
+    ${renderReceiptsSection()}
 
     <section class="pillars-section" id="pillars-section">
       <div class="pillars-head">
@@ -1776,6 +2609,7 @@ function renderWorkshop() {
       setActiveStep(sec.dataset.route);
     });
   });
+  document.getElementById("receipts-head")?.addEventListener("click", () => receipts.toggleCollapse());
   document.querySelectorAll("[data-aim-route]").forEach(b => {
     b.addEventListener("click", async e => {
       e.stopPropagation();
@@ -1928,14 +2762,19 @@ function setActiveStep(route) {
   activePillarStreams.clear();
   // WHY: a live call's root element is about to be re-rendered away.
   if (window.RelayCall) window.RelayCall.hangup();
+  const firstVisit = !state.visited.includes(route);
   state.activeStep = route;
-  if (!state.visited.includes(route)) state.visited.push(route);
+  if (firstVisit) state.visited.push(route);
   persist();
   renderAll();
   // Center the new active section under the sticky timeline.
   requestAnimationFrame(() => {
     const target = document.querySelector(".step-section.active");
     if (target) target.scrollIntoView({ block: "center", behavior: "smooth" });
+    if (firstVisit) {
+      // small delay so the scroll lands before confetti
+      setTimeout(() => celebrateUnlock(route), 320);
+    }
   });
 }
 
@@ -1945,23 +2784,16 @@ async function aimPhoneNumberAt(route, btn) {
   btn.disabled = true;
   btn.textContent = "Updating…";
   if (statusEl) { statusEl.textContent = ""; statusEl.className = "step-aim-status"; }
-  try {
-    const resp = await fetch("/api/setup/route", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ route }),
-    });
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
-    wizard.setup = data.setup;
-    if (statusEl) { statusEl.textContent = "✓ phone now dials this agent"; statusEl.className = "step-aim-status ok"; }
-    // Re-render the stack so every section reflects the new dial target.
-    setTimeout(() => renderAll(), 600);
-  } catch (e) {
+  const r = await swApi("POST", "/api/setup/route", { route }, { label: "repoint phone to agent" });
+  if (!r.ok) {
     btn.disabled = false;
     btn.textContent = original;
-    if (statusEl) { statusEl.textContent = e.message || "failed"; statusEl.className = "step-aim-status err"; }
+    if (statusEl) { statusEl.textContent = r.data?.error || r.error || "failed"; statusEl.className = "step-aim-status err"; }
+    return;
   }
+  wizard.setup = r.data?.setup;
+  if (statusEl) { statusEl.textContent = "✓ phone now dials this agent"; statusEl.className = "step-aim-status ok"; }
+  setTimeout(() => renderAll(), 600);
 }
 
 let _workshopKeysWired = false;
@@ -1990,6 +2822,7 @@ function renderAll() {
   } else {
     renderOnboarding();
   }
+  buddy.syncProgress();
 }
 
 const activePillarStreams = new Map();
@@ -2104,6 +2937,9 @@ async function runPillar(pillar) {
   });
 }
 
+apiLog.init();
+receipts.init();
+buddy.init();
 loadConfig();
 </script>
 </body>

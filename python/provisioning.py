@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import os
 import pathlib
+import time
 from typing import Optional
 
 from signalwire.rest import Client as RestClient
@@ -98,12 +99,30 @@ def search_available(area_code: Optional[str] = None, limit: int = 3) -> list[di
     ]
 
 
+def _timed(api: str, op: str, fn, trace: list):
+    """Run fn(), append {api, op, ms} to trace. Returns fn's return value."""
+    t0 = time.monotonic()
+    try:
+        return fn()
+    finally:
+        trace.append({"api": api, "op": op, "ms": int((time.monotonic() - t0) * 1000)})
+
+
 def configure_existing(sid: str, route: str, public_base: str) -> dict:
     """Repoint an existing number's voice_url at `route`. Also sync the Fabric handler."""
     target_url = f"{public_base.rstrip('/')}{route}"
     client = _client()
-    updated = client.incoming_phone_numbers(sid).update(voice_url=target_url)
-    ensure_agent_handler(public_base=public_base, route=route)
+    trace: list = []
+    updated = _timed(
+        "LaML", "IncomingPhoneNumber.update",
+        lambda: client.incoming_phone_numbers(sid).update(voice_url=target_url),
+        trace,
+    )
+    _timed(
+        "Fabric", "external_swml_handler.put",
+        lambda: ensure_agent_handler(public_base=public_base, route=route),
+        trace,
+    )
     setup = {
         "sid": updated.sid,
         "phone_number": updated.phone_number,
@@ -111,8 +130,9 @@ def configure_existing(sid: str, route: str, public_base: str) -> dict:
         "voice_url": updated.voice_url,
         "route": route,
         "source": "existing",
+        "_trace": trace,
     }
-    save_setup(setup)
+    save_setup({k: v for k, v in setup.items() if k != "_trace"})
     return setup
 
 
@@ -120,12 +140,21 @@ def purchase_and_configure(phone_number: str, route: str, public_base: str) -> d
     """Buy `phone_number` on the project, set voice_url to `route`, sync handler."""
     target_url = f"{public_base.rstrip('/')}{route}"
     client = _client()
-    bought = client.incoming_phone_numbers.create(
-        phone_number=phone_number,
-        voice_url=target_url,
-        friendly_name=FRIENDLY_NAME,
+    trace: list = []
+    bought = _timed(
+        "LaML", "IncomingPhoneNumber.create",
+        lambda: client.incoming_phone_numbers.create(
+            phone_number=phone_number,
+            voice_url=target_url,
+            friendly_name=FRIENDLY_NAME,
+        ),
+        trace,
     )
-    ensure_agent_handler(public_base=public_base, route=route)
+    _timed(
+        "Fabric", "external_swml_handler.put",
+        lambda: ensure_agent_handler(public_base=public_base, route=route),
+        trace,
+    )
     setup = {
         "sid": bought.sid,
         "phone_number": bought.phone_number,
@@ -133,8 +162,9 @@ def purchase_and_configure(phone_number: str, route: str, public_base: str) -> d
         "voice_url": bought.voice_url,
         "route": route,
         "source": "purchased",
+        "_trace": trace,
     }
-    save_setup(setup)
+    save_setup({k: v for k, v in setup.items() if k != "_trace"})
     return setup
 
 
@@ -146,13 +176,23 @@ def repoint_to_route(route: str, public_base: str) -> dict:
         raise RuntimeError("no provisioned number; run setup first")
     target_url = f"{public_base.rstrip('/')}{route}"
     client = _client()
-    updated = client.incoming_phone_numbers(sid).update(voice_url=target_url)
-    ensure_agent_handler(public_base=public_base, route=route)
+    trace: list = []
+    updated = _timed(
+        "LaML", "IncomingPhoneNumber.update",
+        lambda: client.incoming_phone_numbers(sid).update(voice_url=target_url),
+        trace,
+    )
+    _timed(
+        "Fabric", "external_swml_handler.put",
+        lambda: ensure_agent_handler(public_base=public_base, route=route),
+        trace,
+    )
     setup.update({
         "voice_url": updated.voice_url,
         "route": route,
     })
     save_setup(setup)
+    setup["_trace"] = trace
     return setup
 
 
