@@ -2331,7 +2331,7 @@ function renderMilestoneNumber() {
     body = `<p class="loading-row"><span class="loading-spinner"></span> Looking on your project ${sdkBadge("SDK · client.phone_numbers.list")}…</p>`;
   } else if (existing && existing.length > 0) {
     body = `
-      <p class="lead">Found ${existing.length} number${existing.length === 1 ? '' : 's'} already on your project. Pick one and we'll point it at <strong>Step 4 · Hello Agent</strong>. ${sdkBadge("SDK · client.fabric.resources.assign_phone_route")}</p>
+      <p class="lead">Found ${existing.length} number${existing.length === 1 ? '' : 's'} already on your project. Pick one and we'll point it at <strong>Lv.1 · Hello Agent</strong>. ${sdkBadge("SDK · client.fabric.resources.assign_phone_route")}</p>
       <div class="number-grid">
         ${existing.map((n, i) => `
           <button class="number-card existing" data-existing-sid="${escapeHtml(n.sid)}">
