@@ -28,7 +28,38 @@ import signal
 import sys
 import uuid
 from replit_setup import startup
+import session_store
 from urllib.parse import urlparse
+
+
+def _load_dotenv(path=".env"):
+    """Local-dev convenience: load KEY=VALUE lines from a .env into os.environ.
+
+    Only used for local testing. The file is gitignored and never deployed, so
+    on Replit (which uses the Secrets tab) it simply does not exist and this is
+    a no-op -- meaning workshop attendees are still prompted for their own
+    credentials. Existing env vars are NEVER overwritten, so real environment
+    variables / Replit Secrets always win over the file.
+    """
+    if not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key, value = key.strip(), value.strip().strip("'\"")
+            if key and key not in os.environ:
+                os.environ[key] = value
+
+
+# Load local .env (if present) BEFORE startup so credentials are available for
+# the credentials-status endpoint and the panel auto-collapses during local dev.
+_load_dotenv()
+
+_SESSIONS = session_store.SessionStore(path=".workshop_sessions.json")
+_SESSIONS.load()
 
 # Detect public URL and report secret status (no longer blocks on missing creds)
 base_url, auth_user, auth_pass = startup()
@@ -275,11 +306,12 @@ async def _pump(stream, queue: asyncio.Queue, stream_name: str) -> None:
 
 
 @server.app.get("/run/{pillar}/inputs")
-async def run_inputs(pillar: str):
+async def run_inputs(pillar: str, request: Request):
     if pillar not in PILLAR_REQUIRED_ENV:
         return JSONResponse({"error": "unknown pillar"}, status_code=404)
     required = PILLAR_REQUIRED_ENV[pillar]
-    missing = [k for k in required if not os.environ.get(k)]
+    creds = creds_for(request)
+    missing = [k for k in required if not creds.get(k)]
     return {"pillar": pillar, "required": required, "missing": missing}
 
 
@@ -296,7 +328,8 @@ async def run_pillar(pillar: str, request: Request):
 
     run_id = uuid.uuid4().hex
     queue: asyncio.Queue = asyncio.Queue()
-    env = {**os.environ, **{str(k): str(v) for k, v in inputs.items()}}
+    creds = creds_for(request)
+    env = {**os.environ, **creds, **{str(k): str(v) for k, v in inputs.items()}}
 
     proc = await asyncio.create_subprocess_exec(
         sys.executable, "-u", PILLAR_TO_SCRIPT[pillar],
@@ -346,32 +379,19 @@ async def run_stream(pillar: str, run_id: str):
 # ---------------------------------------------------------------------------
 
 @server.app.get("/api/relay/config")
-async def relay_config():
-    """Mint a fresh subscriber token and return the agent dial address.
-
-    Reuses the step 12 helpers so the browser gets exactly what the REST
-    lesson teaches. Admin creds never leave the server; only the short-lived
-    subscriber token reaches the page.
-    """
-    from python.steps.step12_rest_demo import (
-        DEFAULT_REFERENCE,
-        ensure_agent_handler,
-        mint_subscriber_token,
-    )
-
-    print("[relay/config] request received", flush=True)
+async def relay_config(request: Request):
+    from python.steps.step12_rest_demo import DEFAULT_REFERENCE, ensure_agent_handler, mint_subscriber_token
+    creds = creds_for(request)
+    if not creds:
+        return JSONResponse({"error": "missing credentials"}, status_code=400)
+    session = _SESSIONS.ensure(request.state.session_id)
     try:
         reference = os.environ.get("SUBSCRIBER_REFERENCE", DEFAULT_REFERENCE)
-        print(f"[relay/config] reference={reference!r}", flush=True)
-        print("[relay/config] -> ensure_agent_handler", flush=True)
-        # WHY to_thread: the helpers use blocking requests; keep the loop free.
-        destination = await asyncio.to_thread(ensure_agent_handler, base_url)
-        print(f"[relay/config]    destination={destination}", flush=True)
-        print("[relay/config] -> mint_subscriber_token", flush=True)
-        token, sub_id = await asyncio.to_thread(mint_subscriber_token, reference)
-        print(f"[relay/config]    minted token ({len(token)} chars) for {sub_id}", flush=True)
+        destination = await asyncio.to_thread(ensure_agent_handler, base_url, None, None, creds, session)
+        token, sub_id = await asyncio.to_thread(mint_subscriber_token, reference, None, creds)
+        _SESSIONS.save()
         return JSONResponse({"token": token, "destination": destination})
-    except Exception as e:  # noqa: BLE001 - report a clean error, never a 500 stack
+    except Exception as e:  # noqa: BLE001
         print(f"[relay/config] FAILED: {e.__class__.__name__}: {e}", flush=True)
         return JSONResponse({"error": str(e)}, status_code=503)
 
@@ -386,23 +406,60 @@ async def relay_config():
 
 _CRED_KEYS = ("SIGNALWIRE_PROJECT_ID", "SIGNALWIRE_TOKEN", "SIGNALWIRE_SPACE")
 
+_SESSION_COOKIE = "sw_session"
 
-def _credentials_status():
+
+@server.app.middleware("http")
+async def _session_cookie(request: Request, call_next):
+    sid = request.cookies.get(_SESSION_COOKIE)
+    is_new = not sid or _SESSIONS.get(sid) is None
+    if is_new:
+        sid = session_store.new_session_id()
+    request.state.session_id = sid
+    _SESSIONS.ensure(sid)
+    _SESSIONS.sweep()
+    response = await call_next(request)
+    if is_new:
+        response.set_cookie(_SESSION_COOKIE, sid, max_age=12 * 60 * 60,
+                            httponly=True, samesite="lax", secure=True, path="/")
+    return response
+
+
+def env_fallback_allowed() -> bool:
+    """Allow falling back to env/.env creds ONLY when not a Replit deployment."""
+    return not os.environ.get("REPLIT_DEPLOYMENT")
+
+
+def _env_creds() -> dict:
+    return {k: os.environ[k] for k in _CRED_KEYS if os.environ.get(k)}
+
+
+def creds_for(request: Request) -> dict:
+    """The caller session's creds, or env creds when running locally (dev)."""
+    rec = _SESSIONS.ensure(request.state.session_id)
+    if all(rec["creds"].get(k) for k in _CRED_KEYS):
+        return dict(rec["creds"])
+    if env_fallback_allowed():
+        env = _env_creds()
+        if all(env.get(k) for k in _CRED_KEYS):
+            return env
+    return {}
+
+
+def _credentials_status_for(creds: dict):
     return {
-        "configured": all(os.environ.get(k) for k in _CRED_KEYS),
+        "configured": all(creds.get(k) for k in _CRED_KEYS),
         "fields": {
-            "SIGNALWIRE_PROJECT_ID": bool(os.environ.get("SIGNALWIRE_PROJECT_ID")),
-            "SIGNALWIRE_TOKEN": bool(os.environ.get("SIGNALWIRE_TOKEN")),
-            # WHY value not bool: the space is a non-secret domain, so echo it to
-            # prefill the form on reload. Project id and token stay masked.
-            "SIGNALWIRE_SPACE": os.environ.get("SIGNALWIRE_SPACE", ""),
+            "SIGNALWIRE_PROJECT_ID": bool(creds.get("SIGNALWIRE_PROJECT_ID")),
+            "SIGNALWIRE_TOKEN": bool(creds.get("SIGNALWIRE_TOKEN")),
+            "SIGNALWIRE_SPACE": creds.get("SIGNALWIRE_SPACE", ""),
         },
     }
 
 
 @server.app.get("/api/credentials/status")
-async def credentials_status():
-    return JSONResponse(_credentials_status())
+async def credentials_status(request: Request):
+    return JSONResponse(_credentials_status_for(creds_for(request)))
 
 
 @server.app.post("/api/credentials")
@@ -411,14 +468,16 @@ async def set_credentials(request: Request):
     body = json.loads(raw) if raw else {}
     if not isinstance(body, dict):
         return JSONResponse({"error": "expected a JSON object"}, status_code=400)
+    rec = _SESSIONS.ensure(request.state.session_id)
     for k in _CRED_KEYS:
         if k in body:
             value = str(body[k]).strip()
             if value:
-                os.environ[k] = value
+                rec["creds"][k] = value
             else:
-                os.environ.pop(k, None)  # empty value clears it
-    return JSONResponse(_credentials_status())
+                rec["creds"].pop(k, None)
+    _SESSIONS.save()
+    return JSONResponse(_credentials_status_for(creds_for(request)))
 
 # ---------------------------------------------------------------------------
 # Workshop setup — automate phone-number + webhook plumbing via REST.
@@ -427,12 +486,6 @@ async def set_credentials(request: Request):
 # ---------------------------------------------------------------------------
 
 VALID_AGENT_ROUTES = {r for r, _, _ in STEPS}
-
-
-def _require_creds():
-    missing = [k for k in _CRED_KEYS if not os.environ.get(k)]
-    if missing:
-        raise RuntimeError(f"missing credentials: {', '.join(missing)}")
 
 
 def _require_public_base():
@@ -449,22 +502,27 @@ def _normalize_route(route: str) -> str:
     return route
 
 
+def _missing_creds_response(creds):
+    if not creds:
+        return JSONResponse({"error": "missing credentials"}, status_code=400)
+    return None
+
+
 @server.app.get("/api/setup/status")
-async def setup_status():
+async def setup_status(request: Request):
     from python.provisioning import setup_status as _status
-    return JSONResponse(_status(base_url or ""))
+    session = _SESSIONS.ensure(request.state.session_id)
+    return JSONResponse(_status(creds_for(request), session.get("setup", {}), base_url or ""))
 
 
 @server.app.get("/api/setup/numbers")
-async def setup_numbers():
-    """Existing IncomingPhoneNumbers on the project (max 3)."""
-    try:
-        _require_creds()
-    except RuntimeError as e:
-        return JSONResponse({"error": str(e)}, status_code=400)
+async def setup_numbers(request: Request):
+    creds = creds_for(request)
+    r = _missing_creds_response(creds)
+    if r: return r
     from python.provisioning import list_existing_numbers
     try:
-        nums = await asyncio.to_thread(list_existing_numbers, 3)
+        nums = await asyncio.to_thread(list_existing_numbers, creds, 3)
         return JSONResponse({"numbers": nums})
     except Exception as e:  # noqa: BLE001
         return JSONResponse({"error": f"{e.__class__.__name__}: {e}"}, status_code=502)
@@ -472,19 +530,16 @@ async def setup_numbers():
 
 @server.app.post("/api/setup/search")
 async def setup_search(request: Request):
-    """Search up to 3 available US local numbers, with optional area_code filter."""
-    try:
-        _require_creds()
-    except RuntimeError as e:
-        return JSONResponse({"error": str(e)}, status_code=400)
-    raw = await request.body()
-    body = json.loads(raw) if raw else {}
+    creds = creds_for(request)
+    r = _missing_creds_response(creds)
+    if r: return r
+    raw = await request.body(); body = json.loads(raw) if raw else {}
     area_code = body.get("area_code")
     if area_code and not str(area_code).isdigit():
         return JSONResponse({"error": "area_code must be digits"}, status_code=400)
     from python.provisioning import search_available
     try:
-        nums = await asyncio.to_thread(search_available, str(area_code) if area_code else None, 3)
+        nums = await asyncio.to_thread(search_available, creds, str(area_code) if area_code else None, 3)
         return JSONResponse({"numbers": nums, "area_code": area_code or None})
     except Exception as e:  # noqa: BLE001
         return JSONResponse({"error": f"{e.__class__.__name__}: {e}"}, status_code=502)
@@ -492,30 +547,31 @@ async def setup_search(request: Request):
 
 @server.app.post("/api/setup/select")
 async def setup_select(request: Request):
-    """Configure a chosen number — either existing (by sid) or to-be-purchased (by phone_number)."""
+    creds = creds_for(request)
+    r = _missing_creds_response(creds)
+    if r: return r
     try:
-        _require_creds()
         public = _require_public_base()
     except RuntimeError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
-    raw = await request.body()
-    body = json.loads(raw) if raw else {}
+    raw = await request.body(); body = json.loads(raw) if raw else {}
     route = body.get("route", "/step04")
     try:
         route = _normalize_route(route)
     except RuntimeError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
-    sid = body.get("sid")
-    phone_to_buy = body.get("phone_number")
+    sid = body.get("sid"); phone_to_buy = body.get("phone_number")
     if not sid and not phone_to_buy:
         return JSONResponse({"error": "either sid or phone_number is required"}, status_code=400)
     from python.provisioning import configure_existing, purchase_and_configure
+    session = _SESSIONS.ensure(request.state.session_id)
     try:
         if sid:
-            result = await asyncio.to_thread(configure_existing, sid, route, public)
+            result = await asyncio.to_thread(configure_existing, creds, sid, route, public)
         else:
-            result = await asyncio.to_thread(purchase_and_configure, phone_to_buy, route, public)
+            result = await asyncio.to_thread(purchase_and_configure, creds, phone_to_buy, route, public)
         trace = result.pop("_trace", [])
+        session["setup"] = result; _SESSIONS.save()
         return JSONResponse({"setup": result, "_trace": trace})
     except Exception as e:  # noqa: BLE001
         return JSONResponse({"error": f"{e.__class__.__name__}: {e}"}, status_code=502)
@@ -523,33 +579,34 @@ async def setup_select(request: Request):
 
 @server.app.post("/api/setup/route")
 async def setup_route(request: Request):
-    """Re-point the saved number at a different agent step (SWML webhook)."""
+    creds = creds_for(request)
+    r = _missing_creds_response(creds)
+    if r: return r
     try:
-        _require_creds()
         public = _require_public_base()
     except RuntimeError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
-    raw = await request.body()
-    body = json.loads(raw) if raw else {}
+    raw = await request.body(); body = json.loads(raw) if raw else {}
     route = body.get("route")
     try:
         route = _normalize_route(route)
     except RuntimeError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
     from python.provisioning import repoint_to_route
+    session = _SESSIONS.ensure(request.state.session_id)
     try:
-        result = await asyncio.to_thread(repoint_to_route, route, public)
+        result = await asyncio.to_thread(repoint_to_route, creds, session.get("setup", {}), route, public)
         trace = result.pop("_trace", [])
+        session["setup"] = result; _SESSIONS.save()
         return JSONResponse({"setup": result, "_trace": trace})
     except Exception as e:  # noqa: BLE001
         return JSONResponse({"error": f"{e.__class__.__name__}: {e}"}, status_code=502)
 
 
 @server.app.post("/api/setup/reset")
-async def setup_reset():
-    """Forget the persisted phone number/handler. Does NOT release the number."""
-    from python.provisioning import clear_setup
-    clear_setup()
+async def setup_reset(request: Request):
+    session = _SESSIONS.ensure(request.state.session_id)
+    session["setup"] = {}; _SESSIONS.save()
     return JSONResponse({"ok": True})
 
 

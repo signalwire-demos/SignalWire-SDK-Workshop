@@ -51,7 +51,14 @@ def _log(msg):
     print(f"[step12] {msg}", flush=True)
 
 
-def _creds():
+def _creds(creds=None):
+    """Return (project, token, space). Prefer explicit creds (in-process,
+    per-session); fall back to env (the standalone subprocess path)."""
+    if creds:
+        try:
+            return (creds["SIGNALWIRE_PROJECT_ID"], creds["SIGNALWIRE_TOKEN"], creds["SIGNALWIRE_SPACE"])
+        except KeyError as missing:
+            raise RuntimeError(f"missing required credential: {missing.args[0]}") from None
     try:
         return (
             os.environ["SIGNALWIRE_PROJECT_ID"],
@@ -62,13 +69,13 @@ def _creds():
         raise RuntimeError(f"missing required env var: {missing.args[0]}") from None
 
 
-def _client():
+def _client(creds=None):
     """SignalWire REST client (Fabric + Relay namespaces) from the agents SDK.
 
     WHY pass token explicitly: the SDK defaults the token env var to
     SIGNALWIRE_API_TOKEN, but the workshop standardizes on SIGNALWIRE_TOKEN.
     """
-    project, token, space = _creds()
+    project, token, space = _creds(creds)
     return SignalWireClient(project=project, token=token, host=space)
 
 
@@ -132,7 +139,7 @@ def _find_swml_webhook(client):
     return None, None
 
 
-def ensure_agent_handler(public_base=None, route=None, client=None):
+def ensure_agent_handler(public_base=None, route=None, client=None, creds=None, cache=None):
     """Find or create the agent's SWML webhook resource; return its audio address.
 
     If `route` is provided and differs from the resource's primary_request_url,
@@ -143,18 +150,22 @@ def ensure_agent_handler(public_base=None, route=None, client=None):
     target_route = route or DEFAULT_AGENT_PATH
     target_url = _authed_url(_public_base(public_base), target_route)
 
-    if _agent_address_cache and route is None:
-        _log("address from process cache")
-        return _agent_address_cache
+    if cache is not None:
+        if cache.get("agent_address") and route is None:
+            _log("address from session cache")
+            return cache["agent_address"]
+    else:
+        if _agent_address_cache and route is None:
+            _log("address from process cache")
+            return _agent_address_cache
+        space = os.environ.get("SIGNALWIRE_SPACE", "")
+        cached = _load_cache(space)
+        if cached and route is None:
+            _log(f"address from file cache: {cached}")
+            _agent_address_cache = cached
+            return cached
 
-    space = os.environ.get("SIGNALWIRE_SPACE", "")
-    cached = _load_cache(space)
-    if cached and route is None:
-        _log(f"address from file cache: {cached}")
-        _agent_address_cache = cached
-        return cached
-
-    client = client or _client()
+    client = client or _client(creds)
     resource_id, current_url = _find_swml_webhook(client)
     if resource_id:
         _log(f"matched existing SWML webhook id={resource_id}")
@@ -183,12 +194,15 @@ def ensure_agent_handler(public_base=None, route=None, client=None):
     addrs = client.fabric.swml_webhooks.list_addresses(resource_id)
     address = addrs["data"][0]["channels"]["audio"]
     _log(f"agent dial address: {address}")
-    _agent_address_cache = address
-    _save_cache(space, address)
+    if cache is not None:
+        cache["agent_address"] = address
+    else:
+        _agent_address_cache = address
+        _save_cache(os.environ.get("SIGNALWIRE_SPACE", ""), address)
     return address
 
 
-def assign_number_to_agent(e164, public_base=None, route=None, client=None):
+def assign_number_to_agent(e164, public_base=None, route=None, client=None, creds=None):
     """Route a PSTN number to the agent's SWML webhook resource (Call Fabric).
 
     Assigns the number to the SWML webhook Resource as a phone route, exactly
@@ -196,7 +210,7 @@ def assign_number_to_agent(e164, public_base=None, route=None, client=None):
 
     Returns {"resource_id", "phone_route_id"}.
     """
-    client = client or _client()
+    client = client or _client(creds)
     # Ensure the resource exists and points at the requested route, then find it.
     ensure_agent_handler(public_base=public_base, route=route, client=client)
     resource_id, _ = _find_swml_webhook(client)
@@ -226,9 +240,9 @@ def assign_number_to_agent(e164, public_base=None, route=None, client=None):
     return {"resource_id": resource_id, "phone_route_id": phone_route_id}
 
 
-def mint_subscriber_token(reference=DEFAULT_REFERENCE, client=None):
+def mint_subscriber_token(reference=DEFAULT_REFERENCE, client=None, creds=None):
     """Mint a short-lived subscriber token. Returns (token, subscriber_id)."""
-    client = client or _client()
+    client = client or _client(creds)
     _log(f"minting subscriber token (reference={reference!r})")
     data = client.fabric.tokens.create_subscriber_token(reference=reference)
     sid = data.get("subscriber_id", "")

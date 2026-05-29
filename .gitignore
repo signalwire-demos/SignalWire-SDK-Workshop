@@ -16,3 +16,5 @@ calls/
 .superpowers/
 .agent_handler_cache.json
 .workshop_setup.json
+.workshop_credentials.json
+.workshop_sessions.json

@@ -855,6 +855,20 @@
     display: block; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase;
     color: var(--sw-blue); font-weight: 700; margin-bottom: 4px;
   }
+  /* "What each new line does" — plain-English gloss of the star methods */
+  .powerup-methods { display: flex; flex-direction: column; gap: 9px; }
+  .powerup-methods-label {
+    font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--sw-cyan); font-weight: 700;
+  }
+  .pu-method { font-size: 12.5px; line-height: 1.5; }
+  .pu-method-call {
+    font-family: 'JetBrains Mono','SF Mono',monospace; font-size: 11.5px;
+    color: var(--sw-cyan); background: rgba(64,224,208,0.10);
+    border: 1px solid rgba(64,224,208,0.25); border-radius: 5px;
+    padding: 1px 6px; margin-right: 2px;
+  }
+  .pu-method-does { color: var(--sw-text); }
 
   /* doc-links - small reference list inside cards */
   .doc-links {
@@ -1206,8 +1220,6 @@
     .step-advance .btn-primary, .step-advance .btn-secondary { width: 100%; justify-content: center; }
     .flow-strip { gap: 8px; }
     .flow-arrow { display: none; }
-    .creds-fields label { min-width: 100%; }
-
     .creds-grid { grid-template-columns: 1fr; }
     .number-grid { grid-template-columns: 1fr; }
     .signup-invite { flex-direction: column; align-items: stretch; text-align: left; padding: 18px 18px; }
@@ -1260,49 +1272,6 @@
     font: inherit; cursor: pointer;
   }
   .link-button:hover { text-decoration: underline; }
-
-  /* ===== Shared credentials panel (feeds BOTH pillars) ===== */
-  .creds-panel {
-    background: linear-gradient(180deg, rgba(4,78,244,0.08) 0%, var(--sw-card) 60%);
-    border: 1px solid rgba(4,78,244,0.35);
-    border-radius: 16px; padding: 22px 24px; margin-bottom: 22px;
-    box-shadow: 0 16px 40px -22px rgba(4,78,244,0.5);
-  }
-  .creds-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
-  .creds-eyebrow {
-    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--sw-blue); font-weight: 700; display: flex; align-items: center; gap: 8px;
-  }
-  .creds-eyebrow::before { content: '\1F511'; font-size: 12px; }
-  .creds-sub { font-size: 13px; color: var(--sw-text-dim); margin-top: 6px; max-width: 580px; }
-  .creds-status {
-    font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 999px;
-    border: 1px solid var(--sw-border); color: var(--sw-text-dim); white-space: nowrap;
-  }
-  .creds-status.ok { background: rgba(64,224,208,0.12); border-color: var(--sw-cyan); color: var(--sw-cyan); }
-  .creds-status.warn { background: rgba(255,215,0,0.12); border-color: var(--sw-orange); color: var(--sw-orange); }
-  /* Already provided in the setup wizard? Collapse the form, don't re-ask. */
-  .creds-ready { display: none; align-items: center; gap: 12px; margin-top: 14px; font-size: 13.5px; color: var(--sw-text); flex-wrap: wrap; }
-  .creds-ready-icon { color: var(--sw-cyan); font-weight: 700; }
-  .creds-replace {
-    background: transparent; border: 1px solid var(--sw-border); color: var(--sw-text-dim);
-    padding: 6px 12px; border-radius: 7px; font-size: 12px; cursor: pointer;
-    transition: color 0.2s ease, border-color 0.2s ease;
-  }
-  .creds-replace:hover { color: var(--sw-text-bright); border-color: var(--sw-text-dim); }
-  .creds-panel.is-configured:not(.is-editing) .creds-fields { display: none; }
-  .creds-panel.is-configured:not(.is-editing) .creds-sub { display: none; }
-  .creds-panel.is-configured:not(.is-editing) .creds-ready { display: flex; }
-  .creds-fields { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-top: 16px; }
-  .creds-fields label {
-    display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 170px;
-    font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sw-text-dim); font-weight: 600;
-  }
-  .creds-fields input {
-    background: var(--sw-dark); border: 1px solid var(--sw-border); color: var(--sw-text-bright);
-    padding: 10px 12px; border-radius: 8px; font-size: 14px; font-family: 'SF Mono', monospace;
-  }
-  .creds-fields input:focus { outline: none; border-color: var(--sw-blue); box-shadow: 0 0 0 2px rgba(4,78,244,0.25); }
 
   /* ===== Flow strip: the pipeline at a glance ===== */
   .flow-strip { display: flex; align-items: stretch; gap: 10px; margin-bottom: 22px; flex-wrap: wrap; }
@@ -1395,8 +1364,13 @@ const STEPS_META = [
         { t: '        self.prompt_add_section("Personality",', new: true },
         { t: '            "You are Buddy, a friendly phone assistant.")', new: true },
       ],
+      methods: [
+        { call: "AgentBase", does: "The starting point. Your agent is just a Python class built on top of this — everything else is a method you call on it." },
+        { call: "add_language()", does: "Sets the voice and language Buddy speaks in. \"rime.spore\" is the voice — swap that one string and he sounds like someone else." },
+        { call: "prompt_add_section()", does: "Buddy's instructions, in plain English. This text IS his personality — edit it and you've changed the agent." },
+      ],
       buddy: "prompt_add_section is literally my personality. Change that text and you change who I am.",
-      why: "AgentBase plus one prompt section equals a working voice agent.",
+      unlocks: "A class, a voice, and one paragraph of instructions — that's a working phone agent.",
     },
     stem: "step04_hello",
     desc: "The simplest possible agent. Call your number and have a basic conversation with Buddy. Proves everything works end to end.",
@@ -1428,8 +1402,12 @@ const STEPS_META = [
         { t: "def on_tell_joke(self, args, raw_data):" },
         { t: "    return FunctionResult(random.choice(JOKES))", new: true },
       ],
+      methods: [
+        { call: "define_tool()", does: "Registers a function the AI can call on its own. You write what it does; the AI decides when to use it based on what the caller says. (SignalWire calls these SWAIG functions.)" },
+        { call: "FunctionResult()", does: "What your function hands back for Buddy to say out loud." },
+      ],
       buddy: "define_tool() hands me a new ability the AI can call on its own, whenever a caller asks.",
-      why: "One define_tool() call equals one new skill the AI can invoke.",
+      unlocks: "One define_tool() call = one new thing the AI can do — no phone menus, no \"press 1\", no training.",
     },
     stem: "step06_hardcoded_jokes",
     desc: "Teaches the AI to tell jokes using a SWAIG function. The handler picks a random joke from a hardcoded list.",
@@ -1460,8 +1438,12 @@ const STEPS_META = [
         { t: '    joke = resp.json()["joke"]', new: true },
         { t: '    return FunctionResult(f"Dad joke: {joke}")' },
       ],
+      methods: [
+        { call: "on_tell_joke()", does: "The function's handler — your own Python code. Because it runs on your server, it can do anything Python can." },
+        { call: "requests.get()", does: "Here it calls a live website for a brand-new joke every time, instead of reading from a fixed list." },
+      ],
       buddy: "Same tool, but now I call out to the internet for a brand new joke every single time.",
-      why: "Your handler runs on your server, so it can call any API you like.",
+      unlocks: "Your handler is just code, so any tool can reach any API, database, or system you already have.",
     },
     stem: "step07_api_jokes",
     desc: "Replaces hardcoded jokes with fresh ones from the API Ninjas Dad Jokes API. Every call gets a different joke.",
@@ -1491,8 +1473,12 @@ const STEPS_META = [
         { t: "# DataMap runs ON SignalWire, not your server" },
         { t: 'DataMap("get_weather").webhook("GET", WEATHER_URL)', new: true },
       ],
+      methods: [
+        { call: "DataMap()", does: "Describes an API call that SignalWire makes for you, on their own servers. No server of yours to host, no webhook to expose — you just declare the request and the reply." },
+        { call: ".webhook(\"GET\", URL)", does: "The actual API call DataMap runs. The contrast to remember: define_tool runs on YOUR server, DataMap runs on SignalWire's." },
+      ],
       buddy: "DataMap lets SignalWire make the API call for me. define_tool runs on your box; DataMap runs on theirs.",
-      why: "Two ways to add tools: your server (define_tool) or SignalWire's edge (DataMap).",
+      unlocks: "Two ways to add a tool — your server (define_tool) or SignalWire's (DataMap). Same agent, your call.",
     },
     stem: "step08_weather",
     desc: "Adds weather lookups using DataMap - a serverless approach where SignalWire calls the weather API directly.",
@@ -1518,13 +1504,17 @@ const STEPS_META = [
       lang: "step09_polish.py",
       lines: [
         { t: "self.set_params({", new: true },
-        { t: '    "ai_volume": 5,', new: true },
-        { t: '    "end_of_speech_timeout": 500,', new: true },
+        { t: '    "end_of_speech_timeout": 600,', new: true },
+        { t: '    "attention_timeout": 15000,', new: true },
         { t: "})", new: true },
-        { t: 'self.prompt_add_section("Personality", "...")' },
+        { t: 'self.add_hints(["Buddy", "weather", "forecast"])', new: true },
+      ],
+      methods: [
+        { call: "set_params()", does: "The dials for how Buddy behaves — like how long a pause means \"I'm done talking\" (600ms), and when to gently check back in after silence. This is what stops him sounding robotic." },
+        { call: "add_hints()", does: "Words to listen for. Telling the speech recognizer to expect \"Buddy\", \"weather\", and so on helps it hear them correctly." },
       ],
       buddy: "set_params is my dials: how fast I respond, how I sound. This is where I stop sounding like a robot.",
-      why: "Behavior tuning lives in set_params plus layered prompt sections.",
+      unlocks: "Same features as before — just tuned timing and sharper listening for a natural conversation.",
     },
     stem: "step09_polish",
     desc: "Same capabilities as Step 8, but with a much better conversation experience. Better personality, timing, and speech recognition.",
@@ -1553,8 +1543,12 @@ const STEPS_META = [
         { t: '    {"default_timezone": "America/New_York"})', new: true },
         { t: 'self.add_skill("math")', new: true },
       ],
+      methods: [
+        { call: "add_skill(\"datetime\")", does: "Adds a ready-made capability in one line — no function to write. Date and time just work, with options like the default timezone." },
+        { call: "add_skill(\"math\")", does: "Same idea: instant math — tips, percentages, conversions — with zero extra code." },
+      ],
       buddy: "add_skill() is the cheat code. One line and I can do a whole new thing, with no handler to write.",
-      why: "Prebuilt skills are instant capabilities, one line each.",
+      unlocks: "Skills are pre-built tools that ship with the SDK. One line each — it wires up the function, the prompt, and the hints for you.",
     },
     stem: "step10_skills",
     desc: "Adds date/time and math capabilities with just two lines of code. Skills are pre-built capabilities that ship with the SDK.",
@@ -1585,8 +1579,12 @@ const STEPS_META = [
         { t: "    self._register_joke_function()", new: true },
         { t: "    self._register_skills()", new: true },
       ],
+      methods: [
+        { call: "_configure_voice() / _configure_prompts()", does: "The same setup as before, just split into small, clearly-named methods instead of one giant __init__." },
+        { call: "_register_joke_function() / _register_skills()", does: "Each capability's wiring lives in its own method, so the agent stays easy to read and easy to grow." },
+      ],
       buddy: "Same me, just tidy. Everything split into _configure_* and _register_* methods so I'm easy to grow.",
-      why: "Production pattern: small focused setup methods instead of one giant __init__.",
+      unlocks: "Nothing new for the caller — this is the clean structure you'd use to build a real, larger agent.",
     },
     stem: "step11_complete",
     desc: "Everything polished and organized into clean private methods. The production-ready pattern for building larger agents.",
@@ -2140,6 +2138,12 @@ async function loadConfig() {
       if (cfg.auth_pass) authPass = cfg.auth_pass;
     }
   } catch (e) { /* keep defaults */ }
+  // Hydrate real credential status so the gate (renderAll) can decide between
+  // the dashboard and the login wizard. Fail closed: any error => not configured.
+  try {
+    const cr = await fetch("/api/credentials/status");
+    state.credsConfigured = cr.ok ? !!(await cr.json()).configured : false;
+  } catch (e) { state.credsConfigured = false; }
   // Hydrate wizard.setup from server so a returning user sees their number
   // without having to walk the wizard again.
   const sr = await swApi("GET", "/api/setup/status", undefined, { label: "hydrate setup state" });
@@ -2185,6 +2189,7 @@ const state = {
   milestone: Math.min(3, Math.max(1, parseInt(localStorage.getItem("chicago2026.milestone") || "1", 10) || 1)),
   visited: JSON.parse(localStorage.getItem("chicago2026.visited") || "[]"),
   activeStep: localStorage.getItem("chicago2026.activeStep") || "/step04",
+  credsConfigured: false,  // hydrated from /api/credentials/status at boot
 };
 
 function persist() {
@@ -2476,6 +2481,7 @@ async function submitCredentials() {
     return;
   }
   wizard.pending = false;
+  state.credsConfigured = true;  // server confirmed configured:true above
   state.milestone = 2;
   wizard.numbers = null; wizard.searched = null;
   persist();
@@ -2495,6 +2501,12 @@ async function loadExistingNumbers() {
   }
   wizard.pending = false;
   wizard.numbers = r.data?.numbers || [];
+  // No numbers on the project yet? Auto-search so three buyable numbers appear
+  // immediately — the user can click-to-purchase, or search an area code instead.
+  if (wizard.numbers.length === 0 && wizard.searched === null) {
+    runSearch("");
+    return;
+  }
   rerenderWizard();
 }
 
@@ -2654,34 +2666,6 @@ function renderWorkshop() {
         <p>SignalWire is more than AI voice. It is programmable communications infrastructure: voice, messaging, video, SIP, and Call Fabric. Both pillars below run from your browser, no phone required.</p>
       </div>
 
-      <div class="creds-panel">
-        <div class="creds-head">
-          <div>
-            <div class="creds-eyebrow">SignalWire credentials</div>
-            <div class="creds-sub">Enter these once. Both pillars below authenticate with them against the Call Fabric REST API. Your API token is posted to this app's server only, never stored in the browser.</div>
-          </div>
-          <span class="creds-status" id="creds-status">Checking...</span>
-        </div>
-        <div class="creds-fields">
-          <label>Project ID
-            <input type="text" id="cred-project" autocomplete="off" spellcheck="false" placeholder="PXxxxxxxxx" />
-          </label>
-          <label>API Token
-            <input type="text" id="cred-token" autocomplete="off" spellcheck="false" placeholder="PTxxxxxxxx" />
-          </label>
-          <label>Space URL
-            <input type="text" id="cred-space" autocomplete="off" placeholder="your-space.signalwire.com" />
-          </label>
-          <button class="btn-copy" id="cred-save">Save credentials</button>
-          <button class="src-btn" id="cred-clear">Clear</button>
-        </div>
-        <div class="creds-ready">
-          <span class="creds-ready-icon">✓</span>
-          <span>Using the SignalWire credentials from your setup above. Both pillars are ready to run.</span>
-          <button class="creds-replace" id="cred-replace" type="button">Replace</button>
-        </div>
-      </div>
-
       <div class="flow-strip">
         <div class="flow-step">
           <span class="flow-num">1</span>
@@ -2775,6 +2759,8 @@ function renderWorkshop() {
       const pu = btn.closest(".powerup");
       const open = pu.classList.toggle("is-open");
       btn.setAttribute("aria-expanded", String(open));
+      const toggle = btn.querySelector(".powerup-toggle");
+      if (toggle) toggle.innerHTML = `${open ? "Hide" : "Show code"} <span class="powerup-chev">▾</span>`;
     });
   });
   document.querySelectorAll("[data-copy-swml]").forEach(b => {
@@ -2810,8 +2796,6 @@ function renderWorkshop() {
     relayCallBtn.addEventListener("click", () => window.RelayCall && window.RelayCall.start(refs));
     document.getElementById("relay-hangup-btn")?.addEventListener("click", () => window.RelayCall && window.RelayCall.hangup());
   }
-
-  wireCredsPanel();
 }
 
 function renderPinnedUrlCard() {
@@ -2870,14 +2854,14 @@ function renderCodeSpotlight(step) {
     `<span class="cl${l.new ? " is-new" : ""}">${escapeHtml(l.t) || " "}</span>`
   ).join("\n");
   return `
-    <div class="powerup">
-      <button type="button" class="powerup-head" aria-expanded="false">
+    <div class="powerup is-open">
+      <button type="button" class="powerup-head" aria-expanded="true">
         <span class="powerup-bolt">⚡</span>
         <span class="powerup-titles">
-          <span class="powerup-eyebrow">Power-up · ${escapeHtml(step.step)}</span>
+          <span class="powerup-eyebrow">Here's the code · ${escapeHtml(step.step)}</span>
           <span class="powerup-power">${escapeHtml(cs.power)}</span>
         </span>
-        <span class="powerup-toggle">Peek at the code <span class="powerup-chev">▾</span></span>
+        <span class="powerup-toggle">Hide <span class="powerup-chev">▾</span></span>
       </button>
       <div class="powerup-body">
         <div class="powerup-code">
@@ -2889,8 +2873,13 @@ function renderCodeSpotlight(step) {
           <pre class="powerup-pre">${code}</pre>
         </div>
         <div class="powerup-aside">
+          ${cs.methods && cs.methods.length ? `
+          <div class="powerup-methods">
+            <span class="powerup-methods-label">What each new line does</span>
+            ${cs.methods.map(m => `<div class="pu-method"><code class="pu-method-call">${escapeHtml(m.call)}</code><span class="pu-method-does">${escapeHtml(m.does)}</span></div>`).join("")}
+          </div>` : ""}
           <div class="buddy-quote"><span class="buddy-quote-icon">💬</span><span>${escapeHtml(cs.buddy)}</span></div>
-          <div class="powerup-why"><span class="powerup-why-label">Why it matters</span>${escapeHtml(cs.why)}</div>
+          <div class="powerup-why"><span class="powerup-why-label">Unlocks</span>${escapeHtml(cs.unlocks || cs.why || "")}</div>
         </div>
       </div>
     </div>`;
@@ -3033,89 +3022,32 @@ function wireWorkshopKeys() {
 
 /* ---- Render dispatcher ---- */
 function renderAll() {
+  // Login gate: without real server-side credentials the user must not reach the
+  // dashboard, regardless of any stale localStorage onboarding flag. Send them to
+  // the wizard's credentials step (the "login page").
+  if (!state.credsConfigured) {
+    if (state.onboardingComplete || state.milestone !== 1) {
+      state.onboardingComplete = false;
+      state.milestone = 1;
+      persist();
+    }
+    renderOnboarding();
+    return;
+  }
   if (state.onboardingComplete) {
     renderWorkshop();
   } else {
+    // Creds already configured (a local .env, or a returning configured session) —
+    // skip the credentials-entry step so the user is never re-prompted to "log in".
+    if (state.milestone === 1) {
+      state.milestone = 2;
+      persist();
+    }
     renderOnboarding();
   }
 }
 
 const activePillarStreams = new Map();
-async function wireCredsPanel() {
-  const statusEl = document.getElementById("creds-status");
-  const projectEl = document.getElementById("cred-project");
-  const tokenEl = document.getElementById("cred-token");
-  const spaceEl = document.getElementById("cred-space");
-  if (!statusEl) return;
-
-  const panelEl = statusEl.closest(".creds-panel");
-
-  function paint(s) {
-    // WHY prefill only when blank: do not clobber what the user is typing.
-    if (s.fields && s.fields.SIGNALWIRE_SPACE && spaceEl && !spaceEl.value) {
-      spaceEl.value = s.fields.SIGNALWIRE_SPACE;
-    }
-    // WHY collapse when configured: the credentials were already entered in the
-    // setup wizard above. Re-prompting with empty fields here is redundant, so
-    // show a compact "ready" confirmation instead (with a Replace escape hatch).
-    if (panelEl) panelEl.classList.toggle("is-configured", !!s.configured);
-    if (s.configured) {
-      statusEl.textContent = "Credentials set - both pillars ready";
-      statusEl.className = "creds-status ok";
-    } else {
-      statusEl.textContent = "Not set - enter to enable the pillars";
-      statusEl.className = "creds-status warn";
-    }
-  }
-
-  async function refresh() {
-    try { paint(await (await fetch("/api/credentials/status")).json()); }
-    catch (e) { /* leave status as-is */ }
-  }
-
-  document.getElementById("cred-save")?.addEventListener("click", async () => {
-    statusEl.textContent = "Saving...";
-    statusEl.className = "creds-status";
-    // WHY omit blanks: re-saving after the secret fields self-clear must not
-    // wipe creds already stored on the server. Use Clear to wipe.
-    const body = {};
-    if (projectEl.value.trim()) body.SIGNALWIRE_PROJECT_ID = projectEl.value.trim();
-    if (tokenEl.value.trim()) body.SIGNALWIRE_TOKEN = tokenEl.value.trim();
-    if (spaceEl.value.trim()) body.SIGNALWIRE_SPACE = spaceEl.value.trim();
-    const r = await fetch("/api/credentials", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    paint(await r.json());
-    // Collapse back to the ready state once saved.
-    if (panelEl) panelEl.classList.remove("is-editing");
-    // WHY clear secrets from the DOM: do not leave the token in an input.
-    projectEl.value = "";
-    tokenEl.value = "";
-  });
-
-  // "Replace" reveals the form again for someone who wants to swap credentials.
-  document.getElementById("cred-replace")?.addEventListener("click", () => {
-    if (panelEl) panelEl.classList.add("is-editing");
-    projectEl?.focus();
-  });
-
-  document.getElementById("cred-clear")?.addEventListener("click", async () => {
-    const r = await fetch("/api/credentials", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ SIGNALWIRE_PROJECT_ID: "", SIGNALWIRE_TOKEN: "", SIGNALWIRE_SPACE: "" }),
-    });
-    if (projectEl) projectEl.value = "";
-    if (tokenEl) tokenEl.value = "";
-    if (spaceEl) spaceEl.value = "";
-    if (panelEl) panelEl.classList.remove("is-editing");
-    paint(await r.json());
-  });
-
-  refresh();
-}
 
 async function runPillar(pillar) {
   const logPane = document.querySelector(`.run-log[data-pillar="${pillar}"]`);
@@ -3126,10 +3058,10 @@ async function runPillar(pillar) {
   const inputsResp = await fetch(`/run/${pillar}/inputs`);
   const inputsInfo = await inputsResp.json();
 
-  // WHY no inline form here: credentials live in the shared panel above the
-  // pillars. If they are not set yet, point the user there.
   if (inputsInfo.missing && inputsInfo.missing.length > 0) {
-    logPane.textContent = "Enter your SignalWire credentials in the panel above, then click Run REST Demo.";
+    // The credential gate guarantees creds before the dashboard renders, so this
+    // is a defensive fallback only (e.g. creds cleared server-side mid-session).
+    logPane.textContent = "Credentials are no longer available. Reload to return to setup.";
     return;
   }
 
