@@ -98,6 +98,26 @@ When you click **Run**, a single server starts with every workshop step on its o
 
 The code for each agent lives in `python/steps/`. Read through each file to see what changes between steps -- that's the learning path.
 
+### Hosting one shared URL for many attendees (multi-tenant)
+
+When the whole room hits a single deployed URL and each attendee pastes their own
+SignalWire credentials, the app keeps every browser isolated: credentials, the
+provisioned phone number, and the agent handler are scoped to a per-browser
+session (an httpOnly `sw_session` cookie), never to global process state. The
+admin API token stays on the server; the browser only holds the opaque session
+id. Sessions are persisted to disk so a restart does not log everyone out.
+
+Two requirements for the shared deployment:
+
+- **Deploy as a Reserved VM, not Autoscale.** The per-session store lives in the
+  single server process, so it must run on one always-on instance. In the Replit
+  **Deployments** tab choose **Reserved VM** (Autoscale's multiple stateless
+  instances would split sessions and break isolation).
+- **Do NOT set `SIGNALWIRE_*` secrets on the deployment.** Those are per-attendee
+  and entered in the browser. If they were set server-wide, every session would
+  share them. (Locally, a `.env` with `SIGNALWIRE_*` is fine — it auto-fills your
+  own creds for solo testing and is ignored once deployed.)
+
 ---
 
 ## Source Views

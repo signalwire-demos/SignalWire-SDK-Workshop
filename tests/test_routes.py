@@ -37,7 +37,12 @@ def _server():
     if "TEST_BASE_URL" in os.environ:
         yield
         return
-    env = {**os.environ, "PORT": str(_TEST_PORT), "PYTHONUNBUFFERED": "1"}
+    # WHY REPLIT_DEPLOYMENT=1: run the server in its multi-tenant deployment
+    # mode so env/.env credential fallback is disabled. This is what the
+    # credential-isolation tests validate; without it a local .env would make
+    # every fresh session look "configured" and mask cross-session leaks.
+    env = {**os.environ, "PORT": str(_TEST_PORT), "PYTHONUNBUFFERED": "1",
+           "REPLIT_DEPLOYMENT": "1"}
     proc = subprocess.Popen(
         [sys.executable, "main.py"],
         env=env,
@@ -148,7 +153,7 @@ def test_run_rest_with_bogus_creds_streams_an_exit():
 
 
 def test_landing_has_wizard_milestones():
-    """Onboarding state ships with 4 milestones and the wizard card."""
+    """Onboarding state ships with the 3 wizard milestones and the wizard card."""
     r = requests.get(f"{BASE_URL}/", timeout=5)
     assert r.status_code == 200
     text = r.text
@@ -157,7 +162,7 @@ def test_landing_has_wizard_milestones():
     assert "--sw-cyan" in text and "--sw-magenta" in text, "theme variables missing"
     # Wizard wiring
     assert "MILESTONES" in text and "renderMilestones" in text
-    assert "renderMilestone1" in text and "renderMilestone4" in text
+    assert "renderMilestoneCreds" in text and "renderMilestoneDone" in text
     # No green leftovers
     assert "#00c853" not in text, "green sneaked back in - use --sw-cyan"
 
@@ -168,7 +173,7 @@ def test_landing_has_workshop_renderer():
     text = r.text
     assert "renderWorkshop" in text
     assert "renderTimeline" in text
-    assert "renderActiveDetail" in text
+    assert "renderStepSection" in text
     assert "runPillar" in text, "pillar SSE machinery missing"
     assert 'EventSource(`/run/' in text, "EventSource wiring missing"
 
@@ -240,34 +245,54 @@ def test_credentials_status_shape():
     assert set(data["fields"]) == {"SIGNALWIRE_PROJECT_ID", "SIGNALWIRE_TOKEN", "SIGNALWIRE_SPACE"}
 
 
-def test_credentials_shared_across_pillars():
-    # Regression: creds entered once must reach BOTH pillars. Before the fix,
-    # REST-form creds went only to the subprocess, so the relay endpoint
-    # reported "missing required env var". Now a shared server-side store feeds
-    # both the REST subprocess (inherits os.environ) and the relay endpoint.
-    try:
-        r = requests.post(f"{BASE_URL}/api/credentials", json={
-            "SIGNALWIRE_PROJECT_ID": "test-project",
-            "SIGNALWIRE_TOKEN": "test-token",
-            "SIGNALWIRE_SPACE": "test.signalwire.com",
-        }, timeout=5)
-        assert r.status_code == 200
-        assert r.json()["configured"] is True
+def _session_cookies(response):
+    # The session cookie is marked Secure (correct for production HTTPS), so
+    # requests will not auto-resend it over the plain-HTTP test transport.
+    # Carry it forward explicitly so a test can act as one consistent browser.
+    sid = response.cookies.get("sw_session")
+    assert sid, "server did not set an sw_session cookie"
+    return {"sw_session": sid}
 
-        # Proof the server process env now holds the creds: the REST pillar's
-        # inputs endpoint (which reads os.environ) reports nothing missing.
-        inputs = requests.get(f"{BASE_URL}/run/rest/inputs", timeout=5).json()
-        assert inputs["missing"] == []
 
-        status = requests.get(f"{BASE_URL}/api/credentials/status", timeout=5).json()
-        assert status["configured"] is True
-        assert status["fields"]["SIGNALWIRE_SPACE"] == "test.signalwire.com"
-        assert status["fields"]["SIGNALWIRE_TOKEN"] is True
-    finally:
-        # WHY clear: the server process is shared across tests in this module;
-        # do not leak creds into later tests that assume an unconfigured env.
-        requests.post(f"{BASE_URL}/api/credentials", json={
-            "SIGNALWIRE_PROJECT_ID": "",
-            "SIGNALWIRE_TOKEN": "",
-            "SIGNALWIRE_SPACE": "",
-        }, timeout=5)
+def test_credentials_shared_across_pillars_within_a_session():
+    # Within ONE browser session, creds entered once must reach BOTH pillars:
+    # the REST inputs endpoint and the credentials status endpoint. The
+    # multi-tenant refactor scopes creds to the session cookie instead of
+    # mutating global os.environ.
+    r = requests.post(f"{BASE_URL}/api/credentials", json={
+        "SIGNALWIRE_PROJECT_ID": "test-project",
+        "SIGNALWIRE_TOKEN": "test-token",
+        "SIGNALWIRE_SPACE": "test.signalwire.com",
+    }, timeout=5)
+    assert r.status_code == 200
+    assert r.json()["configured"] is True
+    jar = _session_cookies(r)
+
+    # REST pillar inputs (session-scoped) now report nothing missing.
+    inputs = requests.get(f"{BASE_URL}/run/rest/inputs", cookies=jar, timeout=5).json()
+    assert inputs["missing"] == []
+
+    status = requests.get(f"{BASE_URL}/api/credentials/status", cookies=jar, timeout=5).json()
+    assert status["configured"] is True
+    assert status["fields"]["SIGNALWIRE_SPACE"] == "test.signalwire.com"
+    assert status["fields"]["SIGNALWIRE_TOKEN"] is True
+
+
+def test_credentials_isolated_across_sessions():
+    # The point of the refactor: creds set in one session must NOT leak into a
+    # different session. Each cookie jar is a distinct browser.
+    ra = requests.post(f"{BASE_URL}/api/credentials", json={
+        "SIGNALWIRE_PROJECT_ID": "PXA",
+        "SIGNALWIRE_TOKEN": "PTA",
+        "SIGNALWIRE_SPACE": "a.signalwire.com",
+    }, timeout=5)
+    jar_a = _session_cookies(ra)
+
+    # A brand-new request with no cookie is a fresh session.
+    status_b = requests.get(f"{BASE_URL}/api/credentials/status", timeout=5).json()
+    assert status_b["configured"] is False
+    assert status_b["fields"]["SIGNALWIRE_SPACE"] != "a.signalwire.com"
+
+    status_a = requests.get(f"{BASE_URL}/api/credentials/status", cookies=jar_a, timeout=5).json()
+    assert status_a["configured"] is True
+    assert status_a["fields"]["SIGNALWIRE_SPACE"] == "a.signalwire.com"
