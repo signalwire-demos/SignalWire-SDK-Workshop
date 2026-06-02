@@ -11,6 +11,8 @@
 (function () {
   var client = null;
   var call = null;
+  var wasActive = false;  // true once a call actually connected, so we only
+                          // celebrate (refs.onEnded) after a real conversation.
 
   function log() {
     var args = Array.prototype.slice.call(arguments);
@@ -115,11 +117,18 @@
           setStatus(refs, "Call ended.");
           call = null;
           showIdle(refs);
+          // WHY guard on wasActive: only fire the grand finale after a real
+          // connected conversation, not after a failed/aborted dial attempt.
+          if (wasActive && typeof refs.onEnded === "function") {
+            try { refs.onEnded(); } catch (e) { logErr("onEnded handler threw:", e); }
+          }
+          wasActive = false;
         });
 
         setStatus(refs, "Starting media (WebRTC negotiation)...");
         var startT = ts();
         await call.start();
+        wasActive = true;  // a real media session is up
         log("call.start() resolved in", ms(startT), "- total from click:", ms(t0));
         setStatus(refs, "In call with Buddy. Say hello!");
         showInCall(refs);

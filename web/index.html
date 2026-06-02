@@ -1305,6 +1305,89 @@
     color: var(--sw-text-dim); font-weight: 700; margin-bottom: 5px;
   }
   .pillar-card.rest .callout { border-left-color: var(--sw-orange); }
+
+  /* ============ GRAND FINALE (after the in-browser call ends) ============ */
+  .finale {
+    position: relative;
+    padding: 64px 24px 72px;
+    border-top: 1px solid var(--sw-border);
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 0%, rgba(247,42,114,0.14) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 12% 30%, rgba(4,78,244,0.12) 0%, transparent 60%),
+      var(--sw-dark);
+    opacity: 0; transform: translateY(18px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .finale.is-revealed { opacity: 1; transform: none; }
+  .finale-inner { max-width: 1000px; margin: 0 auto; }
+  .finale-eyebrow {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--sw-magenta);
+    text-align: center; margin-bottom: 14px;
+  }
+  .finale-title {
+    font-size: clamp(26px, 4vw, 40px); line-height: 1.12; font-weight: 700;
+    color: var(--sw-text-bright); letter-spacing: -0.02em;
+    text-align: center; max-width: 760px; margin: 0 auto;
+  }
+  .finale-title .accent { color: var(--sw-magenta); }
+  .finale-sub {
+    margin: 16px auto 0; font-size: 16.5px; line-height: 1.6; color: var(--sw-text);
+    max-width: 660px; text-align: center;
+  }
+  .finale-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+    margin: 40px 0 0;
+  }
+  .finale-col {
+    background: var(--sw-card-2); border: 1px solid var(--sw-border);
+    border-radius: 14px; padding: 26px;
+  }
+  .finale-col h3 {
+    font-size: 18px; font-weight: 700; color: var(--sw-text-bright); margin-bottom: 8px;
+  }
+  .finale-col-sub { font-size: 14px; color: var(--sw-text-dim); line-height: 1.55; margin-bottom: 16px; }
+  .finale-checklist { list-style: none; margin: 0 0 20px; padding: 0; display: grid; gap: 11px; }
+  .finale-checklist li {
+    position: relative; padding-left: 26px; font-size: 14px; line-height: 1.5; color: var(--sw-text);
+  }
+  .finale-checklist li::before {
+    content: "✓"; position: absolute; left: 0; top: 0;
+    color: var(--sw-cyan); font-weight: 700;
+  }
+  .finale-checklist strong { color: var(--sw-text-bright); }
+  .finale-btn {
+    display: inline-block; padding: 12px 20px; border-radius: 10px;
+    font-size: 14px; font-weight: 600; border: 1px solid var(--sw-border);
+    color: var(--sw-text-bright); background: transparent; transition: all 0.18s ease;
+  }
+  .finale-btn:hover { border-color: var(--sw-text-dim); text-decoration: none; color: var(--sw-text-bright); }
+  .finale-btn.primary { background: var(--sw-blue); border-color: var(--sw-blue); color: #fff; }
+  .finale-btn.primary:hover { background: var(--sw-blue-deep); color: #fff; }
+  .finale-btn-row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .finale-demos { margin-top: 36px; }
+  .finale-demos h3 { font-size: 18px; font-weight: 700; color: var(--sw-text-bright); margin-bottom: 6px; text-align: center; }
+  .finale-demos .finale-col-sub { text-align: center; max-width: 640px; margin: 0 auto 22px; }
+  .finale-demos-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px;
+  }
+  .demo-card {
+    display: flex; flex-direction: column; gap: 6px;
+    background: var(--sw-card); border: 1px solid var(--sw-border); border-radius: 12px;
+    padding: 18px; transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  }
+  .demo-card:hover {
+    transform: translateY(-3px); text-decoration: none;
+    border-color: var(--sw-border); box-shadow: 0 0 20px rgba(247,42,114,0.18);
+  }
+  .demo-card-emoji { font-size: 26px; line-height: 1; }
+  .demo-card-name { font-size: 15px; font-weight: 700; color: var(--sw-text-bright); }
+  .demo-card-desc { font-size: 12.5px; color: var(--sw-text-dim); line-height: 1.45; flex: 1; }
+  .demo-card-cta { font-size: 12.5px; font-weight: 600; color: var(--sw-magenta); margin-top: 4px; }
+  .finale-foot { text-align: center; margin-top: 38px; font-size: 15px; color: var(--sw-text); }
+  @media (max-width: 768px) {
+    .finale-grid { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -2047,14 +2130,17 @@ function burstConfetti(route) {
     || document.querySelector(".step-section.active");
   if (!node) return;
   const rect = node.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
-  const cy = rect.top + rect.height / 2;
+  burstConfettiAt(rect.left + rect.width / 2, rect.top + rect.height / 2, 16);
+}
+
+// Shared confetti emitter — bursts N particles from a viewport point (cx, cy).
+function burstConfettiAt(cx, cy, N) {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const wrap = document.createElement("div");
   wrap.className = "confetti-burst";
   wrap.style.left = cx + "px";
   wrap.style.top = cy + "px";
   document.body.appendChild(wrap);
-  const N = 16;
   for (let i = 0; i < N; i++) {
     const p = document.createElement("div");
     p.className = "confetti-particle";
@@ -2079,6 +2165,63 @@ function pulseActiveStep() {
   void sec.offsetWidth;  // restart animation
   sec.classList.add("is-just-unlocked");
   setTimeout(() => sec.classList.remove("is-just-unlocked"), 1000);
+}
+
+/* =========================================================================
+ *  Grand finale — fires once the in-browser RELAY call ends (refs.onEnded).
+ * ========================================================================= */
+const FEATURED_DEMOS = [
+  { name: "Santa", desc: "AI-powered Santa Claus voice assistant.", repo: "https://github.com/signalwire-demos/santa", emoji: "🎅" },
+  { name: "Blackjack", desc: "Voice-controlled blackjack dealer.", repo: "https://github.com/signalwire-demos/blackjack", emoji: "🃏" },
+  { name: "Cinebot", desc: "Movie recommendation AI assistant.", repo: "https://github.com/signalwire-demos/cinebot", emoji: "🎬" },
+  { name: "Example Agent", desc: "Starter template for SignalWire AI agents.", repo: "https://github.com/signalwire-demos/example", emoji: "🧩" },
+  { name: "Bobby's Table", desc: "Restaurant reservation voice assistant.", repo: "https://github.com/signalwire-demos/bobbystable", emoji: "🍽️" },
+  { name: "Holy Guacamole", desc: "Food-ordering AI assistant.", repo: "https://github.com/signalwire-demos/holyguacamole", emoji: "🥑" },
+  { name: "Cabby", desc: "AI taxi dispatcher with booking, SMS confirmations & dashboard.", repo: "https://github.com/signalwire-demos/cabby", emoji: "🚕" },
+];
+
+function renderFinaleDemos() {
+  const host = document.getElementById("finale-demos-grid");
+  if (!host || host.dataset.rendered) return;
+  host.dataset.rendered = "1";
+  host.innerHTML = FEATURED_DEMOS.map(d => `
+    <a class="demo-card" href="${d.repo}" target="_blank" rel="noopener noreferrer">
+      <div class="demo-card-emoji" aria-hidden="true">${d.emoji}</div>
+      <div class="demo-card-name">${escapeHtml(d.name)}</div>
+      <div class="demo-card-desc">${escapeHtml(d.desc)}</div>
+      <div class="demo-card-cta">View on GitHub →</div>
+    </a>`).join("");
+}
+
+let finaleShown = false;
+function showGrandFinale() {
+  const el = document.getElementById("grand-finale");
+  if (!el) return;
+  renderFinaleDemos();
+  if (!finaleShown) {
+    finaleShown = true;
+    el.hidden = false;
+    el.setAttribute("aria-hidden", "false");
+    requestAnimationFrame(() => el.classList.add("is-revealed"));
+  }
+  // Let the "Call ended" UI settle, then bring the finale into view.
+  setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 250);
+  finaleFireworks();
+}
+
+// A grander, multi-origin confetti burst for the workshop's closing moment.
+function finaleFireworks() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const origins = [
+    { x: 0.20, y: 0.35 }, { x: 0.50, y: 0.24 }, { x: 0.80, y: 0.35 },
+    { x: 0.35, y: 0.52 }, { x: 0.65, y: 0.52 },
+  ];
+  origins.forEach((o, k) => {
+    setTimeout(
+      () => burstConfettiAt(window.innerWidth * o.x, window.innerHeight * o.y, 26),
+      k * 220,
+    );
+  });
 }
 
 const REPO = "jongray00/Chicago-Roadshow-2026";
@@ -2733,6 +2876,45 @@ function renderWorkshop() {
       </div>
     </section>
 
+    <section class="finale" id="grand-finale" hidden aria-hidden="true">
+      <div class="finale-inner">
+        <div class="finale-eyebrow">Workshop complete</div>
+        <h2 class="finale-title">You just built — and called — a <span class="accent">real AI agent</span>.</h2>
+        <p class="finale-sub">From an empty Space to a live conversation: you provisioned a phone number over the REST API, gave Buddy new capabilities, dialed him over the phone, and just talked to him in your browser over SignalWire RELAY. That is the whole platform, end to end.</p>
+
+        <div class="finale-grid">
+          <div class="finale-col">
+            <h3>See what you built in your dashboard</h3>
+            <p class="finale-col-sub">Open your SignalWire Space and look at the resources this workshop created for you:</p>
+            <ul class="finale-checklist">
+              <li><strong>Phone Numbers</strong> — the number you provisioned is listed and routed to Buddy.</li>
+              <li><strong>Resources · Call Fabric</strong> — Buddy is a dialable resource (an external SWML handler) you can address from anywhere.</li>
+              <li><strong>Call Logs</strong> — both your phone call and your browser call appear here with timing and status.</li>
+              <li><strong>AI · Conversation summaries</strong> — the post-prompt summary of your chat with Buddy. View raw logs at <a href="https://postpromptviewer.signalwire.io/" target="_blank" rel="noopener noreferrer">postpromptviewer.signalwire.io</a>.</li>
+            </ul>
+            <a class="finale-btn primary" href="https://signalwire.com/signin" target="_blank" rel="noopener noreferrer">Open my SignalWire Dashboard →</a>
+          </div>
+
+          <div class="finale-col">
+            <h3>Make it your own</h3>
+            <p class="finale-col-sub">Every agent in this workshop is open source. The fastest way to build your own is to start from a working one: clone a demo, swap in your own prompt and tools, and you have a production-ready agent. This workshop's repo is built the same way — fork it and customize.</p>
+            <div class="finale-btn-row">
+              <a class="finale-btn primary" href="https://github.com/jongray00/Chicago-Roadshow-2026/fork" target="_blank" rel="noopener noreferrer">Fork this workshop repo →</a>
+              <a class="finale-btn" href="https://github.com/signalwire-demos" target="_blank" rel="noopener noreferrer">Browse all SignalWire demos →</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="finale-demos">
+          <h3>Featured demos to build from</h3>
+          <p class="finale-col-sub">Recommended starting points from the SignalWire Demos collection — each is a complete, customizable agent.</p>
+          <div class="finale-demos-grid" id="finale-demos-grid"></div>
+        </div>
+
+        <p class="finale-foot">Thanks for building with SignalWire at the Chicago Roadshow 2026. Now go ship something. 🚀</p>
+      </div>
+    </section>
+
     <div class="footer">
       Built with the <a href="https://signalwire.com/docs/server-sdks" target="_blank" rel="noopener noreferrer">SignalWire Agents SDK</a>
       · <a href="https://github.com/jongray00/Chicago-Roadshow-2026" target="_blank" rel="noopener noreferrer">github.com/jongray00/Chicago-Roadshow-2026</a>
@@ -2800,6 +2982,7 @@ function renderWorkshop() {
       statusEl: document.getElementById("relay-status"),
       callBtn: relayCallBtn,
       hangupBtn: document.getElementById("relay-hangup-btn"),
+      onEnded: () => showGrandFinale(),  // celebrate after the in-browser call ends
     };
     relayCallBtn.addEventListener("click", () => window.RelayCall && window.RelayCall.start(refs));
     document.getElementById("relay-hangup-btn")?.addEventListener("click", () => window.RelayCall && window.RelayCall.hangup());
