@@ -59,6 +59,14 @@ class CompleteAgent(AgentBase):
             "attention_timeout_prompt":
                 "Are you still there? I can help with weather, "
                 "jokes, math, or just chat!",
+            # Video avatar: on a video-capable channel (the browser RELAY call),
+            # Buddy renders as an animated avatar. enable_vision lets the model
+            # "see" the caller's video. These are ignored on audio-only phone
+            # calls, so the PSTN flow is unaffected. Files are SignalWire's
+            # public avatar clips.
+            "enable_vision": True,
+            "video_idle_file": "https://mcdn.signalwire.com/videos/robot_idle2.mp4",
+            "video_talking_file": "https://mcdn.signalwire.com/videos/robot_talking2.mp4",
         })
 
     # -- Prompts ------------------------------------------------------------
@@ -91,6 +99,17 @@ class CompleteAgent(AgentBase):
                 "Date and time: current time in any timezone",
                 "Math: calculations, percentages, unit conversions",
                 "General chat: friendly conversation on any topic",
+            ],
+        )
+        self.prompt_add_section(
+            "Physical Description",
+            body="When a caller reaches you over video, you are shown as an avatar:",
+            bullets=[
+                "You appear as a friendly, glowing robot with an upbeat expression.",
+                "If someone asks how you look or comments on your appearance, "
+                "play along warmly -- you're a cheerful little robot.",
+                "You can see the caller's video, so feel free to react to what "
+                "you can see when it's relevant.",
             ],
         )
         self.prompt_add_section(

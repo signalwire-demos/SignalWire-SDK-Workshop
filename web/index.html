@@ -1388,6 +1388,130 @@
   @media (max-width: 768px) {
     .finale-grid { grid-template-columns: 1fr; }
   }
+
+  /* ============ VIDEO CALL WITH BUDDY — modal showcase ============ */
+  .bv-modal[hidden] { display: none; }
+  .bv-modal {
+    position: fixed; inset: 0; z-index: 300;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    background: rgba(8,10,14,0.78);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    opacity: 0; transition: opacity 0.22s ease;
+  }
+  .bv-modal.is-open { opacity: 1; }
+  body.bv-open { overflow: hidden; }
+  .bv-dialog {
+    width: min(960px, 96vw); max-height: 92vh; overflow: auto;
+    background: var(--sw-card); border: 1px solid var(--sw-border);
+    border-radius: 16px; box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    transform: translateY(12px) scale(0.99); transition: transform 0.22s ease;
+    display: flex; flex-direction: column;
+  }
+  .bv-modal.is-open .bv-dialog { transform: none; }
+  .bv-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-bottom: 1px solid var(--sw-border);
+  }
+  .bv-head-left { display: flex; align-items: center; gap: 10px; }
+  .bv-live-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--sw-text-dim); }
+  .bv-modal[data-call-state="active"] .bv-live-dot {
+    background: var(--sw-magenta); box-shadow: 0 0 0 4px rgba(247,42,114,0.18);
+    animation: tick-pulse 1.4s ease-in-out infinite;
+  }
+  .bv-modal[data-call-state="error"] .bv-live-dot { background: var(--sw-orange); }
+  .bv-state { font-size: 14px; font-weight: 600; color: var(--sw-text-bright); }
+  .bv-head-right { display: flex; align-items: center; gap: 14px; }
+  .bv-timer { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--sw-text-dim); }
+  .bv-close {
+    width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--sw-border);
+    background: transparent; color: var(--sw-text); cursor: pointer; font-size: 15px;
+    transition: all 0.15s ease;
+  }
+  .bv-close:hover { border-color: var(--sw-text-dim); color: var(--sw-text-bright); }
+
+  .bv-stage-wrap {
+    position: relative; margin: 16px; border-radius: 12px; overflow: hidden;
+    background: #05060a; aspect-ratio: 16 / 9;
+  }
+  .bv-stage { position: absolute; inset: 0; }
+  .bv-stage :is(video, .mcuContent, .mcuLayer) { width: 100% !important; height: 100% !important; object-fit: cover; }
+  /* Placeholder shows until the SDK injects a video element into the stage. */
+  .bv-stage:not(:empty) ~ .bv-placeholder { opacity: 0; pointer-events: none; }
+  .bv-placeholder {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 16px; transition: opacity 0.4s ease;
+  }
+  .bv-orb {
+    width: 110px; height: 110px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #2a6bff, var(--sw-blue) 45%, var(--sw-purple) 100%);
+    box-shadow: 0 0 50px rgba(4,78,244,0.5), inset 0 0 30px rgba(255,255,255,0.18);
+    animation: bv-orb-pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes bv-orb-pulse {
+    0%,100% { transform: scale(1); box-shadow: 0 0 50px rgba(4,78,244,0.5), inset 0 0 30px rgba(255,255,255,0.18); }
+    50% { transform: scale(1.06); box-shadow: 0 0 72px rgba(247,42,114,0.4), inset 0 0 30px rgba(255,255,255,0.22); }
+  }
+  .bv-placeholder-label {
+    font-family: 'Instrument Sans', sans-serif; font-weight: 700; font-size: 20px;
+    color: var(--sw-text-bright); letter-spacing: 0.02em;
+  }
+  .bv-selfview-wrap {
+    position: absolute; right: 14px; bottom: 14px; width: 26%; max-width: 200px;
+    aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.25); box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    background: #000;
+  }
+  .bv-selfview { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+  .bv-cam-off .bv-selfview-wrap { display: none !important; }
+
+  .bv-controls { padding: 0 18px 20px; display: flex; flex-direction: column; gap: 16px; }
+  .bv-ctrl-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .bv-ctrl {
+    display: inline-flex; flex-direction: column; align-items: center; gap: 4px;
+    min-width: 84px; padding: 10px 16px; border-radius: 12px;
+    border: 1px solid var(--sw-border); background: var(--sw-card-2);
+    color: var(--sw-text); cursor: pointer; font-size: 12px; transition: all 0.15s ease;
+  }
+  .bv-ctrl:hover:not(:disabled) { border-color: var(--sw-text-dim); color: var(--sw-text-bright); }
+  .bv-ctrl:disabled { opacity: 0.4; cursor: not-allowed; }
+  .bv-ctrl-icon { font-size: 20px; line-height: 1; }
+  .bv-ctrl.is-off { background: rgba(247,42,114,0.14); border-color: var(--sw-magenta); color: var(--sw-text-bright); }
+  .bv-ctrl-end { background: #b3261e; border-color: #b3261e; color: #fff; }
+  .bv-ctrl-end:hover:not(:disabled) { background: #d13a30; border-color: #d13a30; color: #fff; }
+
+  .bv-devices { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .bv-devices label {
+    display: flex; flex-direction: column; gap: 4px; font-size: 11px;
+    color: var(--sw-text-dim); font-weight: 600;
+  }
+  .bv-devices select {
+    background: #2a2a2e; color: var(--sw-text-bright); border: 1px solid var(--sw-border);
+    border-radius: 8px; padding: 7px 10px; font-size: 12.5px; max-width: 220px;
+    font-family: inherit;
+  }
+  .bv-devices select:disabled { opacity: 0.45; }
+
+  .bv-dtmf { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .bv-dtmf-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--sw-text-dim);
+  }
+  .bv-keypad { display: grid; grid-template-columns: repeat(3, 56px); gap: 8px; }
+  .bv-key {
+    height: 44px; border-radius: 10px; border: 1px solid var(--sw-border);
+    background: var(--sw-card-2); color: var(--sw-text-bright); font-size: 16px;
+    font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all 0.12s ease;
+  }
+  .bv-key:hover { border-color: var(--sw-blue); background: rgba(4,78,244,0.16); }
+  .bv-key:active { transform: scale(0.94); }
+
+  @media (max-width: 600px) {
+    .bv-modal { padding: 0; }
+    .bv-dialog { width: 100vw; max-height: 100vh; border-radius: 0; }
+    .bv-stage-wrap { margin: 10px; }
+    .bv-keypad { grid-template-columns: repeat(3, 48px); }
+  }
 </style>
 </head>
 <body>
@@ -1421,6 +1545,61 @@
   </nav>
 </div>
 
+<!-- "Video call with Buddy" — large centered modal showcase (driven by buddy-video.js) -->
+<div class="bv-modal" id="buddy-video-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Video call with Buddy">
+  <div class="bv-dialog">
+    <header class="bv-head">
+      <div class="bv-head-left">
+        <span class="bv-live-dot" aria-hidden="true"></span>
+        <span class="bv-state" id="bv-state">Connecting…</span>
+      </div>
+      <div class="bv-head-right">
+        <span class="bv-timer" id="bv-timer">00:00</span>
+        <button type="button" class="bv-close" id="bv-close" aria-label="Close video call">✕</button>
+      </div>
+    </header>
+
+    <div class="bv-stage-wrap">
+      <!-- The @signalwire/js SDK attaches Buddy's avatar / remote video here. -->
+      <div class="bv-stage" id="bv-stage"></div>
+      <!-- Branded placeholder shown until remote video is flowing. -->
+      <div class="bv-placeholder" aria-hidden="true">
+        <div class="bv-orb"></div>
+        <div class="bv-placeholder-label">Buddy</div>
+      </div>
+      <!-- Local self-view picture-in-picture. -->
+      <div class="bv-selfview-wrap" style="display:none;">
+        <video id="bv-selfview" class="bv-selfview" playsinline autoplay muted></video>
+      </div>
+    </div>
+
+    <div class="bv-controls">
+      <div class="bv-ctrl-row">
+        <button type="button" class="bv-ctrl" id="bv-mic" aria-pressed="false" disabled>
+          <span class="bv-ctrl-icon" aria-hidden="true">🎙️</span><span class="bv-ctrl-label">Mute</span>
+        </button>
+        <button type="button" class="bv-ctrl" id="bv-cam" aria-pressed="false" disabled>
+          <span class="bv-ctrl-icon" aria-hidden="true">🎥</span><span class="bv-ctrl-label">Camera off</span>
+        </button>
+        <button type="button" class="bv-ctrl bv-ctrl-end" id="bv-hangup">
+          <span class="bv-ctrl-icon" aria-hidden="true">📞</span><span class="bv-ctrl-label">Hang up</span>
+        </button>
+      </div>
+
+      <div class="bv-devices">
+        <label>Mic <select id="bv-mic-select" disabled></select></label>
+        <label>Camera <select id="bv-cam-select" disabled></select></label>
+        <label>Speaker <select id="bv-spk-select" disabled></select></label>
+      </div>
+
+      <div class="bv-dtmf" id="bv-dtmf">
+        <span class="bv-dtmf-label">Keypad · sends DTMF tones to Buddy</span>
+        <div class="bv-keypad" id="bv-keypad"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <main id="app">
   <p style="text-align:center;padding:120px 20px;color:var(--sw-text-dim);">Loading…</p>
 </main>
@@ -1429,6 +1608,7 @@
      the global SignalWire and window.RelayCall exist when cards render. -->
 <script src="https://cdn.signalwire.com/@signalwire/js"></script>
 <script src="/static/relay-client.js"></script>
+<script src="/static/buddy-video.js"></script>
 
 <script>
 /* =========================================================================
@@ -2849,6 +3029,7 @@ function renderWorkshop() {
               ${head}
               <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;">
                 <button class="src-btn primary" id="relay-call-btn">📞 ${escapeHtml(p.callLabel)}</button>
+                <button class="src-btn primary" id="buddy-video-btn">🎥 Video call with Buddy</button>
                 <button class="src-btn" id="relay-hangup-btn" style="display:none;">Hang up</button>
                 <a href="${jsSourceUrl(p.sourceFile)}" target="_blank" rel="noopener noreferrer" class="src-btn">Client JS source</a>
                 <a href="${tsSourceUrl(p.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">TypeScript source</a>
@@ -2987,6 +3168,8 @@ function renderWorkshop() {
     relayCallBtn.addEventListener("click", () => window.RelayCall && window.RelayCall.start(refs));
     document.getElementById("relay-hangup-btn")?.addEventListener("click", () => window.RelayCall && window.RelayCall.hangup());
   }
+  document.getElementById("buddy-video-btn")?.addEventListener("click", () =>
+    window.BuddyVideo && window.BuddyVideo.open({ onEnded: () => showGrandFinale() }));
 }
 
 function renderPinnedUrlCard() {

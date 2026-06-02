@@ -387,7 +387,10 @@ async def relay_config(request: Request):
     session = _SESSIONS.ensure(request.state.session_id)
     try:
         reference = os.environ.get("SUBSCRIBER_REFERENCE", DEFAULT_REFERENCE)
-        destination = await asyncio.to_thread(ensure_agent_handler, base_url, None, None, creds, session)
+        # Browser calls (audio + video) reach the COMPLETE agent (/step11): it has
+        # every capability plus the video avatar, so it's the best showcase. The
+        # phone number's own routing is a separate resource and is unaffected.
+        destination = await asyncio.to_thread(ensure_agent_handler, base_url, "/step11", None, creds, session)
         token, sub_id = await asyncio.to_thread(mint_subscriber_token, reference, None, creds)
         _SESSIONS.save()
         return JSONResponse({"token": token, "destination": destination})
