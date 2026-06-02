@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SignalWire · Chicago Roadshow 2026</title>
 <link rel="icon" type="image/png" href="https://mcdn.signalwire.com/images/v2/loud/LogoLarge.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Lexend:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     /* SignalWire brand palette (locked values) */
@@ -24,14 +27,17 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--sw-dark);
     color: var(--sw-text);
     line-height: 1.55;
     min-height: 100vh;
   }
-  a { color: var(--sw-blue); text-decoration: none; }
-  a:hover { text-decoration: underline; }
+  /* Brand typography: Instrument Sans for headings, Lexend for body, JetBrains Mono for code. */
+  h1, h2, h3, h4 { font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
+  /* Links are turquoise on dark (blue text fails contrast on dark per brand guidelines), fuchsia on hover. */
+  a { color: var(--sw-cyan); text-decoration: none; }
+  a:hover { color: var(--sw-magenta); text-decoration: underline; }
   code {
     background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px;
     font-family: 'SF Mono', monospace; font-size: 0.88em; color: var(--sw-text-bright);
@@ -39,30 +45,30 @@
 
   .topbar {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 14px 32px; position: absolute; top: 28px; left: 0; right: 0; z-index: 10;
+    padding: 14px 32px; position: absolute; top: 46px; left: 0; right: 0; z-index: 10;
   }
 
   /* ============ API ACTIVITY TICKER (full-width, pinned top) ============ */
   .api-ticker {
     position: fixed; top: 0; left: 0; right: 0; z-index: 60;
-    height: 28px;
-    display: flex; align-items: center; gap: 10px;
-    padding: 0 18px;
-    background: rgba(8,10,14,0.92);
+    height: 46px;
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 24px;
+    background: rgba(8,10,14,0.94);
     border-bottom: 1px solid var(--sw-border);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     font-family: 'SF Mono', 'JetBrains Mono', monospace;
-    font-size: 11.5px;
+    font-size: 14px;
     color: var(--sw-text-dim);
     overflow: hidden;
   }
   .api-ticker-eyebrow {
-    color: var(--sw-text-dim); font-weight: 700; letter-spacing: 0.06em;
-    text-transform: uppercase; font-size: 10px; flex-shrink: 0;
+    color: var(--sw-text-dim); font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; font-size: 12px; flex-shrink: 0;
   }
   .api-ticker-dot {
-    width: 7px; height: 7px; border-radius: 50%;
+    width: 9px; height: 9px; border-radius: 50%;
     background: var(--sw-text-dim); flex-shrink: 0;
     transition: background 0.2s ease;
   }
@@ -388,11 +394,11 @@
 
   /* ============ HERO with WIZARD ============ */
   .hero {
-    padding: 92px 24px 64px;
+    padding: 108px 24px 64px;
     background:
-      radial-gradient(ellipse 60% 50% at 18% 22%, rgba(4,78,244,0.42) 0%, transparent 60%),
-      radial-gradient(ellipse 50% 40% at 84% 18%, rgba(247,42,114,0.30) 0%, transparent 60%),
-      radial-gradient(ellipse 70% 30% at 50% 100%, rgba(4,78,244,0.12) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 50% at 18% 22%, rgba(4,78,244,0.22) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 84% 18%, rgba(247,42,114,0.16) 0%, transparent 60%),
+      radial-gradient(ellipse 70% 30% at 50% 100%, rgba(4,78,244,0.08) 0%, transparent 70%),
       var(--sw-dark);
     border-bottom: 1px solid var(--sw-border);
     position: relative;
@@ -413,10 +419,8 @@
     color: var(--sw-text-bright); letter-spacing: -0.025em;
     text-align: center; max-width: 760px; margin: 0 auto;
   }
-  .hero h1 .accent {
-    background: linear-gradient(90deg, var(--sw-blue), var(--sw-magenta));
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-  }
+  /* Headings stay neutral; a single emphasis phrase carries the fuchsia accent. */
+  .hero h1 .accent { color: var(--sw-magenta); }
   .hero-sub {
     margin: 16px auto 0; font-size: 17px; color: var(--sw-text);
     max-width: 560px; text-align: center;
@@ -442,9 +446,9 @@
     background: rgba(4,78,244,0.18); border-color: var(--sw-blue); color: var(--sw-text-bright);
   }
   .milestone.active .milestone-dot {
-    background: linear-gradient(135deg, var(--sw-blue), var(--sw-magenta));
-    border-color: var(--sw-magenta); color: white; transform: scale(1.22);
-    box-shadow: 0 0 0 5px rgba(247,42,114,0.18), 0 0 24px rgba(247,42,114,0.45);
+    background: var(--sw-blue);
+    border-color: var(--sw-blue); color: #fff; transform: scale(1.18);
+    box-shadow: 0 0 0 4px rgba(4,78,244,0.18);
   }
   .milestone-label {
     font-size: 11.5px; color: var(--sw-text-dim); font-weight: 500;
@@ -608,7 +612,7 @@
   }
   .signup-invite-cta {
     flex-shrink: 0;
-    background: linear-gradient(135deg, var(--sw-blue), var(--sw-magenta));
+    background: var(--sw-blue);
     color: white; font-weight: 700; font-size: 14.5px;
     padding: 14px 22px; border-radius: 10px;
     box-shadow: 0 10px 24px -10px rgba(247,42,114,0.7);
@@ -714,10 +718,9 @@
   .wizard-card-success .lead, .wizard-card-success .wizard-helper { text-align: center; }
   .wizard-card-success .wizard-nav { justify-content: space-between; }
   .big-number {
-    font-family: 'SF Mono', 'JetBrains Mono', monospace;
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
     font-size: 44px; font-weight: 700; letter-spacing: -0.02em;
-    background: linear-gradient(135deg, var(--sw-blue), var(--sw-magenta));
-    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    color: var(--sw-magenta);   /* the provisioned number is the hero stat — fuchsia per brand */
     margin: 18px 0 10px;
   }
 
@@ -1080,7 +1083,7 @@
 
   /* Sticky timeline that follows the user down the journey */
   .timeline-sticky {
-    position: sticky; top: 0; z-index: 40;
+    position: sticky; top: 46px; z-index: 40;  /* clear the fixed API ticker (46px) */
     padding: 14px 0 14px;
     background: rgba(11,11,11,0.88);
     backdrop-filter: blur(12px);
@@ -1202,7 +1205,7 @@
     .timeline-connector, .preview-connector { display: none; }
     .timeline-circle { width: 34px; height: 34px; font-size: 12px; }
     .timeline-label { font-size: 10px; }
-    .timeline-sticky { padding: 10px 0; }
+    .timeline-sticky { padding: 10px 0; top: 40px; }
 
     .detail-grid, .pillars-grid { grid-template-columns: 1fr; }
 
@@ -1231,9 +1234,10 @@
     .receipts-section { padding: 0 16px; }
     .receipts-body { grid-template-columns: 1fr; }
     .receipt { transform: rotate(0) !important; } /* skip rotation on mobile for cleaner stack */
-    /* Ticker tighter on mobile */
-    .api-ticker { height: 24px; font-size: 10.5px; padding: 0 12px; }
-    .topbar { top: 24px; }
+    /* Ticker tighter on mobile (still larger than before for readability) */
+    .api-ticker { height: 40px; font-size: 12.5px; padding: 0 14px; gap: 9px; }
+    .api-ticker-eyebrow { font-size: 11px; }
+    .topbar { top: 40px; }
     .big-number { font-size: 32px; }
     .step-aim { flex-direction: column; align-items: stretch; gap: 10px; }
     .step-aim button { width: 100%; }
@@ -2215,7 +2219,7 @@ function renderOnboarding() {
       <div class="hero-inner">
         <div style="text-align:center;"><div class="hero-eyebrow">Chicago Roadshow 2026 · 60-minute workshop</div></div>
         <h1>Build your first <span class="accent">AI phone agent</span> in three steps.</h1>
-        <p class="hero-sub">No dashboard clicks, no ngrok. Paste your SignalWire credentials and we'll provision the phone number for you over the REST API.</p>
+        <p class="hero-sub">Log in with your SignalWire credentials and we'll use the REST API to buy and provision a real phone number for <strong>Buddy</strong>, a pre-built AI agent. Then give Buddy new capabilities and call him right from your browser — no dashboard clicks, no ngrok.</p>
         ${renderMilestones()}
         <div id="wizard-card-host">${renderWizardCard()}</div>
         <div class="skip-link">
@@ -2251,6 +2255,8 @@ const wizard = {
   pending: false,       // request in-flight (disables buttons)
   errorMsg: "",
   setup: null,          // configured phone number after /api/setup/select
+  editingCreds: false,  // true when the user explicitly clicked "Back to credentials"
+                        // so the gate in renderAll() lets them reach step 1 again.
 };
 
 function renderMilestones() {
@@ -2290,8 +2296,8 @@ function renderMilestoneCreds() {
   return `
     <div class="wizard-card">
       <div class="wizard-eyebrow">Step 1 of 3 · SignalWire credentials</div>
-      <h2>Let's get you talking to your first AI agent.</h2>
-      <p class="lead">First, you'll need a SignalWire Space. Brand new? Start here — it's free and takes about a minute.</p>
+      <h2>Log in to your SignalWire Space.</h2>
+      <p class="lead">Your credentials are the keys that let this workshop call the SignalWire <strong>REST API</strong> on your behalf — to buy a phone number, configure your agent, and more. Brand new? Create a free Space below; it takes about a minute.</p>
 
       <a href="https://signalwire.com/signup" target="_blank" rel="noopener noreferrer" class="signup-invite">
         <div class="signup-invite-text">
@@ -2372,7 +2378,8 @@ function renderMilestoneNumber() {
   return `
     <div class="wizard-card">
       <div class="wizard-eyebrow">Step 2 of 3 · Phone number</div>
-      <h2>Connect a phone number to Buddy.</h2>
+      <h2>Connect a phone number to Buddy, a pre-built AI agent.</h2>
+      <p class="lead">A phone number is how people reach Buddy by phone. We'll buy and provision one for you over the SignalWire REST API — every call below is the same API you'd use in your own code.</p>
       ${body}
       ${error}
       <div class="wizard-nav">
@@ -2403,7 +2410,7 @@ function renderMilestoneDone() {
       <h2>Your AI agent Buddy is connected.</h2>
       <div class="big-number">${escapeHtml(formatPhone(phone))}</div>
       <p class="lead">Buddy is live at <strong>Lv.1 · Hello Agent</strong>, ${sourceLabel === 'purchased' ? 'on the number you just purchased' : 'on your number'}, wired up over the SignalWire REST API. Dial from any phone — Buddy will pick up and say hello.</p>
-      <p class="wizard-helper">Once you've talked to Buddy, level him up below. Each level adds a new capability, and a one-click <strong>"Point my phone number here"</strong> button swaps which version your number dials.</p>
+      <p class="wizard-helper">An AI agent can be reached two ways: <strong>dialed over the phone</strong> like you just set up, or <strong>connected over the internet</strong> straight from a browser. You'll do the browser call at the end with SignalWire RELAY. First, level Buddy up below — each level adds a new capability, and a one-click <strong>"Point my phone number here"</strong> button swaps which version your number dials.</p>
       <div class="wizard-nav">
         <button class="btn-secondary" id="wiz-restart">Start over</button>
         <span class="step-counter">Done</span>
@@ -2428,7 +2435,7 @@ function attachWizardHandlers() {
   if (m === 1) {
     on("wiz-creds-next", "click", () => submitCredentials());
   } else if (m === 2) {
-    on("wiz-num-back", "click", () => { wizard.errorMsg = ""; backMilestone(); });
+    on("wiz-num-back", "click", () => { wizard.errorMsg = ""; wizard.editingCreds = true; backMilestone(); });
     on("wiz-buy-instead", "click", e => { e.preventDefault(); wizard.numbers = []; wizard.errorMsg = ""; rerenderWizard(); });
     on("wiz-search-again", "click", e => { e.preventDefault(); wizard.searched = null; wizard.searchedAreaCode = ""; rerenderWizard(); });
     document.getElementById("wiz-search-form")?.addEventListener("submit", e => {
@@ -2481,6 +2488,7 @@ async function submitCredentials() {
     return;
   }
   wizard.pending = false;
+  wizard.editingCreds = false;   // done editing creds; let the gate resume normally
   state.credsConfigured = true;  // server confirmed configured:true above
   state.milestone = 2;
   wizard.numbers = null; wizard.searched = null;
@@ -3039,7 +3047,9 @@ function renderAll() {
   } else {
     // Creds already configured (a local .env, or a returning configured session) —
     // skip the credentials-entry step so the user is never re-prompted to "log in".
-    if (state.milestone === 1) {
+    // Exception: if the user explicitly clicked "Back to credentials" to change them,
+    // honor that intent and let them sit on step 1 until they resubmit.
+    if (state.milestone === 1 && !wizard.editingCreds) {
       state.milestone = 2;
       persist();
     }
