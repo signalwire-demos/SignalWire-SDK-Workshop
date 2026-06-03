@@ -1879,9 +1879,9 @@ const PILLAR_CARDS = [
     desc: "Use the REST API to provision the AI agent as a dialable Fabric resource and mint a short-lived subscriber token for the browser.",
     runLabel: "Run REST Demo",
     docs: [
-      { label: "REST API overview", url: "/rest" },
-      { label: "Authorization", url: "/rest/getting-started/authentication" },
-      { label: "Call Fabric", url: "/platform/call-fabric" },
+      { label: "REST API overview", url: "/apis" },
+      { label: "Authorization", url: "/apis/authorization" },
+      { label: "Call Fabric", url: "/platform/resources" },
     ],
   },
   {
@@ -1894,9 +1894,9 @@ const PILLAR_CARDS = [
     desc: "Click one button and talk to Buddy in your browser. The @signalwire/js SDK dials the agent using the subscriber token from the REST pillar. No phone needed.",
     callLabel: "Call Buddy",
     docs: [
-      { label: "Call Fabric", url: "/platform/call-fabric" },
-      { label: "Browser SDK", url: "/sdks/reference/browser-sdk/relay-js" },
-      { label: "Getting started", url: "/platform/call-fabric/getting-started" },
+      { label: "Call Fabric", url: "/platform/resources" },
+      { label: "Browser SDK", url: "/browser-sdk/v3/js" },
+      { label: "Getting started", url: "/platform/getting-started" },
     ],
   },
 ];
@@ -2646,7 +2646,7 @@ function renderMilestoneCreds() {
       </div>
       <p class="wizard-error" id="wiz-creds-error">${wizard.errorMsg ? escapeHtml(wizard.errorMsg) : ""}</p>
       ${renderDocLinks([
-        { label: "Where's my API token?", url: "/rest/getting-started/authentication" },
+        { label: "Where's my API token?", url: "/apis/authorization" },
         { label: "What is a Space?", url: "/platform/getting-started" },
       ])}
       <div class="wizard-nav">

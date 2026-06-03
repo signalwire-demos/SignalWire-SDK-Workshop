@@ -446,6 +446,6 @@ self.add_skill("skill_name", {config})
 
 ### Resources
 
-- [SignalWire Documentation](https://docs.signalwire.com)
+- [SignalWire Documentation](https://signalwire.com/docs)
 - [Post-Prompt Viewer](https://postpromptviewer.signalwire.io/) -- upload call JSON to debug conversations
 - [Python SDK](https://github.com/signalwire/signalwire-python)
