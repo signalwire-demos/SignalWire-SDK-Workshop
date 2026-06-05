@@ -166,26 +166,18 @@ class CompleteAgent(AgentBase):
                 "about weather, temperature, or conditions."
             )
             .parameter("city", "string", "The city to get weather for", required=True)
-            # WHY two hops: Open-Meteo splits geocoding from forecast. First call
-            # turns the city name into lat/lon; second call fetches current weather.
-            .webhook(
-                "GET",
-                "https://geocoding-api.open-meteo.com/v1/search"
-                "?name=${enc:args.city}&count=1&format=json",
-            )
-            .webhook(
-                "GET",
-                "https://api.open-meteo.com/v1/forecast"
-                "?latitude=${response.results[0].latitude}"
-                "&longitude=${response.results[0].longitude}"
-                "&current=temperature_2m,relative_humidity_2m,apparent_temperature"
-                "&temperature_unit=fahrenheit",
-            )
+            # WHY one webhook: DataMap runs multiple webhooks as sequential
+            # FALLBACKS, not a pipeline -- there's no way to feed one webhook's
+            # response into the next webhook's request. So we use wttr.in, which
+            # takes the city name directly (no separate geocoding hop) and needs
+            # no API key, keeping the workshop prerequisite-free.
+            .webhook("GET", "https://wttr.in/${enc:args.city}?format=j1")
             .output(FunctionResult(
                 "Weather in ${args.city}: "
-                "${response.current.temperature_2m} degrees Fahrenheit, "
-                "humidity ${response.current.relative_humidity_2m} percent. "
-                "Feels like ${response.current.apparent_temperature} degrees."
+                "${response.current_condition[0].weatherDesc[0].value}, "
+                "${response.current_condition[0].temp_F} degrees Fahrenheit, "
+                "humidity ${response.current_condition[0].humidity} percent. "
+                "Feels like ${response.current_condition[0].FeelsLikeF} degrees."
             ))
             .fallback_output(FunctionResult(
                 "Sorry, I couldn't get the weather for ${args.city}. "
