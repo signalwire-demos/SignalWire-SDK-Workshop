@@ -51,24 +51,24 @@ def _timed(api: str, op: str, fn, trace: list):
         trace.append({"api": api, "op": op, "ms": int((time.monotonic() - t0) * 1000)})
 
 
-def configure_existing(creds, sid: str, route: str, public_base: str) -> dict:
+def configure_existing(creds, sid: str, route: str, public_base: str, session_sid: str | None = None) -> dict:
     client = step12._client(creds)
     trace = []
     num = _timed("SDK", "phone_numbers.get", lambda: client.phone_numbers.get(sid), trace)
     e164 = num.get("number")
     assignment = _timed("Fabric", "assign_phone_route",
-        lambda: step12.assign_number_to_agent(e164, public_base=public_base, route=route, client=client), trace)
+        lambda: step12.assign_number_to_agent(e164, public_base=public_base, route=route, client=client, sid=session_sid), trace)
     return {"sid": num.get("id"), "phone_number": e164, "friendly_name": num.get("name") or "",
             "route": route, "source": "existing", **assignment, "_trace": trace}
 
 
-def purchase_and_configure(creds, phone_number: str, route: str, public_base: str) -> dict:
+def purchase_and_configure(creds, phone_number: str, route: str, public_base: str, session_sid: str | None = None) -> dict:
     client = step12._client(creds)
     trace = []
     bought = _timed("SDK", "phone_numbers.create", lambda: client.phone_numbers.create(number=phone_number), trace)
     e164 = bought.get("number", phone_number)
     assignment = _timed("Fabric", "assign_phone_route",
-        lambda: step12.assign_number_to_agent(e164, public_base=public_base, route=route, client=client), trace)
+        lambda: step12.assign_number_to_agent(e164, public_base=public_base, route=route, client=client, sid=session_sid), trace)
     return {"sid": bought.get("id"), "phone_number": e164, "friendly_name": bought.get("name") or FRIENDLY_NAME,
             "route": route, "source": "purchased", **assignment, "_trace": trace}
 

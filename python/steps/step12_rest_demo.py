@@ -90,12 +90,15 @@ def _public_base(public_base=None):
     return base.rstrip("/")
 
 
-def _authed_url(base, route):
+def _authed_url(base, route, sid=None):
     """Build the URL SignalWire fetches, with the agent's Basic auth embedded.
 
     The agent requires Basic auth on its routes, so the SWML webhook's
     primary_request_url must carry credentials (same as the console output and
     the agent's own swaig URLs). Without them SignalWire gets 401, not SWML.
+
+    When `sid` is given it is appended as a `?sid=` query param so the agent's
+    on_swml_request can stamp the originating workshop session into global_data.
     """
     user = quote(os.environ.get("SWML_BASIC_AUTH_USER", "workshop"), safe="")
     pw = quote(os.environ.get("SWML_BASIC_AUTH_PASSWORD", "password"), safe="")
@@ -103,7 +106,8 @@ def _authed_url(base, route):
     netloc = f"{user}:{pw}@{parts.hostname}"
     if parts.port:
         netloc += f":{parts.port}"
-    return urlunsplit((parts.scheme, netloc, route, "", ""))
+    query = f"sid={quote(sid, safe='')}" if sid else ""
+    return urlunsplit((parts.scheme, netloc, route, query, ""))
 
 
 def _load_cache(space):
@@ -139,16 +143,20 @@ def _find_swml_webhook(client):
     return None, None
 
 
-def ensure_agent_handler(public_base=None, route=None, client=None, creds=None, cache=None):
+def ensure_agent_handler(public_base=None, route=None, client=None, creds=None, cache=None, sid=None):
     """Find or create the agent's SWML webhook resource; return its audio address.
 
     If `route` is provided and differs from the resource's primary_request_url,
     the resource is updated in place so PSTN and browser dialing land on the same
     agent step.
+
+    When `sid` is given it is embedded as a `?sid=` query param in the
+    primary_request_url so the agent's on_swml_request can stamp the originating
+    workshop session into global_data.
     """
     global _agent_address_cache
     target_route = route or DEFAULT_AGENT_PATH
-    target_url = _authed_url(_public_base(public_base), target_route)
+    target_url = _authed_url(_public_base(public_base), target_route, sid=sid)
 
     if cache is not None:
         if cache.get("agent_address") and route is None:
@@ -202,17 +210,20 @@ def ensure_agent_handler(public_base=None, route=None, client=None, creds=None, 
     return address
 
 
-def assign_number_to_agent(e164, public_base=None, route=None, client=None, creds=None):
+def assign_number_to_agent(e164, public_base=None, route=None, client=None, creds=None, sid=None):
     """Route a PSTN number to the agent's SWML webhook resource (Call Fabric).
 
     Assigns the number to the SWML webhook Resource as a phone route, exactly
     like the dashboard's "Assign Resource -> SWML Script (External URL)" flow.
 
+    When `sid` is given it is threaded into ensure_agent_handler so the
+    provisioned URL carries ?sid= for session stamping.
+
     Returns {"resource_id", "phone_route_id"}.
     """
     client = client or _client(creds)
     # Ensure the resource exists and points at the requested route, then find it.
-    ensure_agent_handler(public_base=public_base, route=route, client=client)
+    ensure_agent_handler(public_base=public_base, route=route, client=client, sid=sid)
     resource_id, _ = _find_swml_webhook(client)
     if not resource_id:
         raise RuntimeError("agent SWML webhook not found after ensure_agent_handler()")

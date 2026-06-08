@@ -18,3 +18,5 @@ calls/
 .workshop_setup.json
 .workshop_credentials.json
 .workshop_sessions.json
+.workshop_calls.json
+.workshop_config.json

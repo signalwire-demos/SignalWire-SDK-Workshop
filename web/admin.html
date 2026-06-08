@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post-Prompt Admin · SignalWire Chicago Roadshow 2026</title>
+<link rel="icon" type="image/png" href="https://mcdn.signalwire.com/images/v2/loud/LogoLarge.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Lexend:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* SignalWire brand palette (locked values, mirrored from index.html) */
+    --sw-blue: #044EF4;
+    --sw-blue-deep: #022DA8;
+    --sw-dark: #0e0e18;
+    --sw-card: #181a28;
+    --sw-card-2: #222436;
+    --sw-border: #2a2d42;
+    --sw-magenta: #F72A72;      /* fuchsia */
+    --sw-cyan: #40E0D0;         /* turquoise */
+    --sw-gold: #FFD700;
+    --sw-purple: #601BE6;
+    --sw-text: #e8e8ec;
+    --sw-text-bright: #f0f0f4;
+    --sw-text-dim: #a0a0aa;
+    --mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background:
+      radial-gradient(ellipse 55% 45% at 12% 0%, rgba(4,78,244,0.20) 0%, transparent 60%),
+      radial-gradient(ellipse 45% 40% at 92% 4%, rgba(247,42,114,0.14) 0%, transparent 62%),
+      var(--sw-dark);
+    color: var(--sw-text);
+    line-height: 1.55;
+    display: flex; flex-direction: column;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+  h1, h2, h3, h4 { font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
+  ::selection { background: rgba(247,42,114,0.32); }
+
+  /* ===== Scrollbars ===== */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--sw-border); border-radius: 6px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a3e5c; background-clip: padding-box; }
+
+  /* ============ TOP BAR ============ */
+  .topbar {
+    flex-shrink: 0;
+    display: flex; align-items: center; gap: 18px;
+    padding: 14px 24px;
+    background: rgba(8,10,14,0.78);
+    border-bottom: 1px solid var(--sw-border);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    z-index: 30;
+  }
+  .brand { display: flex; align-items: center; gap: 11px; }
+  .brand-mark {
+    width: 26px; height: 26px; border-radius: 7px;
+    background: linear-gradient(135deg, var(--sw-blue) 0%, var(--sw-magenta) 100%);
+    box-shadow: 0 4px 16px rgba(247,42,114,0.34);
+    flex-shrink: 0;
+  }
+  .brand-titles { display: flex; flex-direction: column; line-height: 1.15; }
+  .brand-titles .eyebrow {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--sw-text-dim);
+  }
+  .brand-titles .title {
+    font-family: 'Instrument Sans', sans-serif; font-weight: 700;
+    font-size: 16px; color: var(--sw-text-bright); letter-spacing: -0.01em;
+  }
+  .brand-titles .title .accent { color: var(--sw-magenta); }
+
+  .topbar-spacer { flex: 1; }
+
+  /* connection indicator */
+  .conn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--sw-text-dim);
+    padding: 6px 12px; border: 1px solid var(--sw-border); border-radius: 999px;
+    background: rgba(255,255,255,0.02);
+  }
+  .conn-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--sw-text-dim); transition: background 0.25s ease;
+  }
+  .conn.is-live { color: var(--sw-cyan); border-color: rgba(64,224,208,0.3); }
+  .conn.is-live .conn-dot {
+    background: var(--sw-cyan);
+    box-shadow: 0 0 0 3px rgba(64,224,208,0.18);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  .conn.is-down { color: var(--sw-magenta); border-color: rgba(247,42,114,0.3); }
+  .conn.is-down .conn-dot { background: var(--sw-magenta); box-shadow: 0 0 0 3px rgba(247,42,114,0.18); }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(0.8); } }
+
+  /* header action buttons */
+  .btn {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+    text-transform: uppercase; cursor: pointer;
+    padding: 8px 14px; border-radius: 8px;
+    border: 1px solid var(--sw-border); background: rgba(255,255,255,0.03);
+    color: var(--sw-text); transition: all 0.16s ease;
+  }
+  .btn:hover { border-color: var(--sw-cyan); color: var(--sw-text-bright); }
+  .btn-danger:hover { border-color: var(--sw-magenta); color: #fff; background: rgba(247,42,114,0.12); }
+  .btn-ghost { background: transparent; }
+
+  /* in-page confirm */
+  .confirm-wrap { position: relative; }
+  .confirm-pop {
+    position: absolute; top: calc(100% + 8px); right: 0; z-index: 50;
+    width: 248px; padding: 14px;
+    background: var(--sw-card); border: 1px solid var(--sw-border); border-radius: 12px;
+    box-shadow: 0 22px 60px -22px rgba(0,0,0,0.7);
+    display: none;
+  }
+  .confirm-pop.is-open { display: block; animation: pop-in 0.14s ease-out; }
+  @keyframes pop-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+  .confirm-pop p { font-size: 12.5px; color: var(--sw-text); margin-bottom: 12px; line-height: 1.45; }
+  .confirm-pop p strong { color: var(--sw-magenta); }
+  .confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .cfg-l { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--sw-text-dim); margin: 10px 0 4px; }
+  .cfg-src { text-transform: none; letter-spacing: 0; color: var(--sw-magenta); font-size: 11px; }
+  .cfg-i { width: 100%; box-sizing: border-box; padding: 8px 10px; font-size: 13px;
+    background: var(--sw-bg, #0e0e18); color: var(--sw-text-bright);
+    border: 1px solid var(--sw-border); border-radius: 8px; font-family: inherit; }
+  .cfg-i:focus { outline: none; border-color: var(--sw-magenta); }
+  .cfg-status { font-size: 12px; color: var(--sw-text-dim); margin-top: 8px; min-height: 14px; text-align: right; }
+
+  /* ============ TABS ============ */
+  .tabbar {
+    flex-shrink: 0;
+    display: flex; align-items: stretch; gap: 0;
+    padding: 0 24px;
+    background: rgba(8,10,14,0.5);
+    border-bottom: 1px solid var(--sw-border);
+  }
+  .tab {
+    display: inline-flex; align-items: center; gap: 9px;
+    padding: 13px 20px; cursor: pointer; position: relative;
+    font-family: 'Instrument Sans', sans-serif; font-weight: 600; font-size: 14px;
+    color: var(--sw-text-dim); background: transparent; border: none;
+    transition: color 0.16s ease;
+  }
+  .tab:hover { color: var(--sw-text); }
+  .tab.is-active { color: var(--sw-text-bright); }
+  .tab.is-active::after {
+    content: ''; position: absolute; left: 14px; right: 14px; bottom: -1px; height: 2px;
+    background: linear-gradient(90deg, var(--sw-blue), var(--sw-magenta));
+    border-radius: 2px;
+  }
+  .tab-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--sw-border);
+    transition: background 0.25s ease;
+  }
+  .tab.is-live .tab-dot { background: var(--sw-cyan); box-shadow: 0 0 0 3px rgba(64,224,208,0.18); animation: pulse 1.6s ease-in-out infinite; }
+  .tab-count {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    padding: 1px 8px; border-radius: 999px;
+    background: rgba(255,255,255,0.05); color: var(--sw-text-dim);
+  }
+  .tab.is-active .tab-count { background: rgba(247,42,114,0.16); color: var(--sw-magenta); }
+
+  /* ============ PANES ============ */
+  .pane { flex: 1; min-height: 0; display: none; }
+  .pane.is-active { display: flex; }
+
+  /* ---- Calls: master-detail ---- */
+  #pane-calls { flex-direction: row; }
+  .rail {
+    width: 360px; flex-shrink: 0;
+    border-right: 1px solid var(--sw-border);
+    display: flex; flex-direction: column; min-height: 0;
+    background: rgba(8,10,14,0.35);
+  }
+  .rail-head { padding: 12px 16px; border-bottom: 1px solid var(--sw-border); flex-shrink: 0; }
+  .rail-head label {
+    display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--sw-text-dim); margin-bottom: 6px;
+  }
+  select.filter {
+    width: 100%; padding: 8px 10px; border-radius: 8px;
+    background: var(--sw-card); color: var(--sw-text);
+    border: 1px solid var(--sw-border); font-family: var(--mono); font-size: 12px;
+    cursor: pointer;
+  }
+  select.filter:focus { outline: none; border-color: var(--sw-cyan); }
+  .session-filter-chip {
+    display: none; align-items: center; gap: 8px; margin-top: 9px;
+    font-family: var(--mono); font-size: 11px; color: var(--sw-cyan);
+    background: rgba(64,224,208,0.08); border: 1px solid rgba(64,224,208,0.25);
+    border-radius: 999px; padding: 5px 10px;
+  }
+  .session-filter-chip.is-on { display: inline-flex; }
+  .session-filter-chip button {
+    background: none; border: none; color: var(--sw-magenta); cursor: pointer;
+    font-family: var(--mono); font-size: 13px; line-height: 1; padding: 0;
+  }
+
+  .rail-list { flex: 1; overflow-y: auto; padding: 8px; min-height: 0; }
+  .call-item {
+    padding: 11px 13px; border-radius: 10px; cursor: pointer; margin-bottom: 6px;
+    border: 1px solid transparent; background: rgba(255,255,255,0.015);
+    transition: background 0.14s ease, border-color 0.14s ease;
+  }
+  .call-item:hover { background: rgba(255,255,255,0.04); }
+  .call-item.is-selected { background: rgba(4,78,244,0.12); border-color: rgba(4,78,244,0.45); }
+  .call-item.is-new { animation: flash-new 1.8s ease-out; }
+  @keyframes flash-new {
+    0% { background: rgba(247,42,114,0.28); border-color: var(--sw-magenta); box-shadow: 0 0 0 1px rgba(247,42,114,0.5); }
+    100% { background: rgba(255,255,255,0.015); border-color: transparent; box-shadow: none; }
+  }
+  .ci-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+  .ci-agent { font-weight: 600; font-size: 13.5px; color: var(--sw-text-bright); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ci-new-badge {
+    font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: 0.1em;
+    color: #fff; background: var(--sw-magenta); padding: 2px 6px; border-radius: 4px; flex-shrink: 0;
+  }
+  .ci-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .ci-route { font-family: var(--mono); font-size: 11px; color: var(--sw-cyan); }
+  .ci-time { font-family: var(--mono); font-size: 11px; color: var(--sw-text-dim); }
+  .ci-origin {
+    font-family: var(--mono); font-size: 10px; color: var(--sw-text-dim);
+    margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ci-origin .pid { color: var(--sw-purple); filter: brightness(1.45); }
+
+  .detail { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+  .detail-head { padding: 18px 24px 0; flex-shrink: 0; }
+  .detail-agent { font-size: 22px; font-weight: 700; color: var(--sw-text-bright); letter-spacing: -0.01em; }
+  .detail-sub {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 7px;
+    font-family: var(--mono); font-size: 12px; color: var(--sw-text-dim);
+  }
+  .detail-sub .k { color: var(--sw-cyan); }
+  .detail-sub .pid { color: var(--sw-purple); filter: brightness(1.45); }
+
+  .subtabs { display: flex; gap: 4px; margin-top: 16px; border-bottom: 1px solid var(--sw-border); padding: 0 24px; flex-shrink: 0; }
+  .subtab {
+    padding: 9px 14px; cursor: pointer; position: relative; bottom: -1px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.04em;
+    color: var(--sw-text-dim); background: none; border: none; border-bottom: 2px solid transparent;
+    transition: color 0.14s ease;
+  }
+  .subtab:hover { color: var(--sw-text); }
+  .subtab.is-active { color: var(--sw-text-bright); border-bottom-color: var(--sw-magenta); }
+  .subtab .badge {
+    margin-left: 6px; font-size: 10px; padding: 0 6px; border-radius: 999px;
+    background: rgba(255,255,255,0.06); color: var(--sw-text-dim);
+  }
+
+  .detail-body { flex: 1; overflow-y: auto; padding: 22px 24px 40px; min-height: 0; }
+  .subview { display: none; }
+  .subview.is-active { display: block; }
+
+  /* summary */
+  .summary-raw {
+    background: var(--sw-card); border: 1px solid var(--sw-border); border-radius: 12px;
+    padding: 18px 20px; font-size: 14.5px; line-height: 1.6; color: var(--sw-text-bright);
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .section-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--sw-text-dim); margin: 22px 0 9px;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  /* transcript */
+  .turn { display: flex; gap: 12px; margin-bottom: 14px; }
+  .turn-role {
+    flex-shrink: 0; width: 78px; text-align: right;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+    padding-top: 9px;
+  }
+  .turn-role.user { color: var(--sw-cyan); }
+  .turn-role.assistant { color: var(--sw-magenta); }
+  .turn-role.system, .turn-role.tool { color: var(--sw-gold); }
+  .turn-bubble {
+    flex: 1; background: var(--sw-card); border: 1px solid var(--sw-border);
+    border-radius: 12px; padding: 11px 15px; font-size: 14px; line-height: 1.55;
+    white-space: pre-wrap; word-break: break-word; color: var(--sw-text);
+  }
+
+  /* tools */
+  .tool-card { background: var(--sw-card); border: 1px solid var(--sw-border); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+  .tool-name { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--sw-gold); margin-bottom: 8px; }
+  .tool-name::before { content: 'ƒ '; color: var(--sw-text-dim); }
+  .kv { display: grid; grid-template-columns: 70px 1fr; gap: 4px 12px; font-family: var(--mono); font-size: 12px; }
+  .kv .k { color: var(--sw-text-dim); }
+  .kv pre { white-space: pre-wrap; word-break: break-word; color: var(--sw-text); margin: 0; }
+
+  /* meta grid */
+  .meta-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .meta-cell { background: var(--sw-card); border: 1px solid var(--sw-border); border-radius: 12px; padding: 13px 16px; }
+  .meta-cell .mk { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sw-text-dim); margin-bottom: 5px; }
+  .meta-cell .mv { font-family: var(--mono); font-size: 14px; color: var(--sw-text-bright); word-break: break-word; }
+
+  /* raw json */
+  pre.raw {
+    background: #0a0c14; border: 1px solid var(--sw-border); border-radius: 12px;
+    padding: 16px 18px; font-family: var(--mono); font-size: 12px; line-height: 1.5;
+    color: var(--sw-text); white-space: pre-wrap; word-break: break-word; overflow-x: auto;
+  }
+
+  /* ---- Sessions table ---- */
+  #pane-sessions { flex-direction: column; overflow: hidden; }
+  .sessions-scroll { flex: 1; overflow-y: auto; padding: 18px 24px 40px; }
+  table.sessions { width: 100%; border-collapse: collapse; }
+  table.sessions th {
+    text-align: left; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--sw-text-dim); font-weight: 500;
+    padding: 10px 14px; border-bottom: 1px solid var(--sw-border); position: sticky; top: 0;
+    background: var(--sw-dark);
+  }
+  table.sessions td { padding: 13px 14px; border-bottom: 1px solid rgba(42,45,66,0.5); font-size: 13px; vertical-align: middle; }
+  tr.srow { cursor: pointer; transition: background 0.12s ease; }
+  tr.srow:hover { background: rgba(64,224,208,0.05); }
+  tr.srow.is-active { background: rgba(4,78,244,0.12); }
+  .sp-space { color: var(--sw-text-bright); font-weight: 500; }
+  .mono-cell { font-family: var(--mono); font-size: 12px; color: var(--sw-text); }
+  .pid-cell { font-family: var(--mono); font-size: 12px; color: var(--sw-purple); filter: brightness(1.45); }
+  .tok-cell { font-family: var(--mono); font-size: 12px; color: var(--sw-text-dim); }
+  .signed-pill {
+    font-family: var(--mono); font-size: 11px; padding: 3px 9px; border-radius: 999px;
+    background: rgba(64,224,208,0.1); color: var(--sw-cyan); border: 1px solid rgba(64,224,208,0.25);
+  }
+  .signed-pill.off { background: rgba(255,255,255,0.03); color: var(--sw-text-dim); border-color: var(--sw-border); }
+  .row-link-hint { color: var(--sw-text-dim); font-size: 11px; font-family: var(--mono); }
+  tr.srow:hover .row-link-hint { color: var(--sw-cyan); }
+
+  /* ---- empty states ---- */
+  .empty {
+    display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; color: var(--sw-text-dim); padding: 40px; gap: 12px;
+  }
+  .empty .glyph {
+    width: 56px; height: 56px; border-radius: 14px;
+    background: linear-gradient(135deg, rgba(4,78,244,0.25), rgba(247,42,114,0.25));
+    border: 1px solid var(--sw-border);
+    display: flex; align-items: center; justify-content: center; font-size: 26px;
+  }
+  .empty h3 { font-size: 16px; color: var(--sw-text); font-weight: 600; }
+  .empty p { font-size: 13px; max-width: 320px; }
+
+  @media (max-width: 900px) {
+    .rail { width: 280px; }
+  }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div class="brand-titles">
+        <span class="eyebrow">SignalWire · Chicago Roadshow 2026</span>
+        <span class="title">Post-Prompt <span class="accent">Admin</span></span>
+      </div>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div id="conn" class="conn is-down"><span class="conn-dot"></span><span id="conn-label">connecting</span></div>
+    <button id="btn-export" class="btn btn-ghost">Export</button>
+    <div class="confirm-wrap">
+      <button id="btn-config" class="btn btn-ghost">⚙ Config</button>
+      <div id="config-pop" class="confirm-pop" style="width:360px;">
+        <p style="margin:0 0 4px;"><strong>Connection config</strong></p>
+        <p style="margin:0 0 12px;opacity:.7;font-size:12px;">
+          The public URL is auto-detected from this page's address. Override any field if needed.</p>
+        <label class="cfg-l">Public URL <span id="cfg-base-src" class="cfg-src"></span></label>
+        <input id="cfg-base" class="cfg-i" type="text" placeholder="https://your-app.replit.app" autocomplete="off">
+        <label class="cfg-l">SWAIG auth username</label>
+        <input id="cfg-user" class="cfg-i" type="text" autocomplete="off">
+        <label class="cfg-l">SWAIG auth password</label>
+        <input id="cfg-pass" class="cfg-i" type="text" autocomplete="off">
+        <div class="confirm-actions" style="margin-top:12px;">
+          <button id="cfg-cancel" class="btn btn-ghost">Close</button>
+          <button id="cfg-save" class="btn">Save</button>
+        </div>
+        <div id="cfg-status" class="cfg-status"></div>
+      </div>
+    </div>
+    <div class="confirm-wrap">
+      <button id="btn-clear" class="btn btn-danger">Clear</button>
+      <div id="confirm-pop" class="confirm-pop">
+        <p>Clear <strong>all captured calls</strong>? This cannot be undone.</p>
+        <div class="confirm-actions">
+          <button id="confirm-cancel" class="btn btn-ghost">Cancel</button>
+          <button id="confirm-yes" class="btn btn-danger">Clear all</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabbar">
+    <button class="tab is-active" data-tab="calls">
+      <span class="tab-dot"></span>Calls<span class="tab-count" id="count-calls">0</span>
+    </button>
+    <button class="tab" data-tab="sessions">
+      <span class="tab-dot"></span>Sessions<span class="tab-count" id="count-sessions">0</span>
+    </button>
+  </nav>
+
+  <!-- ===== CALLS PANE ===== -->
+  <section id="pane-calls" class="pane is-active">
+    <aside class="rail">
+      <div class="rail-head">
+        <label for="agent-filter">Filter by agent</label>
+        <select id="agent-filter" class="filter"><option value="">All agents</option></select>
+        <span id="session-chip" class="session-filter-chip">
+          <span id="session-chip-label"></span>
+          <button id="session-chip-clear" title="Clear session filter">×</button>
+        </span>
+      </div>
+      <div id="rail-list" class="rail-list"></div>
+    </aside>
+    <div class="detail" id="detail">
+      <div class="empty" id="detail-empty">
+        <div class="glyph">📞</div>
+        <h3>No call selected</h3>
+        <p>Place a call to see post-prompts here.</p>
+      </div>
+      <div id="detail-content" style="display:none; flex:1; min-height:0; flex-direction:column;">
+        <div class="detail-head">
+          <div class="detail-agent" id="d-agent"></div>
+          <div class="detail-sub" id="d-sub"></div>
+        </div>
+        <div class="subtabs" id="subtabs">
+          <button class="subtab is-active" data-sub="summary">Summary</button>
+          <button class="subtab" data-sub="transcript">Transcript<span class="badge" id="b-transcript">0</span></button>
+          <button class="subtab" data-sub="tools">Tools<span class="badge" id="b-tools">0</span></button>
+          <button class="subtab" data-sub="swaig">SWAIG Log<span class="badge" id="b-swaig">0</span></button>
+          <button class="subtab" data-sub="meta">Meta</button>
+          <button class="subtab" data-sub="raw">Raw JSON</button>
+        </div>
+        <div class="detail-body">
+          <div class="subview is-active" data-sub="summary" id="sv-summary"></div>
+          <div class="subview" data-sub="transcript" id="sv-transcript"></div>
+          <div class="subview" data-sub="tools" id="sv-tools"></div>
+          <div class="subview" data-sub="swaig" id="sv-swaig"></div>
+          <div class="subview" data-sub="meta" id="sv-meta"></div>
+          <div class="subview" data-sub="raw" id="sv-raw"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SESSIONS PANE ===== -->
+  <section id="pane-sessions" class="pane">
+    <div class="sessions-scroll" id="sessions-scroll">
+      <div class="empty" id="sessions-empty">
+        <div class="glyph">🔑</div>
+        <h3>No sessions yet</h3>
+        <p>Sessions appear here when a workshop attendee signs in with their SignalWire credentials.</p>
+      </div>
+      <table class="sessions" id="sessions-table" style="display:none;">
+        <thead>
+          <tr>
+            <th>Space</th><th>Project ID</th><th>Token</th>
+            <th>Signed In</th><th>Last Seen</th><th>Agent Address</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="sessions-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+<script>
+(function () {
+  "use strict";
+
+  // ----- state -----
+  var calls = [];
+  var sessions = [];
+  var selectedCallId = null;
+  var activeTab = "calls";
+  var activeSub = "summary";
+  var agentFilter = "";
+  var sessionFilter = null;       // session_id string when cross-linked
+  var knownCallIds = {};          // for NEW-flash on freshly arrived calls
+  var firstCallsLoad = true;
+
+  // ----- helpers -----
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    if (s === null || s === undefined) return "";
+    return String(s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  function fmtTime(epoch) {
+    if (epoch === null || epoch === undefined) return "—";
+    var d = new Date(epoch * 1000);
+    if (isNaN(d.getTime())) return "—";
+    return d.toLocaleString([], {
+      month: "short", day: "numeric",
+      hour: "2-digit", minute: "2-digit", second: "2-digit"
+    });
+  }
+  function fmtTimeShort(epoch) {
+    if (epoch === null || epoch === undefined) return "—";
+    var d = new Date(epoch * 1000);
+    if (isNaN(d.getTime())) return "—";
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  }
+  function originLabel(rec) {
+    if (rec.session && (rec.session.space || rec.session.project_id)) {
+      return { space: rec.session.space || "unknown", pid: rec.session.project_id || "unknown", known: true };
+    }
+    return { space: "unknown", pid: "unknown", known: false };
+  }
+
+  // ----- top-level tabs -----
+  Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (t) {
+    t.addEventListener("click", function () { switchTab(t.getAttribute("data-tab")); });
+  });
+  function switchTab(name) {
+    activeTab = name;
+    Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (t) {
+      t.classList.toggle("is-active", t.getAttribute("data-tab") === name);
+    });
+    $("pane-calls").classList.toggle("is-active", name === "calls");
+    $("pane-sessions").classList.toggle("is-active", name === "sessions");
+  }
+
+  // ----- detail sub-tabs -----
+  Array.prototype.forEach.call(document.querySelectorAll(".subtab"), function (st) {
+    st.addEventListener("click", function () {
+      activeSub = st.getAttribute("data-sub");
+      Array.prototype.forEach.call(document.querySelectorAll(".subtab"), function (x) {
+        x.classList.toggle("is-active", x === st);
+      });
+      Array.prototype.forEach.call(document.querySelectorAll(".subview"), function (v) {
+        v.classList.toggle("is-active", v.getAttribute("data-sub") === activeSub);
+      });
+    });
+  });
+
+  // ----- agent filter -----
+  $("agent-filter").addEventListener("change", function () {
+    agentFilter = this.value;
+    renderRail();
+  });
+
+  // ----- session cross-link chip -----
+  $("session-chip-clear").addEventListener("click", function () {
+    sessionFilter = null;
+    updateSessionChip();
+    renderRail();
+    renderSessions();
+  });
+  function updateSessionChip() {
+    var chip = $("session-chip");
+    if (sessionFilter) {
+      var row = sessions.filter(function (s) { return s.session_id === sessionFilter; })[0];
+      var lbl = row ? (row.space || row.project_id || sessionFilter) : sessionFilter;
+      $("session-chip-label").textContent = "session: " + lbl;
+      chip.classList.add("is-on");
+    } else {
+      chip.classList.remove("is-on");
+    }
+  }
+
+  // ----- filtering -----
+  function visibleCalls() {
+    return calls.filter(function (c) {
+      if (agentFilter && c.agent_name !== agentFilter) return false;
+      if (sessionFilter) {
+        if (!c.session || c.session.session_id !== sessionFilter) return false;
+      }
+      return true;
+    });
+  }
+
+  // ----- render: agent filter options -----
+  function renderAgentOptions() {
+    var sel = $("agent-filter");
+    var prev = sel.value;
+    var names = {};
+    calls.forEach(function (c) { if (c.agent_name) names[c.agent_name] = true; });
+    var keys = Object.keys(names).sort();
+    var html = '<option value="">All agents</option>';
+    keys.forEach(function (n) { html += '<option value="' + esc(n) + '">' + esc(n) + "</option>"; });
+    sel.innerHTML = html;
+    if (keys.indexOf(prev) !== -1) sel.value = prev; else { sel.value = ""; agentFilter = ""; }
+  }
+
+  // ----- render: call rail -----
+  function renderRail() {
+    var list = $("rail-list");
+    var vis = visibleCalls();
+    if (vis.length === 0) {
+      list.innerHTML =
+        '<div class="empty" style="padding:48px 16px;">' +
+        '<div class="glyph">📞</div><h3>No calls</h3>' +
+        '<p>Place a call to see post-prompts here.</p></div>';
+      return;
+    }
+    var html = "";
+    vis.forEach(function (c) {
+      var isNew = !knownCallIds[c.call_id] && !firstCallsLoad;
+      var o = originLabel(c);
+      html +=
+        '<div class="call-item' +
+          (c.call_id === selectedCallId ? " is-selected" : "") +
+          (isNew ? " is-new" : "") +
+          '" data-id="' + esc(c.call_id) + '">' +
+          '<div class="ci-top">' +
+            '<span class="ci-agent">' + esc(c.agent_name || "unknown agent") + "</span>" +
+            (isNew ? '<span class="ci-new-badge">NEW</span>' : "") +
+          "</div>" +
+          '<div class="ci-meta">' +
+            (c.agent_route ? '<span class="ci-route">' + esc(c.agent_route) + "</span>" : "") +
+            '<span class="ci-time">' + esc(fmtTimeShort(c.received_at)) + "</span>" +
+          "</div>" +
+          '<div class="ci-origin">' + esc(o.space) +
+            ' · <span class="pid">' + esc(o.pid) + "</span></div>" +
+        "</div>";
+    });
+    list.innerHTML = html;
+    Array.prototype.forEach.call(list.querySelectorAll(".call-item"), function (el) {
+      el.addEventListener("click", function () { selectCall(el.getAttribute("data-id")); });
+    });
+  }
+
+  function selectCall(id) {
+    selectedCallId = id;
+    renderRail();
+    renderDetail();
+  }
+
+  // ----- render: detail -----
+  function renderDetail() {
+    var rec = calls.filter(function (c) { return c.call_id === selectedCallId; })[0];
+    if (!rec) {
+      $("detail-empty").style.display = "flex";
+      $("detail-content").style.display = "none";
+      return;
+    }
+    $("detail-empty").style.display = "none";
+    $("detail-content").style.display = "flex";
+
+    $("d-agent").textContent = rec.agent_name || "unknown agent";
+
+    var o = originLabel(rec);
+    var subHtml =
+      (rec.agent_route ? '<span><span class="k">route</span> ' + esc(rec.agent_route) + "</span>" : "") +
+      '<span><span class="k">time</span> ' + esc(fmtTime(rec.received_at)) + "</span>" +
+      '<span><span class="k">space</span> ' + esc(o.space) + "</span>" +
+      '<span><span class="k">project</span> <span class="pid">' + esc(o.pid) + "</span></span>";
+    $("d-sub").innerHTML = subHtml;
+
+    // summary
+    var sv = $("sv-summary");
+    var sm = rec.summary || {};
+    var sHtml = "";
+    if (sm.raw) {
+      sHtml += '<div class="section-label">Summary</div>';
+      sHtml += '<div class="summary-raw">' + esc(sm.raw) + "</div>";
+    }
+    if (sm.parsed !== null && sm.parsed !== undefined) {
+      sHtml += '<div class="section-label">Parsed</div>';
+      sHtml += '<pre class="raw">' + esc(JSON.stringify(sm.parsed, null, 2)) + "</pre>";
+    }
+    if (!sHtml) {
+      sHtml = '<div class="empty" style="padding:40px 0;"><h3>No summary</h3>' +
+        "<p>This call did not include post-prompt summary data.</p></div>";
+    }
+    sv.innerHTML = sHtml;
+
+    // transcript
+    var tr = rec.transcript || [];
+    $("b-transcript").textContent = tr.length;
+    var tv = $("sv-transcript");
+    if (tr.length === 0) {
+      tv.innerHTML = '<div class="empty" style="padding:40px 0;"><h3>No transcript</h3></div>';
+    } else {
+      var th = "";
+      tr.forEach(function (turn) {
+        var role = (turn.role || "—").toLowerCase();
+        th +=
+          '<div class="turn">' +
+            '<div class="turn-role ' + esc(role) + '">' + esc(turn.role || "—") + "</div>" +
+            '<div class="turn-bubble">' + esc(turn.content) + "</div>" +
+          "</div>";
+      });
+      tv.innerHTML = th;
+    }
+
+    // tools
+    var tools = rec.tools || [];
+    $("b-tools").textContent = tools.length;
+    var toolv = $("sv-tools");
+    if (tools.length === 0) {
+      toolv.innerHTML = '<div class="empty" style="padding:40px 0;"><h3>No tool calls</h3>' +
+        "<p>This call did not invoke any functions.</p></div>";
+    } else {
+      var toh = "";
+      tools.forEach(function (t) {
+        toh +=
+          '<div class="tool-card">' +
+            '<div class="tool-name">' + esc(t.name || "unknown") + "</div>" +
+            '<div class="kv">' +
+              '<span class="k">args</span><pre>' + esc(stringify(t.args)) + "</pre>" +
+              '<span class="k">result</span><pre>' + esc(stringify(t.result)) + "</pre>" +
+            "</div>" +
+          "</div>";
+      });
+      toolv.innerHTML = toh;
+    }
+
+    // SWAIG execution log (raw ground truth — the URL SignalWire actually hit,
+    // the raw response, and any error flags). This is the live debugging view:
+    // an empty response or an unexpected URL means a function misfired.
+    var swaig = rec.swaig || [];
+    $("b-swaig").textContent = swaig.length;
+    var swv = $("sv-swaig");
+    if (swaig.length === 0) {
+      swv.innerHTML = '<div class="empty" style="padding:40px 0;"><h3>No SWAIG calls</h3>' +
+        "<p>No functions were invoked on this call.</p></div>";
+    } else {
+      var sh = "";
+      swaig.forEach(function (s) {
+        var emptyResp = (s.response === null || s.response === undefined || s.response === "");
+        var bad = !!s.error || emptyResp;
+        var flag = s.error
+          ? '<span style="color:var(--sw-magenta);">⚠ ' + esc(stringify(s.error)) + "</span>"
+          : (emptyResp ? '<span style="color:var(--sw-gold,#FFD700);">⚠ empty response</span>' : "");
+        sh +=
+          '<div class="tool-card"' + (bad ? ' style="border-color:var(--sw-magenta);"' : "") + ">" +
+            '<div class="tool-name">ƒ ' + esc(s.name || "unknown") +
+              (flag ? '  ' + flag : "") + "</div>" +
+            '<div class="kv">' +
+              '<span class="k">args</span><pre>' + esc(stringify(s.args)) + "</pre>" +
+              '<span class="k">url called</span><pre>' + esc(s.url || "—") + "</pre>" +
+              '<span class="k">response</span><pre>' + esc(emptyResp ? "(empty)" : stringify(s.response)) + "</pre>" +
+              (s.http_code ? '<span class="k">http</span><pre>' + esc(String(s.http_code)) + "</pre>" : "") +
+            "</div>" +
+          "</div>";
+      });
+      swv.innerHTML = sh;
+    }
+
+    // meta
+    var m = rec.meta || {};
+    var cells = [
+      ["Caller Number", m.caller_id_num],
+      ["Caller Name", m.caller_id_name],
+      ["To", m.to],
+      ["From", m.from],
+      ["Direction", m.direction],
+      ["Call ID", rec.call_id]
+    ];
+    var mh = '<div class="meta-grid">';
+    cells.forEach(function (c) {
+      mh += '<div class="meta-cell"><div class="mk">' + esc(c[0]) + '</div>' +
+        '<div class="mv">' + esc(c[1] !== null && c[1] !== undefined && c[1] !== "" ? c[1] : "—") + "</div></div>";
+    });
+    mh += "</div>";
+    $("sv-meta").innerHTML = mh;
+
+    // raw
+    $("sv-raw").innerHTML = '<pre class="raw">' + esc(JSON.stringify(rec.raw, null, 2)) + "</pre>";
+  }
+
+  function stringify(v) {
+    if (v === null || v === undefined) return "—";
+    if (typeof v === "string") return v;
+    try { return JSON.stringify(v, null, 2); } catch (e) { return String(v); }
+  }
+
+  // ----- render: sessions -----
+  function renderSessions() {
+    $("count-sessions").textContent = sessions.length;
+    var tbl = $("sessions-table");
+    var empty = $("sessions-empty");
+    if (sessions.length === 0) {
+      tbl.style.display = "none";
+      empty.style.display = "flex";
+      return;
+    }
+    empty.style.display = "none";
+    tbl.style.display = "table";
+    var body = $("sessions-body");
+    var html = "";
+    sessions.forEach(function (s) {
+      var on = s.signed_in_at ? "" : " off";
+      html +=
+        '<tr class="srow' + (s.session_id === sessionFilter ? " is-active" : "") +
+          '" data-id="' + esc(s.session_id) + '">' +
+          '<td class="sp-space">' + esc(s.space || "—") + "</td>" +
+          '<td class="pid-cell">' + esc(s.project_id || "—") + "</td>" +
+          '<td class="tok-cell">' + esc(s.token_masked || "—") + "</td>" +
+          '<td><span class="signed-pill' + on + '">' +
+            (s.signed_in_at ? esc(fmtTime(s.signed_in_at)) : "not signed in") + "</span></td>" +
+          '<td class="mono-cell">' + esc(fmtTime(s.last_seen)) + "</td>" +
+          '<td class="mono-cell">' + esc(s.agent_address || "—") + "</td>" +
+          '<td class="row-link-hint">view calls →</td>' +
+        "</tr>";
+    });
+    body.innerHTML = html;
+    Array.prototype.forEach.call(body.querySelectorAll(".srow"), function (row) {
+      row.addEventListener("click", function () {
+        sessionFilter = row.getAttribute("data-id");
+        updateSessionChip();
+        renderRail();
+        renderSessions();
+        switchTab("calls");
+      });
+    });
+  }
+
+  // ----- render: calls collection (full pipeline) -----
+  function renderCalls() {
+    $("count-calls").textContent = calls.length;
+    renderAgentOptions();
+    updateSessionChip();
+    renderRail();
+    // keep selection valid
+    if (selectedCallId && !calls.some(function (c) { return c.call_id === selectedCallId; })) {
+      selectedCallId = null;
+    }
+    renderDetail();
+  }
+
+  function setCalls(next) {
+    calls = Array.isArray(next) ? next : [];
+    calls.forEach(function (c) { knownCallIds[c.call_id] = true; });
+    renderCalls();
+    firstCallsLoad = false;
+    // mark all current as known AFTER a frame so the NEW flash plays once
+    setTimeout(function () {
+      calls.forEach(function (c) { knownCallIds[c.call_id] = true; });
+    }, 0);
+  }
+
+  // ----- connection indicator -----
+  function setConn(state) {
+    var el = $("conn");
+    el.classList.remove("is-live", "is-down");
+    if (state === "live") { el.classList.add("is-live"); $("conn-label").textContent = "live"; }
+    else { el.classList.add("is-down"); $("conn-label").textContent = "disconnected"; }
+    Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (t) {
+      t.classList.toggle("is-live", state === "live");
+    });
+  }
+
+  // ----- header actions -----
+  $("btn-export").addEventListener("click", function () {
+    window.location.href = "/admin/export";
+  });
+
+  var confirmPop = $("confirm-pop");
+  $("btn-clear").addEventListener("click", function (e) {
+    e.stopPropagation();
+    confirmPop.classList.toggle("is-open");
+  });
+  $("confirm-cancel").addEventListener("click", function () { confirmPop.classList.remove("is-open"); });
+  $("confirm-yes").addEventListener("click", function () {
+    confirmPop.classList.remove("is-open");
+    fetch("/admin/calls", { method: "DELETE" }).catch(function () {});
+  });
+  document.addEventListener("click", function (e) {
+    if (!confirmPop.contains(e.target) && e.target.id !== "btn-clear") {
+      confirmPop.classList.remove("is-open");
+    }
+  });
+
+  // ----- config panel (public URL + SWAIG auth, editable here vs Replit Secrets) -----
+  var configPop = $("config-pop");
+  function fillConfig(c) {
+    $("cfg-base").value = c.public_base || "";
+    $("cfg-user").value = c.auth_user || "";
+    $("cfg-pass").value = c.auth_password || "";
+    $("cfg-base-src").textContent = c.public_base_overridden
+      ? "(manual override)"
+      : (c.public_base_detected ? "(auto-detected)" : "(from environment)");
+  }
+  function loadConfig() {
+    fetch("/admin/config").then(function (r) { return r.json(); })
+      .then(fillConfig).catch(function () {});
+  }
+  $("btn-config").addEventListener("click", function (e) {
+    e.stopPropagation();
+    configPop.classList.toggle("is-open");
+    if (configPop.classList.contains("is-open")) { $("cfg-status").textContent = ""; loadConfig(); }
+  });
+  $("cfg-cancel").addEventListener("click", function () { configPop.classList.remove("is-open"); });
+  $("cfg-save").addEventListener("click", function () {
+    $("cfg-status").textContent = "Saving…";
+    fetch("/admin/config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        public_base: $("cfg-base").value,
+        auth_user: $("cfg-user").value,
+        auth_password: $("cfg-pass").value
+      })
+    }).then(function (r) { return r.json(); })
+      .then(function (c) { fillConfig(c); $("cfg-status").textContent = "Saved ✓ (applied live)"; })
+      .catch(function () { $("cfg-status").textContent = "Save failed"; });
+  });
+  document.addEventListener("click", function (e) {
+    if (!configPop.contains(e.target) && e.target.id !== "btn-config") {
+      configPop.classList.remove("is-open");
+    }
+  });
+
+  // ----- initial load + SSE -----
+  function loadInitial() {
+    fetch("/admin/calls").then(function (r) { return r.json(); })
+      .then(function (d) { setCalls(d.calls || []); }).catch(function () {});
+    fetch("/admin/sessions").then(function (r) { return r.json(); })
+      .then(function (d) { sessions = d.sessions || []; renderSessions(); updateSessionChip(); })
+      .catch(function () {});
+  }
+
+  function connect() {
+    var es = new EventSource("/admin/stream");
+    es.addEventListener("open", function () { setConn("live"); });
+    es.addEventListener("calls", function (ev) {
+      try { var d = JSON.parse(ev.data); setCalls(d.calls || []); } catch (e) {}
+    });
+    es.addEventListener("sessions", function (ev) {
+      try {
+        var d = JSON.parse(ev.data);
+        sessions = d.sessions || [];
+        renderSessions();
+        updateSessionChip();
+      } catch (e) {}
+    });
+    es.addEventListener("error", function () {
+      setConn("down");
+      // EventSource auto-reconnects; surface state until it reopens.
+    });
+  }
+
+  loadInitial();
+  connect();
+})();
+</script>
+</body>
+</html>

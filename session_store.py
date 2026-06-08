@@ -19,7 +19,8 @@ def new_session_id() -> str:
 
 
 def _empty_record() -> dict:
-    return {"creds": {}, "setup": {}, "agent_address": None, "last_seen": time.time()}
+    return {"creds": {}, "setup": {}, "agent_address": None,
+            "signed_in_at": None, "last_seen": time.time()}
 
 
 class SessionStore:
@@ -27,6 +28,7 @@ class SessionStore:
         self._path = path
         self._sessions = {}
         self._lock = threading.Lock()
+        self.version = 0
 
     def get(self, session_id):
         with self._lock:
@@ -46,6 +48,42 @@ class SessionStore:
             rec = self._sessions.get(session_id)
             if rec is not None:
                 rec["last_seen"] = time.time()
+
+    def mark_signed_in(self, session_id):
+        """Stamp the first successful credential sign-in. Idempotent."""
+        with self._lock:
+            rec = self._sessions.get(session_id)
+            if rec is None:
+                return
+            if rec.get("signed_in_at") is None:
+                rec["signed_in_at"] = time.time()
+                self.version += 1
+
+    def admin_snapshot(self):
+        """Sanitized view of all sessions for the admin dashboard.
+
+        The raw SIGNALWIRE_TOKEN is NEVER included — only a masked tail.
+        """
+        def mask(tok):
+            if not tok:
+                return ""
+            tail = tok[-4:] if len(tok) > 4 else ""
+            return "•" * 6 + tail
+
+        with self._lock:
+            rows = []
+            for sid, rec in self._sessions.items():
+                creds = rec.get("creds", {})
+                rows.append({
+                    "session_id": sid,
+                    "space": creds.get("SIGNALWIRE_SPACE"),
+                    "project_id": creds.get("SIGNALWIRE_PROJECT_ID"),
+                    "token_masked": mask(creds.get("SIGNALWIRE_TOKEN")),
+                    "signed_in_at": rec.get("signed_in_at"),
+                    "last_seen": rec.get("last_seen"),
+                    "agent_address": rec.get("agent_address"),
+                })
+            return rows
 
     def sweep(self, ttl_seconds=DEFAULT_TTL_SECONDS):
         cutoff = time.time() - ttl_seconds

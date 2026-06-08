@@ -18,11 +18,8 @@ Compare the three approaches:
   | Math       | Skill       | 1     | No          |
 """
 
-import json
-import os
-from datetime import datetime
 import requests
-from signalwire_agents import AgentBase, SwaigFunctionResult as FunctionResult, DataMap
+from signalwire_agents import AgentBase, SwaigFunctionResult as FunctionResult
 
 
 class SkillsAgent(AgentBase):
@@ -39,12 +36,14 @@ class SkillsAgent(AgentBase):
             ],
         )
 
+        from python.steps._postprompt_params import CAPTURE_PARAMS
         self.set_params({
             "end_of_speech_timeout": 600,
             "attention_timeout": 15000,
             "attention_timeout_prompt":
                 "Are you still there? I can help with weather, "
                 "jokes, math, or just chat!",
+            **CAPTURE_PARAMS,
         })
 
         self.add_hints(["Buddy", "weather", "joke", "temperature", "forecast"])
@@ -83,7 +82,7 @@ class SkillsAgent(AgentBase):
         )
 
         self._register_joke_function()
-        self._register_weather_datamap()
+        self._register_weather()
 
         # NEW: Built-in skills - one line each, zero configuration
         self.add_skill("datetime", {"default_timezone": "America/New_York"})
@@ -132,43 +131,15 @@ class SkillsAgent(AgentBase):
         except requests.RequestException:
             return FunctionResult("My joke service is taking a break. Try again in a moment!")
 
-    # -- Weather DataMap ----------------------------------------------------
+    # -- Weather (server-side SWAIG tool, runs on our server) ----------------
 
-    def _register_weather_datamap(self):
-        weather_dm = (
-            DataMap("get_weather")
-            .description(
-                "Get the current weather for a city. Use this when the caller asks "
-                "about weather, temperature, or conditions."
-            )
-            .parameter("city", "string", "The city to get weather for", required=True)
-            # WHY one webhook: DataMap runs multiple webhooks as sequential
-            # FALLBACKS, not a pipeline -- there's no way to feed one webhook's
-            # response into the next webhook's request. So we use wttr.in, which
-            # takes the city name directly (no separate geocoding hop) and needs
-            # no API key, keeping the workshop prerequisite-free.
-            .webhook("GET", "https://wttr.in/${enc:args.city}?format=j1")
-            .output(FunctionResult(
-                "Weather in ${args.city}: "
-                "${response.current_condition[0].weatherDesc[0].value}, "
-                "${response.current_condition[0].temp_F} degrees Fahrenheit, "
-                "humidity ${response.current_condition[0].humidity} percent. "
-                "Feels like ${response.current_condition[0].FeelsLikeF} degrees."
-            ))
-            .fallback_output(FunctionResult(
-                "Sorry, I couldn't get the weather for ${args.city}. "
-                "Please check the city name and try again."
-            ))
-        )
-
-        self.register_swaig_function(weather_dm.to_swaig_function())
+    def _register_weather(self):
+        # Server-side define_tool, NOT a serverless DataMap: a real workshop call
+        # proved SignalWire's DataMap engine left every ${...} empty for this
+        # function. Fetching + formatting here is deterministic. See _weather.py.
+        from python.steps._weather import register_weather_tool
+        register_weather_tool(self)
 
     def on_summary(self, summary, raw_data):
-        os.makedirs("calls", exist_ok=True)
-        call_id = (raw_data or {}).get(
-            "call_id", datetime.now().strftime("%Y%m%d_%H%M%S"),
-        )
-        filepath = os.path.join("calls", f"{call_id}.json")
-        with open(filepath, "w") as f:
-            json.dump(raw_data, f, indent=2, default=str)
-        print(f"Call summary saved: {filepath}")
+        from python.steps._summary_capture import record_call
+        record_call(self, raw_data)

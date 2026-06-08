@@ -12,10 +12,7 @@ New concepts:
   - function_fillers: phrases spoken while your function runs
 """
 
-import json
-import os
 import random
-from datetime import datetime
 from signalwire_agents import AgentBase, SwaigFunctionResult as FunctionResult
 
 
@@ -74,16 +71,13 @@ class JokeAgent(AgentBase):
             "Note which jokes were told and how the caller reacted.",
         )
 
+        from python.steps._postprompt_params import CAPTURE_PARAMS
+        self.set_params({**CAPTURE_PARAMS})
+
     def on_tell_joke(self, args, raw_data):
         joke = random.choice(JOKES)
         return FunctionResult(f"Here's a joke: {joke}")
 
     def on_summary(self, summary, raw_data):
-        os.makedirs("calls", exist_ok=True)
-        call_id = (raw_data or {}).get(
-            "call_id", datetime.now().strftime("%Y%m%d_%H%M%S"),
-        )
-        filepath = os.path.join("calls", f"{call_id}.json")
-        with open(filepath, "w") as f:
-            json.dump(raw_data, f, indent=2, default=str)
-        print(f"Call summary saved: {filepath}")
+        from python.steps._summary_capture import record_call
+        record_call(self, raw_data)

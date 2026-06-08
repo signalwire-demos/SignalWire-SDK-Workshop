@@ -29,6 +29,8 @@ import sys
 import uuid
 from replit_setup import startup
 import session_store
+import call_store
+import config_store
 from urllib.parse import urlparse
 
 
@@ -60,6 +62,61 @@ _load_dotenv()
 
 _SESSIONS = session_store.SessionStore(path=".workshop_sessions.json")
 _SESSIONS.load()
+
+# Runtime config (public URL + SWAIG basic auth), editable on the admin page
+# instead of via Replit Secrets. Applied into the live process by _apply_config().
+_CONFIG = config_store.ConfigStore(path=".workshop_config.json")
+_CONFIG.load()
+
+
+def _resolve_session_for_call(raw_data):
+    """Map a post-prompt payload to its originating session.
+
+    1. Prefer global_data.workshop_session_id (exact; stamped at SWML render).
+    2. Match the SignalWire project_id (every post-prompt payload carries it;
+       each attendee uses their own project). This is the reliable workhorse —
+       confirmed against a real captured payload.
+    3. Fall back to matching the provisioned phone number against to/from.
+    Defensive: returns None on any mismatch and never raises.
+    """
+    try:
+        raw_data = raw_data if isinstance(raw_data, dict) else {}
+
+        gd = raw_data.get("global_data") or {}
+        sid = gd.get("workshop_session_id") if isinstance(gd, dict) else None
+        if sid:
+            sess = _SESSIONS.get(sid)
+            if sess:
+                creds = sess.get("creds", {}) or {}
+                return {"space": creds.get("SIGNALWIRE_SPACE"),
+                        "project_id": creds.get("SIGNALWIRE_PROJECT_ID"),
+                        "session_id": sid}
+
+        project_id = raw_data.get("project_id")
+        if project_id:
+            for row in _SESSIONS.admin_snapshot():
+                if row.get("project_id") == project_id:
+                    return {"space": row["space"], "project_id": row["project_id"],
+                            "session_id": row["session_id"]}
+
+        swml = raw_data.get("SWMLVars") or raw_data.get("prompt_vars") or {}
+        if not isinstance(swml, dict):
+            swml = {}
+        candidates = {swml.get("to"), swml.get("from"), raw_data.get("caller_id_num")}
+        candidates.discard(None)
+        for row in _SESSIONS.admin_snapshot():
+            setup_num = row.get("agent_address") or ""
+            sess = _SESSIONS.get(row["session_id"]) or {}
+            provisioned = (sess.get("setup", {}) or {}).get("phone_number")
+            if (provisioned and provisioned in candidates) or (setup_num and setup_num in candidates):
+                return {"space": row["space"], "project_id": row["project_id"],
+                        "session_id": row["session_id"]}
+    except Exception:
+        return None
+    return None
+
+
+call_store.set_session_resolver(_resolve_session_for_call)
 
 # Detect public URL and report secret status (no longer blocks on missing creds)
 base_url, auth_user, auth_pass = startup()
@@ -103,6 +160,35 @@ for route, agent_class, _desc in STEPS:
     agent = agent_class(route=route)
     server.register(agent, route)
     registered_agents[route] = agent
+
+
+def _effective_base():
+    """Public URL SignalWire calls back: admin override -> auto-detected -> env."""
+    return _CONFIG.effective_base(env_default=base_url)
+
+
+def _apply_config():
+    """Push the effective config into the live process so edits take effect now:
+    - SWML_PROXY_URL_BASE env: used by step12 provisioning and the SDK's webhook
+      URL generation.
+    - SWML_BASIC_AUTH_* env + each agent's `_basic_auth` tuple: the agents both
+      EMBED these creds in the webhook URLs they generate AND VALIDATE inbound
+      SignalWire requests against them, so both sides must update together.
+    """
+    base = _effective_base()
+    if base:
+        os.environ["SWML_PROXY_URL_BASE"] = base
+    user, pw = _CONFIG.effective_auth()
+    os.environ["SWML_BASIC_AUTH_USER"] = user
+    os.environ["SWML_BASIC_AUTH_PASSWORD"] = pw
+    for _agent in registered_agents.values():
+        try:
+            _agent._basic_auth = (user, pw)
+        except Exception:  # noqa: BLE001 - never let config application crash a request
+            pass
+
+
+_apply_config()  # apply any persisted overrides at startup
 
 # ---------------------------------------------------------------------------
 # Config endpoint - landing page fetches auth credentials dynamically
@@ -207,24 +293,91 @@ async def root_swaig_fallback(request: Request):
 @server.app.post("/post_prompt")
 @server.app.post("/post_prompt/")
 async def root_post_prompt_fallback(request: Request):
-    """Dispatch post_prompt calls that land on root /post_prompt/."""
+    """Capture post_prompt calls that land on the root path."""
     body = await request.body()
     try:
         data = _json.loads(body)
     except Exception:
         data = {}
-
-    # Try each agent's on_summary handler
-    for _route, agent in registered_agents.items():
-        if hasattr(agent, 'on_summary'):
-            try:
-                summary = data.get("post_prompt_data", {}).get("raw", "")
-                agent.on_summary(summary, data)
-                return JSONResponse({"status": "ok"})
-            except Exception:
-                continue
-
+    agent_name = data.get("app_name") or data.get("agent") or "(root fallback)"
+    call_store.STORE.record(agent_name, None, data)
     return JSONResponse({"status": "ok"})
+
+# ---------------------------------------------------------------------------
+# Admin dashboard — live post-prompt + sessions view (unlisted, no auth).
+# ---------------------------------------------------------------------------
+
+@server.app.get("/admin/calls")
+async def admin_calls(request: Request):
+    return JSONResponse({"calls": call_store.STORE.all()})
+
+
+@server.app.get("/admin/sessions")
+async def admin_sessions(request: Request):
+    return JSONResponse({"sessions": _SESSIONS.admin_snapshot()})
+
+
+@server.app.delete("/admin/calls")
+async def admin_clear_calls(request: Request):
+    call_store.STORE.clear()
+    return JSONResponse({"status": "cleared"})
+
+
+@server.app.get("/admin/export")
+async def admin_export(request: Request):
+    return JSONResponse(
+        {"calls": call_store.STORE.all()},
+        headers={"Content-Disposition": "attachment; filename=postprompt-calls.json"},
+    )
+
+
+@server.app.get("/admin/config")
+async def admin_get_config(request: Request):
+    """Current runtime config (public URL + SWAIG basic auth) for the admin page."""
+    return JSONResponse(_CONFIG.snapshot(env_default=_effective_base()))
+
+
+@server.app.post("/admin/config")
+async def admin_set_config(request: Request):
+    """Save admin-edited config and apply it live. Empty string clears an override
+    (falls back to auto-detected/env); omitted keys are left unchanged."""
+    try:
+        body = await request.json()
+    except Exception:  # noqa: BLE001
+        body = {}
+    _CONFIG.update(
+        public_base=body.get("public_base"),
+        auth_user=body.get("auth_user"),
+        auth_password=body.get("auth_password"),
+    )
+    _apply_config()
+    return JSONResponse(_CONFIG.snapshot(env_default=_effective_base()))
+
+
+@server.app.get("/admin/stream")
+async def admin_stream(request: Request):
+    """SSE driven by polling the stores' version counters (sync/thread safe)."""
+    async def gen():
+        last_calls = -1
+        last_sessions = -1
+        # Prime the client with current state immediately.
+        while True:
+            if await request.is_disconnected():
+                return
+            cv = call_store.STORE.version
+            sv = _SESSIONS.version
+            if cv != last_calls:
+                last_calls = cv
+                payload = _json.dumps({"calls": call_store.STORE.all()})
+                yield f"event: calls\ndata: {payload}\n\n"
+            if sv != last_sessions:
+                last_sessions = sv
+                payload = _json.dumps({"sessions": _SESSIONS.admin_snapshot()})
+                yield f"event: sessions\ndata: {payload}\n\n"
+            yield ": keepalive\n\n"
+            await asyncio.sleep(1.0)
+
+    return StreamingResponse(gen(), media_type="text/event-stream")
 
 # ---------------------------------------------------------------------------
 # Source viewer - lets the landing page link to /source/agents/step04_hello.py
@@ -256,6 +409,10 @@ if os.path.isdir("web"):
     @server.app.get("/")
     async def landing():
         return FileResponse("web/index.html")
+
+    @server.app.get("/admin")
+    async def admin_page():
+        return FileResponse("web/admin.html")
 
 # ---------------------------------------------------------------------------
 # REST + RELAY pillar Run endpoints (steps 12 + 13)
@@ -390,7 +547,7 @@ async def relay_config(request: Request):
         # Browser calls (audio + video) reach the COMPLETE agent (/step11): it has
         # every capability plus the video avatar, so it's the best showcase. The
         # phone number's own routing is a separate resource and is unaffected.
-        destination = await asyncio.to_thread(ensure_agent_handler, base_url, "/step11", None, creds, session)
+        destination = await asyncio.to_thread(ensure_agent_handler, _effective_base(), "/step11", None, creds, session, request.state.session_id)
         token, sub_id = await asyncio.to_thread(mint_subscriber_token, reference, None, creds)
         _SESSIONS.save()
         return JSONResponse({"token": token, "destination": destination})
@@ -414,6 +571,15 @@ _SESSION_COOKIE = "sw_session"
 
 @server.app.middleware("http")
 async def _session_cookie(request: Request, call_next):
+    # Auto-detect the public base from the first real (non-local) request so the
+    # *.replit.app URL self-populates with no Secret to set. A manual admin
+    # override always wins (effective_base checks it first).
+    _host = request.headers.get("x-forwarded-host") or request.headers.get("host") or ""
+    if _host and "localhost" not in _host and not _host.startswith(("127.", "0.0.0.0")):
+        _proto = request.headers.get("x-forwarded-proto") or request.url.scheme or "https"
+        if _CONFIG.set_detected_base(f"{_proto}://{_host}"):
+            _apply_config()
+
     sid = request.cookies.get(_SESSION_COOKIE)
     is_new = not sid or _SESSIONS.get(sid) is None
     if is_new:
@@ -479,6 +645,8 @@ async def set_credentials(request: Request):
                 rec["creds"][k] = value
             else:
                 rec["creds"].pop(k, None)
+    if all(rec["creds"].get(k) for k in _CRED_KEYS):
+        _SESSIONS.mark_signed_in(request.state.session_id)
     _SESSIONS.save()
     return JSONResponse(_credentials_status_for(creds_for(request)))
 
@@ -492,9 +660,10 @@ VALID_AGENT_ROUTES = {r for r, _, _ in STEPS}
 
 
 def _require_public_base():
-    if not base_url:
-        raise RuntimeError("no public URL detected; set SWML_PROXY_URL_BASE or REPLIT_DEV_DOMAIN")
-    return base_url
+    base = _effective_base()
+    if not base:
+        raise RuntimeError("no public URL detected; open /admin and set the Public URL, or set SWML_PROXY_URL_BASE")
+    return base
 
 
 def _normalize_route(route: str) -> str:
@@ -570,9 +739,9 @@ async def setup_select(request: Request):
     session = _SESSIONS.ensure(request.state.session_id)
     try:
         if sid:
-            result = await asyncio.to_thread(configure_existing, creds, sid, route, public)
+            result = await asyncio.to_thread(configure_existing, creds, sid, route, public, request.state.session_id)
         else:
-            result = await asyncio.to_thread(purchase_and_configure, creds, phone_to_buy, route, public)
+            result = await asyncio.to_thread(purchase_and_configure, creds, phone_to_buy, route, public, request.state.session_id)
         trace = result.pop("_trace", [])
         session["setup"] = result; _SESSIONS.save()
         return JSONResponse({"setup": result, "_trace": trace})

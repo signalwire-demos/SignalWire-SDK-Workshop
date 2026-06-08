@@ -11,9 +11,6 @@ Concepts:
   - set_post_prompt() + on_summary(): save call data for debugging
 """
 
-import json
-import os
-from datetime import datetime
 from signalwire_agents import AgentBase
 
 
@@ -42,16 +39,9 @@ class HelloAgent(AgentBase):
             "Include what the caller wanted and how the conversation went.",
         )
 
-    def on_summary(self, summary, raw_data):
-        """Save post-prompt data to calls/ for debugging.
+        from python.steps._postprompt_params import CAPTURE_PARAMS
+        self.set_params({**CAPTURE_PARAMS})
 
-        Upload JSON files to https://postpromptviewer.signalwire.io/
-        """
-        os.makedirs("calls", exist_ok=True)
-        call_id = (raw_data or {}).get(
-            "call_id", datetime.now().strftime("%Y%m%d_%H%M%S"),
-        )
-        filepath = os.path.join("calls", f"{call_id}.json")
-        with open(filepath, "w") as f:
-            json.dump(raw_data, f, indent=2, default=str)
-        print(f"Call summary saved: {filepath}")
+    def on_summary(self, summary, raw_data):
+        from python.steps._summary_capture import record_call
+        record_call(self, raw_data)

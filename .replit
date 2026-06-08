@@ -9,8 +9,14 @@ PYTHONUNBUFFERED = "1"
 localPort = 5000
 externalPort = 80
 
+# reserved_vm: a single always-on, persistent instance. This app keeps per-session
+# credentials, captured calls, and the admin feed as in-memory + local-JSON state in
+# ONE process, and serves a long-lived SSE stream (/admin/stream). Autoscale would run
+# multiple stateless instances and scale to zero, splitting that state across instances
+# (SignalWire's cookie-less callbacks could hit an instance that never saw the session)
+# and dropping SSE. reserved_vm matches the app's single-process, stateful design.
 [deployment]
-deploymentTarget = "autoscale"
+deploymentTarget = "reserved_vm"
 run = ["python", "main.py"]
 build = ["sh", "-c", "pip install ."]
 
