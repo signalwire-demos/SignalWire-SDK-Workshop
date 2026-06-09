@@ -191,6 +191,23 @@ def _apply_config():
 _apply_config()  # apply any persisted overrides at startup
 
 # ---------------------------------------------------------------------------
+# Phase 3 observability: register every agent's SWAIG functions with the health
+# store so /admin/swaig can list + run them. All functions now run in-process
+# (define_tool); a dict registry entry would be a serverless DataMap.
+# ---------------------------------------------------------------------------
+import function_health
+import error_store
+from swaig_cases import CASES, expect_ok
+
+for _route, _agent in registered_agents.items():
+    _reg = getattr(getattr(_agent, "_tool_registry", None), "_swaig_functions", {}) or {}
+    for _fname, _fobj in _reg.items():
+        function_health.STORE.register(
+            _fname, route=_route,
+            kind=("datamap" if isinstance(_fobj, dict) else "tool"),
+        )
+
+# ---------------------------------------------------------------------------
 # Config endpoint - landing page fetches auth credentials dynamically
 # ---------------------------------------------------------------------------
 
@@ -268,6 +285,80 @@ async def validate_urls():
 
 from fastapi import Request, Response, HTTPException
 import json as _json
+import time as _time
+
+
+def _owning_agent(func_name):
+    """Return the registered agent that owns `func_name`, or None."""
+    for _route, agent in registered_agents.items():
+        reg = getattr(getattr(agent, "_tool_registry", None), "_swaig_functions", None)
+        if reg and func_name in reg:
+            return _route, agent
+    return None, None
+
+
+def _swaig_result_failed(raw):
+    """True if a SWAIG result dict represents a failure. The SDK swallows
+    handler exceptions and returns HTTP 200 with an error payload, so we must
+    inspect the result rather than rely on a raised exception."""
+    if not isinstance(raw, dict):
+        return False
+    if raw.get("error"):
+        return True
+    resp = raw.get("response")
+    if isinstance(resp, str) and (
+        resp.startswith("Error executing function")
+        or resp.startswith("Function '") and "not found" in resp
+    ):
+        return True
+    return False
+
+
+def run_swaig_case(func_name):
+    """Invoke one SWAIG function against its swaig_cases entry and record health.
+
+    Every workshop function runs in-process, so this always dispatches via
+    agent._execute_swaig_function(...). Returns a verdict dict the /admin "Run
+    test" button renders: {"ok", "result", "latency_ms"}.
+    """
+    case = next((c for c in CASES if c["function"] == func_name), None)
+    args = case.get("args", {}) if case else {}
+    expect = case.get("expect", "") if case else ""
+
+    _route, agent = _owning_agent(func_name)
+    if agent is None:
+        # No owning agent: do NOT record_result (that would setdefault a phantom
+        # entry into the function list and persist it). Just log the error.
+        error_store.STORE.record(source="swaig-test", message=f"unknown function: {func_name}")
+        return {"ok": False, "result": f"function '{func_name}' not registered", "latency_ms": None}
+
+    # Defensive: a dict registry entry would be a serverless DataMap (runs on
+    # SignalWire, not here). None remain today, but keep the branch honest.
+    reg_entry = agent._tool_registry._swaig_functions.get(func_name)
+    if isinstance(reg_entry, dict):
+        detail = "DataMap (runs on SignalWire)"
+        function_health.STORE.record_result(func_name, ok=True, detail=detail, latency_ms=None)
+        return {"ok": True, "result": detail, "latency_ms": None}
+
+    t0 = _time.perf_counter()
+    try:
+        raw = agent._execute_swaig_function(func_name, dict(args), None, None)
+        text = raw.get("response") if isinstance(raw, dict) else (getattr(raw, "response", None) or str(raw))
+        latency_ms = round((_time.perf_counter() - t0) * 1000, 1)
+        # The SDK swallows handler exceptions and returns an HTTP-200 error
+        # string in `response`; that string is non-empty, so without this check
+        # a crashing handler would be wrongly marked ok.
+        failed = _swaig_result_failed(raw)
+        ok = (not failed) and bool(text) and (not expect or expect_ok(text, expect))
+        function_health.STORE.record_result(func_name, ok=ok, detail=text or "", latency_ms=latency_ms)
+        return {"ok": ok, "result": text, "latency_ms": latency_ms}
+    except Exception as e:  # noqa: BLE001 - a failing test must never crash the server
+        latency_ms = round((_time.perf_counter() - t0) * 1000, 1)
+        msg = f"{e.__class__.__name__}: {e}"
+        function_health.STORE.record_result(func_name, ok=False, detail=msg, latency_ms=latency_ms)
+        error_store.STORE.record(source="swaig-test", message=f"{func_name}: {e}")
+        return {"ok": False, "result": msg, "latency_ms": latency_ms}
+
 
 @server.app.post("/swaig")
 @server.app.post("/swaig/")
@@ -286,8 +377,17 @@ async def root_swaig_fallback(request: Request):
         if hasattr(agent, '_tool_registry') and hasattr(agent._tool_registry, '_swaig_functions'):
             if func_name in agent._tool_registry._swaig_functions:
                 result = agent._execute_swaig_function(func_name, data, None, None)
+                # The SDK never lets handler exceptions escape; it returns an
+                # HTTP-200 error payload. Inspect the result to record failures.
+                if _swaig_result_failed(result):
+                    detail = str(result.get("error") or result.get("response"))
+                    error_store.STORE.record(source="swaig", message=f"{func_name}: " + detail[:200])
+                    function_health.STORE.record_result(
+                        func_name, ok=False, detail=detail[:500], latency_ms=None)
+                # Still return the result — SignalWire must receive the response.
                 return JSONResponse(result if isinstance(result, dict) else {"response": str(result)})
 
+    error_store.STORE.record(source="swaig", message=f"unknown function: {func_name}")
     raise HTTPException(status_code=404, detail="Function not found")
 
 @server.app.post("/post_prompt")
@@ -354,18 +454,53 @@ async def admin_set_config(request: Request):
     return JSONResponse(_CONFIG.snapshot(env_default=_effective_base()))
 
 
+@server.app.get("/admin/swaig")
+async def admin_swaig(request: Request):
+    """List every registered SWAIG function with its latest health status."""
+    return JSONResponse({"functions": function_health.STORE.all()})
+
+
+@server.app.post("/admin/swaig/test")
+async def admin_swaig_test(request: Request):
+    """Run one SWAIG function's test case off the event loop and return a verdict."""
+    try:
+        body = await request.json()
+    except Exception:  # noqa: BLE001
+        body = {}
+    name = (body or {}).get("function")
+    if not name:
+        return JSONResponse({"error": "function name required"}, status_code=400)
+    verdict = await asyncio.to_thread(run_swaig_case, name)
+    return JSONResponse(verdict)
+
+
+@server.app.get("/admin/errors")
+async def admin_errors(request: Request):
+    return JSONResponse({"errors": error_store.STORE.all()})
+
+
+@server.app.delete("/admin/errors")
+async def admin_clear_errors(request: Request):
+    error_store.STORE.clear()
+    return JSONResponse({"status": "cleared"})
+
+
 @server.app.get("/admin/stream")
 async def admin_stream(request: Request):
     """SSE driven by polling the stores' version counters (sync/thread safe)."""
     async def gen():
         last_calls = -1
         last_sessions = -1
+        last_swaig = -1
+        last_errors = -1
         # Prime the client with current state immediately.
         while True:
             if await request.is_disconnected():
                 return
             cv = call_store.STORE.version
             sv = _SESSIONS.version
+            fv = function_health.STORE.version
+            ev = error_store.STORE.version
             if cv != last_calls:
                 last_calls = cv
                 payload = _json.dumps({"calls": call_store.STORE.all()})
@@ -374,6 +509,14 @@ async def admin_stream(request: Request):
                 last_sessions = sv
                 payload = _json.dumps({"sessions": _SESSIONS.admin_snapshot()})
                 yield f"event: sessions\ndata: {payload}\n\n"
+            if fv != last_swaig:
+                last_swaig = fv
+                payload = _json.dumps({"functions": function_health.STORE.all()})
+                yield f"event: swaig\ndata: {payload}\n\n"
+            if ev != last_errors:
+                last_errors = ev
+                payload = _json.dumps({"errors": error_store.STORE.all()})
+                yield f"event: errors\ndata: {payload}\n\n"
             yield ": keepalive\n\n"
             await asyncio.sleep(1.0)
 
@@ -822,7 +965,8 @@ if base_url:
     else:
         print(f"\nWebhook URL validation passed for {len(registered_agents)} agents.")
 
-port = int(os.environ.get("PORT", 5000))
-print(f"\nStarting server with all agents on port {port}...\n")
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    print(f"\nStarting server with all agents on port {port}...\n")
 
-server.run()
+    server.run()
