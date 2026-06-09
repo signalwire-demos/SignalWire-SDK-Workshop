@@ -563,6 +563,23 @@
     padding: 10px 22px; border-radius: 8px; font-weight: 600;
     font-size: 13.5px; cursor: pointer;
   }
+  .btn-cta-lg {
+    font-size: 1.25rem;
+    font-weight: 700;
+    padding: 18px 40px;
+    border-radius: 12px;
+    letter-spacing: 0.01em;
+    box-shadow: 0 8px 28px rgba(10, 132, 255, 0.35);
+  }
+  .wizard-toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px);
+    background: #11151c; color: #fff; border: 1px solid #2a2f3a; border-radius: 10px;
+    padding: 12px 18px; font-size: 14px; font-weight: 600; opacity: 0; pointer-events: none;
+    transition: opacity .25s, transform .25s; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,.4);
+  }
+  .wizard-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .wizard-toast.err { border-color: #e0218a; }
+  .wizard-toast.ok  { border-color: #0a84ff; }
   .step-counter { font-size: 12px; color: var(--sw-text-dim); }
 
   .skip-link {
@@ -724,57 +741,13 @@
     margin: 18px 0 10px;
   }
 
-  /* === "Point my phone number here" — the primary action in each step === */
-  .step-aim {
-    margin-top: 24px; padding: 22px 24px;
-    border: 1px solid rgba(4,78,244,0.45); border-radius: 16px;
-    background:
-      radial-gradient(130% 150% at 0% 0%, rgba(4,78,244,0.18), transparent 62%),
-      rgba(4,78,244,0.08);
-    box-shadow: 0 14px 48px -18px rgba(4,78,244,0.6);
-    display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
-  }
-  .step-aim .step-aim-label {
-    flex: 1; font-size: 16px; line-height: 1.45; color: var(--sw-text-bright); min-width: 230px;
-  }
-  .step-aim .step-aim-label strong { color: #fff; font-family: 'SF Mono', monospace; }
-  .step-aim-eyebrow {
-    display: block; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--sw-blue); font-weight: 700; margin-bottom: 6px;
-  }
-  .step-aim button {
-    display: inline-flex; align-items: center; gap: 10px;
-    background: var(--sw-blue); border: none; color: #fff;
-    padding: 16px 30px; border-radius: 12px; cursor: pointer;
-    font-weight: 700; font-size: 16px; letter-spacing: 0.01em;
-    box-shadow: 0 8px 22px rgba(4,78,244,0.5);
-    transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
-    animation: aim-pulse 2.6s ease-in-out infinite;
-  }
-  .step-aim button::before { content: "📞"; font-size: 18px; }
-  .step-aim button:hover:not(:disabled) {
-    transform: translateY(-2px); background: var(--sw-blue-deep);
-    box-shadow: 0 12px 32px rgba(4,78,244,0.7);
-  }
-  @keyframes aim-pulse {
-    0%, 100% { box-shadow: 0 8px 22px rgba(4,78,244,0.5); }
-    50% { box-shadow: 0 8px 30px rgba(4,78,244,0.85); }
-  }
-  .step-aim button:disabled {
-    cursor: default; animation: none;
-    background: rgba(64,224,208,0.16); color: var(--sw-cyan);
-    box-shadow: none;
-  }
-  .step-aim button:disabled::before { content: "✓"; }
-  .step-aim.is-current {
-    border-color: rgba(64,224,208,0.4);
-    background: rgba(64,224,208,0.07);
-    box-shadow: none;
-  }
-  .step-aim.is-current .step-aim-label strong { color: var(--sw-cyan); }
-  .step-aim-status { flex-basis: 100%; font-size: 13px; color: var(--sw-text-dim); }
-  .step-aim-status.ok { color: var(--sw-cyan); }
-  .step-aim-status.err { color: var(--sw-magenta); }
+  /* === Per-version "call Buddy and ask him" prompt (Task 1.6) === */
+  .running-version-badge { text-align:center; font-size:13px; color:var(--sw-text-dim); margin:6px 0 2px; }
+  .running-version-badge .rv-phone { color:var(--sw-text-bright); font-weight:700; }
+  .step-call-cta { display:flex; gap:12px; align-items:flex-start; background:rgba(10,132,255,.08);
+    border:1px solid rgba(10,132,255,.35); border-radius:10px; padding:12px 14px; margin:12px 0; }
+  .step-call-cta .scc-icon { font-size:20px; }
+  .step-call-cta .scc-sub { display:block; color:var(--sw-text-dim); font-weight:400; margin-top:2px; }
 
   /* === Power-up code spotlight: the real code change for each level === */
   .powerup {
@@ -981,6 +954,31 @@
     margin: 28px auto 0; text-align: center; max-width: 580px;
     font-size: 13.5px; color: var(--sw-text-dim); font-style: italic;
   }
+
+  /* ============ CALL FABRIC PIPELINE (REST/RELAY showcase) ============ */
+  .cf-section { max-width: 980px; margin: 0 auto; padding: 32px 20px 8px; }
+  .cf-head { text-align: center; }
+  .cf-head .label {
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--sw-cyan); font-weight: 600;
+  }
+  .cf-head h2 { margin: 6px 0; }
+  .cf-head p { color: var(--sw-text-dim); max-width: 720px; margin: 0 auto; }
+  .cf-pipeline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center; margin:24px 0; }
+  .cf-node { background:#161b22; border:1px solid #30363d; border-radius:12px; padding:14px 16px; min-width:120px;
+    text-align:center; cursor:pointer; color:var(--sw-text); transition: box-shadow .25s, border-color .25s, transform .15s; }
+  .cf-node:hover { transform: translateY(-2px); }
+  .cf-node.lit { border-color:#0a84ff; box-shadow:0 0 0 2px rgba(10,132,255,.25); }
+  .cf-node.cf-node-buddy.lit { border-color:#e0218a; box-shadow:0 0 0 2px rgba(224,33,138,.25); }
+  .cf-node.selected { outline:2px solid var(--sw-text-bright); }
+  .cf-emoji { font-size:26px; }
+  .cf-node-name { font-size:12.5px; margin-top:6px; }
+  .cf-arrow { color:#0a84ff; font-weight:700; font-size:20px; }
+  .cf-action { text-align:center; margin:8px 0 16px; }
+  .cf-call-btn { font-size:1.05rem; padding:14px 28px; }
+  .cf-status { color:var(--sw-text-dim); font-size:12.5px; margin-top:10px; }
+  .cf-reveal { background:#0f1117; border:1px solid #2a2f3a; border-radius:12px; padding:18px; margin-top:8px; }
+  .cf-reveal-links { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
 
   /* ============ AFTER THE BASICS (pillars) ============ */
   .pillars-section { padding: 64px 24px; max-width: 1080px; margin: 0 auto; }
@@ -1221,8 +1219,6 @@
     .steps-stack { padding: 0 10px; gap: 12px; max-width: 100%; }
     .step-advance { flex-direction: column-reverse; align-items: stretch; gap: 10px; }
     .step-advance .btn-primary, .step-advance .btn-secondary { width: 100%; justify-content: center; }
-    .flow-strip { gap: 8px; }
-    .flow-arrow { display: none; }
     .creds-grid { grid-template-columns: 1fr; }
     .number-grid { grid-template-columns: 1fr; }
     .signup-invite { flex-direction: column; align-items: stretch; text-align: left; padding: 18px 18px; }
@@ -1239,8 +1235,6 @@
     .api-ticker-eyebrow { font-size: 11px; }
     .topbar { top: 40px; }
     .big-number { font-size: 32px; }
-    .step-aim { flex-direction: column; align-items: stretch; gap: 10px; }
-    .step-aim button { width: 100%; }
   }
 
   /* Small phone */
@@ -1277,21 +1271,7 @@
   }
   .link-button:hover { text-decoration: underline; }
 
-  /* ===== Flow strip: the pipeline at a glance ===== */
-  .flow-strip { display: flex; align-items: stretch; gap: 10px; margin-bottom: 22px; flex-wrap: wrap; }
-  .flow-step {
-    flex: 1; min-width: 210px; display: flex; gap: 12px; align-items: flex-start;
-    background: var(--sw-card); border: 1px solid var(--sw-border); border-radius: 12px; padding: 14px 16px;
-  }
-  .flow-num {
-    flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--sw-blue), var(--sw-magenta)); color: #fff;
-    font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;
-  }
-  .flow-step strong { color: var(--sw-text-bright); font-size: 13.5px; }
-  .flow-step p { color: var(--sw-text-dim); font-size: 12px; margin-top: 3px; line-height: 1.45; }
-  .flow-step em, .callout em { color: var(--sw-magenta); font-style: normal; font-weight: 600; }
-  .flow-arrow { align-self: center; color: var(--sw-text-dim); font-size: 18px; }
+  .callout em { color: var(--sw-magenta); font-style: normal; font-weight: 600; }
 
   /* ===== Behind-the-scenes callout inside a pillar card ===== */
   .callout {
@@ -1604,11 +1584,11 @@
   <p style="text-align:center;padding:120px 20px;color:var(--sw-text-dim);">Loading…</p>
 </main>
 
-<!-- Browser SDK for step 13 click-to-call. Loaded before the page script so
-     the global SignalWire and window.RelayCall exist when cards render. -->
-<script src="https://cdn.signalwire.com/@signalwire/js"></script>
-<script src="/static/relay-client.js"></script>
-<script src="/static/buddy-video.js"></script>
+<!-- Browser SDK (pinned to v4) for the in-browser call. Loaded before the page
+     script so the global SignalWire and window.BuddyVideo exist when the Call
+     Fabric diagram renders. -->
+<script src="https://cdn.signalwire.com/@signalwire/js@4.0.0-rc.0"></script>
+<script src="/static/buddy-video.js?v=2"></script>
 
 <script>
 /* =========================================================================
@@ -1618,8 +1598,9 @@
 const STEPS_META = [
   {
     route: "/step04",
-    step: "Lv.1",
+    step: "Version 1",
     name: "Hello Agent",
+    callPrompt: "just say hi — Buddy answers the phone and introduces himself.",
     tagline: "Buddy comes online",
     codeSpotlight: {
       power: "Buddy wakes up and can hold a conversation",
@@ -1655,8 +1636,9 @@ const STEPS_META = [
   },
   {
     route: "/step06",
-    step: "Lv.2",
+    step: "Version 2",
     name: "Hardcoded Jokes",
+    callPrompt: "Ask Buddy to tell you a joke.",
     tagline: "Buddy learns jokes",
     codeSpotlight: {
       power: "Buddy can reach for a joke mid-call",
@@ -1692,8 +1674,9 @@ const STEPS_META = [
   },
   {
     route: "/step07",
-    step: "Lv.3",
+    step: "Version 3",
     name: "Live API Jokes",
+    callPrompt: "Ask Buddy to tell you a joke — this version fetches one from a live API.",
     tagline: "Buddy calls a live API",
     codeSpotlight: {
       power: "Buddy fetches a fresh joke from the internet",
@@ -1727,8 +1710,9 @@ const STEPS_META = [
   },
   {
     route: "/step08",
-    step: "Lv.4",
+    step: "Version 4",
     name: "Weather + Jokes",
+    callPrompt: "Ask Buddy what the weather is like in Chicago.",
     tagline: "Buddy checks the weather",
     codeSpotlight: {
       power: "Buddy checks the weather without touching your server",
@@ -1763,8 +1747,9 @@ const STEPS_META = [
   },
   {
     route: "/step09",
-    step: "Lv.5",
+    step: "Version 5",
     name: "Polished Agent",
+    callPrompt: "Ask for a joke, then the weather in Chicago — notice the smoother, polished replies.",
     tagline: "Buddy gets polished",
     codeSpotlight: {
       power: "Buddy gets a personality and tuned timing",
@@ -1799,8 +1784,9 @@ const STEPS_META = [
   },
   {
     route: "/step10",
-    step: "Lv.6",
+    step: "Version 6",
     name: "Agent with Skills",
+    callPrompt: "Ask Buddy what the weather is like, then ask for a joke — both now come from reusable skills.",
     tagline: "Buddy gains skills",
     codeSpotlight: {
       power: "Buddy gains date/time and math in two lines",
@@ -1833,8 +1819,9 @@ const STEPS_META = [
   },
   {
     route: "/step11",
-    step: "Lv.7",
+    step: "Version 7",
     name: "Complete Agent",
+    callPrompt: "Ask Buddy for the weather in Chicago and a dad joke — this is the full production-ready agent.",
     tagline: "Buddy goes production-ready",
     codeSpotlight: {
       power: "Buddy is reorganized into clean, production-ready methods",
@@ -1869,37 +1856,10 @@ const STEPS_META = [
   },
 ];
 
-const PILLAR_CARDS = [
-  {
-    pillar: "rest",
-    kind: "sse",
-    step: "Bonus 1",
-    name: "REST pillar - subscriber token",
-    stem: "step12_rest_demo",
-    desc: "Use the REST API to provision the AI agent as a dialable Fabric resource and mint a short-lived subscriber token for the browser.",
-    runLabel: "Run REST Demo",
-    docs: [
-      { label: "REST API overview", url: "/apis" },
-      { label: "Authorization", url: "/apis/authorization" },
-      { label: "Call Fabric", url: "/platform/resources" },
-    ],
-  },
-  {
-    pillar: "relay",
-    kind: "call",
-    step: "Bonus 2",
-    name: "RELAY pillar - click to call",
-    stem: "step13_relay_client",
-    sourceFile: "relay-client.js",
-    desc: "Click one button and talk to Buddy in your browser. The @signalwire/js SDK dials the agent using the subscriber token from the REST pillar. No phone needed.",
-    callLabel: "Call Buddy",
-    docs: [
-      { label: "Call Fabric", url: "/platform/resources" },
-      { label: "Browser SDK", url: "/browser-sdk/v3/js" },
-      { label: "Getting started", url: "/platform/getting-started" },
-    ],
-  },
-];
+/* The REST/RELAY showcase is now the interactive Call Fabric pipeline diagram
+ * (see CF_NODES / revealCfNode). The old PILLAR_CARDS data drove two static
+ * "Bonus" cards and is no longer needed — the diagram inlines its own stems,
+ * source links, and docs. */
 
 /* =========================================================================
  *  API activity bus — every workshop fetch flows through swApi() so the
@@ -2665,7 +2625,7 @@ function renderMilestoneNumber() {
     body = `<p class="loading-row"><span class="loading-spinner"></span> Looking on your project ${sdkBadge("SDK · client.phone_numbers.list")}…</p>`;
   } else if (existing && existing.length > 0) {
     body = `
-      <p class="lead">Found ${existing.length} number${existing.length === 1 ? '' : 's'} already on your project. Pick one and we'll point it at <strong>Lv.1 · Hello Agent</strong>. ${sdkBadge("SDK · client.fabric.resources.assign_phone_route")}</p>
+      <p class="lead">Found ${existing.length} number${existing.length === 1 ? '' : 's'} already on your project. Pick one and we'll point it at <strong>Version 1 · Hello Agent</strong>. ${sdkBadge("SDK · client.fabric.resources.assign_phone_route")}</p>
       <div class="number-grid">
         ${existing.map((n, i) => `
           <button class="number-card existing" data-existing-sid="${escapeHtml(n.sid)}">
@@ -2689,8 +2649,9 @@ function renderMilestoneNumber() {
       <p class="wizard-helper">Purchasing a number will add a small monthly charge to your SignalWire account (typically ~$1/mo). <a href="#" id="wiz-search-again">Search a different area code →</a></p>`;
   } else if (searched && searched.length === 0) {
     body = `
-      <p class="lead">No available numbers found${wizard.searchedAreaCode ? ` for area code <strong>${escapeHtml(wizard.searchedAreaCode)}</strong>` : ''}. Try a different area code.</p>
-      ${renderSearchForm()}`;
+      <p class="lead">No available numbers found${wizard.searchedAreaCode ? ` for area code <strong>${escapeHtml(wizard.searchedAreaCode)}</strong>` : ''}. Try a different area code, or grab any available US number.</p>
+      ${renderSearchForm()}
+      <p class="wizard-helper"><a href="#" id="wiz-search-any">Show any available US number →</a></p>`;
   } else {
     // No existing numbers — show search form
     body = `
@@ -2732,12 +2693,12 @@ function renderMilestoneDone() {
       <div class="wizard-eyebrow">Step 3 of 3 · You're live</div>
       <h2>Your AI agent Buddy is connected.</h2>
       <div class="big-number">${escapeHtml(formatPhone(phone))}</div>
-      <p class="lead">Buddy is live at <strong>Lv.1 · Hello Agent</strong>, ${sourceLabel === 'purchased' ? 'on the number you just purchased' : 'on your number'}, wired up over the SignalWire REST API. Dial from any phone — Buddy will pick up and say hello.</p>
-      <p class="wizard-helper">An AI agent can be reached two ways: <strong>dialed over the phone</strong> like you just set up, or <strong>connected over the internet</strong> straight from a browser. You'll do the browser call at the end with SignalWire RELAY. First, level Buddy up below — each level adds a new capability, and a one-click <strong>"Point my phone number here"</strong> button swaps which version your number dials.</p>
+      <p class="lead">Buddy is live at <strong>Version 1 · Hello Agent</strong>, ${sourceLabel === 'purchased' ? 'on the number you just purchased' : 'on your number'}, wired up over the SignalWire REST API. Dial from any phone — Buddy will pick up and say hello.</p>
+      <p class="wizard-helper">An AI agent can be reached two ways: <strong>dialed over the phone</strong> like you just set up, or <strong>connected over the internet</strong> straight from a browser. You'll do the browser call at the end with SignalWire RELAY. First, give Buddy a new capability below — each version adds one, and your number automatically re-points to whichever version you're viewing.</p>
       <div class="wizard-nav">
         <button class="btn-secondary" id="wiz-restart">Start over</button>
         <span class="step-counter">Done</span>
-        <button class="btn-primary" id="wiz-finish">Open the workshop →</button>
+        <button class="btn-primary btn-cta-lg" id="wiz-finish">Open the workshop →</button>
       </div>
     </div>`;
 }
@@ -2752,6 +2713,74 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
 }
 
+/* ---- Call Fabric pipeline diagram (REST/RELAY showcase) ---- */
+const CF_NODES = {
+  browser: {
+    title: "Your browser",
+    body: "The @signalwire/js v4 SDK runs entirely in this page. It requests mic/camera, then opens a WebRTC media session — no phone, no SIP client, no dialed number.",
+    links: [{ label: "Browser SDK v4 overview", url: "https://signalwire.com/docs/browser-sdk/v4/guides/overview" }],
+    source: { js: "buddy-video.js" },
+  },
+  rest: {
+    title: "REST mints a subscriber JWT",
+    body: "HTTP Basic auth against api/fabric provisions Buddy as an external SWML handler (a dialable Call Fabric address) and mints a short-lived subscriber token scoped to voice. Fully API-driven.",
+    links: [{ label: "REST API overview", url: "https://signalwire.com/docs" }],
+    source: { stem: "step12_rest_demo" },
+  },
+  edge: {
+    title: "SignalWire edge · WebRTC",
+    body: "The subscriber token authorizes a real-time WebRTC voice/video session across SignalWire's global edge straight to your AI agent. Browser-native, serverless.",
+    links: [],
+    source: { stem: "step13_relay_client" },
+  },
+  buddy: {
+    title: "Buddy (AI)",
+    body: "The same agent you leveled up answers — now reachable from the browser exactly as it is over the phone.",
+    links: [],
+    source: { stem: "step13_relay_client" },
+  },
+};
+
+function revealCfNode(key) {
+  const n = CF_NODES[key];
+  const host = document.getElementById("cf-reveal");
+  if (!n || !host) return;
+  document.querySelectorAll(".cf-node").forEach(b => b.classList.toggle("selected", b.dataset.cfNode === key));
+  const srcLinks = [];
+  if (n.source?.stem) {
+    srcLinks.push(`<a href="${pySourceUrl(n.source.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">Python source</a>`);
+    srcLinks.push(`<a href="${tsSourceUrl(n.source.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">TypeScript source</a>`);
+  }
+  if (n.source?.js) {
+    srcLinks.push(`<a href="${jsSourceUrl(n.source.js)}" target="_blank" rel="noopener noreferrer" class="src-btn">Client JS source</a>`);
+  }
+  const docLinks = (n.links || []).map(l => `<a href="${l.url}" target="_blank" rel="noopener noreferrer" class="src-btn">${escapeHtml(l.label)}</a>`).join("");
+  host.hidden = false;
+  host.innerHTML = `<h3>${escapeHtml(n.title)}</h3><p>${escapeHtml(n.body)}</p>
+    <div class="cf-reveal-links">${srcLinks.join("")}${docLinks}</div>`;
+}
+
+// Light nodes up as the call progresses; called from the popup client's
+// status callbacks (window.BuddyVideo.start({ onStatus })).
+function setCfStage(stage) {
+  const order = ["browser", "rest", "edge", "buddy"];
+  const idx = order.indexOf(stage);
+  order.forEach((k, i) => {
+    const el = document.querySelector(`[data-cf-node="${k}"]`);
+    if (el) el.classList.toggle("lit", i <= idx);
+  });
+  // Keep the status line in sync with the lit pipeline. Unknown/null stage
+  // (call ended or failed) resets to the idle prompt.
+  const CF_STATUS = {
+    browser: "Starting in your browser…",
+    rest:    "Minting a secure token…",
+    edge:    "Connecting media over WebRTC…",
+    buddy:   "Connected — talking to Buddy.",
+  };
+  const s = document.getElementById("cf-status");
+  if (s) s.textContent = CF_STATUS[stage] || "Click to start a live in-browser call with Buddy.";
+}
+
 function attachWizardHandlers() {
   const m = state.milestone;
   const on = (id, ev, fn) => document.getElementById(id)?.addEventListener(ev, fn);
@@ -2761,6 +2790,7 @@ function attachWizardHandlers() {
     on("wiz-num-back", "click", () => { wizard.errorMsg = ""; wizard.editingCreds = true; backMilestone(); });
     on("wiz-buy-instead", "click", e => { e.preventDefault(); wizard.numbers = []; wizard.errorMsg = ""; rerenderWizard(); });
     on("wiz-search-again", "click", e => { e.preventDefault(); wizard.searched = null; wizard.searchedAreaCode = ""; rerenderWizard(); });
+    on("wiz-search-any", "click", e => { e.preventDefault(); wizard.searchedAreaCode = ""; runSearch(null); });
     document.getElementById("wiz-search-form")?.addEventListener("submit", e => {
       e.preventDefault();
       const code = document.getElementById("wiz-area-code")?.value.trim() || "";
@@ -2858,9 +2888,6 @@ async function runSearch(areaCode) {
 }
 
 async function selectNumber(payload) {
-  if (payload.phone_number) {
-    if (!confirm(`Purchase ${formatPhone(payload.phone_number)} on your SignalWire project?\n\nThis adds a recurring charge (typically ~$1/mo) to your account.`)) return;
-  }
   wizard.pending = true; wizard.errorMsg = "";
   rerenderWizard();
   const r = await swApi("POST", "/api/setup/select", { ...payload, route: "/step04" }, { label: "configure phone number" });
@@ -2932,18 +2959,18 @@ function renderLockedPreviews() {
 
     <section class="pillars-section" id="pillars-section">
       <div class="pillars-head">
-        <div class="label">After the basics</div>
-        <h2>Two more pillars beyond the AI agent</h2>
-        <p>SignalWire is more than AI voice. Once you've made your first call, explore REST and RELAY - both runnable from this page without picking up the phone.</p>
+        <div class="label">The whole platform, end to end</div>
+        <h2>Call Buddy from your browser — no phone, no dialing</h2>
+        <p>SignalWire is more than AI voice. Once you've made your first call, the same REST API mints a token your browser uses to open a live WebRTC call straight to Buddy — all from this page, no phone required.</p>
       </div>
       <div class="pillars-grid">
         <div class="pillar-card rest locked" aria-disabled="true">
-          <div class="pillar-eyebrow">REST pillar · Bonus 1</div>
+          <div class="pillar-eyebrow">REST · Call Fabric</div>
           <div class="pillar-name">Subscriber token</div>
           <div class="pillar-desc">Use the REST API to provision the AI agent as a dialable Fabric resource and mint a short-lived subscriber token for the browser.</div>
         </div>
         <div class="pillar-card relay locked" aria-disabled="true">
-          <div class="pillar-eyebrow">RELAY pillar · Bonus 2</div>
+          <div class="pillar-eyebrow">Browser SDK · WebRTC</div>
           <div class="pillar-name">Click to call</div>
           <div class="pillar-desc">Click one button and talk to the agent in your browser with the @signalwire/js SDK. No phone, no dialed number.</div>
         </div>
@@ -2980,81 +3007,47 @@ function renderWorkshop() {
     <section class="preview-section">
       <div class="preview-inner">
         <div class="preview-head">
-          <h2>Level up your AI agent</h2>
-          <p>Buddy starts by just answering the phone, then gains a new capability at every level — all the way to production-ready. Scroll, use ← → keys, or click any node.</p>
+          <h2>Give Buddy a new capability</h2>
+          <p>Buddy starts by just answering the phone, then gains a new capability at every version — all the way to production-ready. Scroll, use ← → keys, or click any node.</p>
         </div>
       </div>
-      <div class="timeline-sticky"><div class="timeline-sticky-inner">${renderTimeline()}</div></div>
+      <div class="timeline-sticky"><div class="timeline-sticky-inner"><div id="running-version-badge" class="running-version-badge"></div>${renderTimeline()}</div></div>
       ${renderStepsStack()}
     </section>
 
     ${renderReceiptsSection()}
 
-    <section class="pillars-section" id="pillars-section">
-      <div class="pillars-head">
-        <div class="label">After the basics</div>
-        <h2>Two more pillars beyond the AI agent</h2>
-        <p>SignalWire is more than AI voice. It is programmable communications infrastructure: voice, messaging, video, SIP, and Call Fabric. Both pillars below run from your browser, no phone required.</p>
+    <section class="cf-section" id="cf-section">
+      <div class="cf-head">
+        <div class="label">The whole platform, end to end</div>
+        <h2>Talk to Buddy from your browser — no phone, no dialing</h2>
+        <p>This is SignalWire Call Fabric: the same REST API that bought your number now provisions Buddy as a dialable resource and mints a token your browser uses to open a live WebRTC call. Watch each stage light up.</p>
       </div>
 
-      <div class="flow-strip">
-        <div class="flow-step">
-          <span class="flow-num">1</span>
-          <div><strong>REST mints a token</strong><p>The <em>Call Fabric</em> REST API provisions your AI agent as a dialable resource and issues a short-lived <em>subscriber JWT</em> scoped to voice.</p></div>
-        </div>
-        <div class="flow-arrow" aria-hidden="true">&rarr;</div>
-        <div class="flow-step">
-          <span class="flow-num">2</span>
-          <div><strong>Browser SDK dials</strong><p>The <em>@signalwire/js</em> client opens a <em>WebRTC</em> media session over SignalWire's global edge using that token.</p></div>
-        </div>
-        <div class="flow-arrow" aria-hidden="true">&rarr;</div>
-        <div class="flow-step">
-          <span class="flow-num">3</span>
-          <div><strong>Live AI voice</strong><p>You are talking to your agent in the browser. No phone number, no PSTN, no dialout, fully <em>browser-native</em>.</p></div>
-        </div>
+      <div class="cf-pipeline" id="cf-pipeline" aria-label="Call Fabric pipeline">
+        <button class="cf-node" data-cf-node="browser" onclick="revealCfNode('browser')">
+          <div class="cf-emoji">🖥️</div><div class="cf-node-name">Your browser</div>
+        </button>
+        <div class="cf-arrow" aria-hidden="true">→</div>
+        <button class="cf-node" data-cf-node="rest" onclick="revealCfNode('rest')">
+          <div class="cf-emoji">🔑</div><div class="cf-node-name">REST mints JWT</div>
+        </button>
+        <div class="cf-arrow" aria-hidden="true">→</div>
+        <button class="cf-node" data-cf-node="edge" onclick="revealCfNode('edge')">
+          <div class="cf-emoji">🌍</div><div class="cf-node-name">SignalWire edge · WebRTC</div>
+        </button>
+        <div class="cf-arrow" aria-hidden="true">→</div>
+        <button class="cf-node cf-node-buddy" data-cf-node="buddy" onclick="revealCfNode('buddy')">
+          <div class="cf-emoji">🤖</div><div class="cf-node-name">Buddy (AI)</div>
+        </button>
       </div>
 
-      <div class="pillars-grid" id="pillars-host">
-        ${PILLAR_CARDS.map(p => {
-          const accent = p.pillar;
-          const namePart = p.name.includes(" - ") ? p.name.split(" - ").slice(1).join(" - ") : p.name;
-          const head = `
-            <div class="pillar-eyebrow">${escapeHtml(p.step.toUpperCase())} · ${escapeHtml(p.name.split(" - ")[0])}</div>
-            <div class="pillar-name">${escapeHtml(namePart)}</div>
-            <div class="pillar-desc">${escapeHtml(p.desc)}</div>`;
-          if (p.kind === "call") {
-            // Step 13: live in-browser call panel (no subprocess, no SSE).
-            return `
-            <div class="pillar-card ${accent}">
-              ${head}
-              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;">
-                <button class="src-btn primary" id="relay-call-btn">📞 ${escapeHtml(p.callLabel)}</button>
-                <button class="src-btn primary" id="buddy-video-btn">🎥 Video call with Buddy</button>
-                <button class="src-btn" id="relay-hangup-btn" style="display:none;">Hang up</button>
-                <a href="${jsSourceUrl(p.sourceFile)}" target="_blank" rel="noopener noreferrer" class="src-btn">Client JS source</a>
-                <a href="${tsSourceUrl(p.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">TypeScript source</a>
-              </div>
-              ${renderDocLinks(p.docs, "Docs")}
-              <div class="callout"><span class="co-label">Behind the scenes</span>The <em>subscriber token</em> from step 12 authorizes a <em>WebRTC</em> voice session straight to your AI agent over SignalWire's programmable network. Browser-native, serverless, real-time, no SIP client and no phone number.</div>
-              <div id="relay-status" style="margin-top:12px;font-size:12.5px;color:var(--sw-text-dim);">Click to start an in-browser call with the agent.</div>
-              <div id="relay-root" style="display:none;"></div>
-            </div>`;
-          }
-          // Step 12: subprocess Run button + SSE log pane.
-          return `
-          <div class="pillar-card ${accent}">
-            ${head}
-            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;">
-              <button class="src-btn primary" data-run="${p.pillar}">▶ ${escapeHtml(p.runLabel)}</button>
-              <a href="${pySourceUrl(p.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">Python source</a>
-              <a href="${tsSourceUrl(p.stem)}" target="_blank" rel="noopener noreferrer" class="src-btn">TypeScript source</a>
-            </div>
-            ${renderDocLinks(p.docs, "Docs")}
-            <div class="callout"><span class="co-label">Behind the scenes</span>HTTP Basic auth against <em>api/fabric</em> provisions your agent as an <em>external SWML handler</em> (a dialable Call Fabric address) and mints a short-lived <em>subscriber token</em>. Programmable telephony, fully API-driven.</div>
-            <pre class="run-log" data-pillar="${p.pillar}" style="margin-top:12px;background:var(--sw-dark);border:1px solid var(--sw-border);border-radius:8px;padding:12px;font-size:12px;color:var(--sw-text);min-height:0;max-height:280px;overflow:auto;font-family:'SF Mono',monospace;"></pre>
-          </div>`;
-        }).join("")}
+      <div class="cf-action">
+        <button class="src-btn primary cf-call-btn" id="buddy-call-btn">📞 Call Buddy from your Browser</button>
+        <div id="cf-status" class="cf-status">Click to start a live in-browser call with Buddy.</div>
       </div>
+
+      <div class="cf-reveal" id="cf-reveal" hidden></div>
     </section>
 
     <section class="finale" id="grand-finale" hidden aria-hidden="true">
@@ -3144,32 +3137,16 @@ function renderWorkshop() {
     });
   });
   document.getElementById("receipts-head")?.addEventListener("click", () => receipts.toggleCollapse());
-  document.querySelectorAll("[data-aim-route]").forEach(b => {
-    b.addEventListener("click", async e => {
-      e.stopPropagation();
-      const route = e.currentTarget.dataset.aimRoute;
-      await aimPhoneNumberAt(route, e.currentTarget);
-    });
-  });
   wireWorkshopKeys();
-  document.querySelectorAll("[data-run]").forEach(btn => {
-    btn.addEventListener("click", () => runPillar(btn.dataset.run));
-  });
 
-  const relayCallBtn = document.getElementById("relay-call-btn");
-  if (relayCallBtn) {
-    const refs = {
-      rootEl: document.getElementById("relay-root"),
-      statusEl: document.getElementById("relay-status"),
-      callBtn: relayCallBtn,
-      hangupBtn: document.getElementById("relay-hangup-btn"),
-      onEnded: () => showGrandFinale(),  // celebrate after the in-browser call ends
-    };
-    relayCallBtn.addEventListener("click", () => window.RelayCall && window.RelayCall.start(refs));
-    document.getElementById("relay-hangup-btn")?.addEventListener("click", () => window.RelayCall && window.RelayCall.hangup());
+  const buddyCallBtn = document.getElementById("buddy-call-btn");
+  if (buddyCallBtn) {
+    buddyCallBtn.addEventListener("click", () => window.BuddyVideo && window.BuddyVideo.start({
+      onStatus: stage => setCfStage(stage),  // light up the Call Fabric pipeline nodes
+      onEnded: () => showGrandFinale(),       // celebrate after the in-browser call ends
+    }));
   }
-  document.getElementById("buddy-video-btn")?.addEventListener("click", () =>
-    window.BuddyVideo && window.BuddyVideo.open({ onEnded: () => showGrandFinale() }));
+  renderPinnedHeader();  // populate the always-visible number badge once the DOM is in place
 }
 
 function renderPinnedUrlCard() {
@@ -3183,6 +3160,16 @@ function renderPinnedUrlCard() {
       </div>
       <button class="btn-copy" id="pinned-copy">Copy URL</button>
     </div>`;
+}
+
+function renderPinnedHeader() {
+  const host = document.getElementById("running-version-badge");
+  if (!host) return;
+  const num = wizard.setup?.phone_number ? formatPhone(wizard.setup.phone_number) : null;
+  const step = STEPS_META.find(s => s.route === (wizard.setup?.route || state.activeStep)) || STEPS_META[0];
+  host.innerHTML = num
+    ? `<span class="rv-phone">${escapeHtml(num)}</span> · running Buddy <strong>${escapeHtml(step.step)}</strong>`
+    : "";
 }
 
 function renderTimeline() {
@@ -3275,22 +3262,16 @@ function renderStepSection(step, i) {
     : `${escapeHtml(step.step)} · ${escapeHtml(step.name)} · ${isVisited ? "unlocked" : "locked"}`;
   const teaser = `<div class="step-teaser">${escapeHtml(step.desc.split(". ")[0])}.</div>`;
   const isCurrentDialTarget = wizard.setup?.route === step.route;
-  const aim = wizard.setup?.phone_number ? `
-    <div class="step-aim ${isCurrentDialTarget ? 'is-current' : ''}">
-      <div class="step-aim-label">
-        ${isCurrentDialTarget
-          ? `<strong>${escapeHtml(formatPhone(wizard.setup.phone_number))}</strong> currently dials <strong>${escapeHtml(step.name)}</strong>.`
-          : `<span class="step-aim-eyebrow">Recommended · one REST API call</span>Point <strong>${escapeHtml(formatPhone(wizard.setup.phone_number))}</strong> at <strong>${escapeHtml(step.name)}</strong> and call it right now.`}
-      </div>
-      <button data-aim-route="${escapeHtml(step.route)}"${isCurrentDialTarget ? ' disabled' : ''}>
-        ${isCurrentDialTarget ? 'Pointed here' : 'Point my phone number here'}
-      </button>
-      <span class="step-aim-status" data-aim-status="${escapeHtml(step.route)}"></span>
+  const callCta = wizard.setup?.phone_number ? `
+    <div class="step-call-cta">
+      <span class="scc-icon">📞</span>
+      <div><strong>Call ${escapeHtml(formatPhone(wizard.setup.phone_number))} now and ${escapeHtml(step.callPrompt)}</strong>
+      <span class="scc-sub">${isCurrentDialTarget ? "Your number already dials this version." : "Selecting this version points your number here."}</span></div>
     </div>` : "";
   const body = `
     <div class="step-detail-body">
       <p class="desc">${escapeHtml(step.desc)}</p>
-      ${aim}
+      ${callCta}
       ${renderCodeSpotlight(step)}
       ${renderTrySaying(step.prompts)}
       <div class="detail-grid">
@@ -3321,7 +3302,7 @@ function renderStepSection(step, i) {
           : `<span></span>`}
         ${next
           ? `<button class="btn-primary" data-step-route="${next.route}">Continue: ${escapeHtml(next.name)} →</button>`
-          : `<a href="#pillars-section" class="btn-primary">Explore the REST &amp; RELAY pillars ↓</a>`}
+          : `<a href="#cf-section" class="btn-primary">Call Buddy from your browser ↓</a>`}
       </div>
     </div>`;
   return `
@@ -3333,14 +3314,61 @@ function renderStepSection(step, i) {
     </section>`;
 }
 
+// Debounced, deduped auto-repointing of the provisioned number to the active
+// version. Reuses the same REST call the old manual button used.
+const AUTOPOINT_DEBOUNCE_MS = 400;  // debounce rapid arrow-key / scroll selection
+let _autoPointTimer = null;
+let _autoPointInFlight = false;
+function autoPointNumber(route) {
+  if (!wizard.setup?.phone_number) return;     // nothing provisioned yet
+  if (wizard.setup.route === route) return;    // already pointed here (dedupe)
+  clearTimeout(_autoPointTimer);
+  _autoPointTimer = setTimeout(async () => {
+    if (_autoPointInFlight || wizard.setup.route === route) return;
+    _autoPointInFlight = true;
+    const r = await swApi("POST", "/api/setup/route", { route }, { label: "re-point phone to this version" });
+    _autoPointInFlight = false;
+    if (!r.ok) {
+      showToast(`Couldn't re-point your number — tap a version to retry.`, "err");
+      return;
+    }
+    wizard.setup = r.data?.setup;
+    const meta = STEPS_META.find(s => s.route === route);
+    const versionLabel = meta ? `${meta.step}` : "this version";
+    showToast(`📞 ${formatPhone(wizard.setup.phone_number)} now runs Buddy ${versionLabel}.`, "ok");
+    // Re-render everything (not just the badge): the step sections were rendered
+    // before this debounced/async repoint resolved, so each step's call-CTA sub-line
+    // is stale. renderAll() re-renders both the pinned header and the step sections
+    // (reading state.activeStep, so the active version stays put — no scrollIntoView).
+    // WHY await whenIdle first: the swApi call drives the apiTheater overlay; calling
+    // renderAll() while it's still animating wipes the DOM out from under it and the
+    // overlay never dismisses. Let the theater finish, then re-render.
+    await apiTheater.whenIdle();
+    renderAll();
+  }, AUTOPOINT_DEBOUNCE_MS);
+}
+
+function showToast(msg, kind) {
+  let host = document.getElementById("wizard-toast");
+  if (!host) {
+    host = document.createElement("div");
+    host.id = "wizard-toast";
+    document.body.appendChild(host);
+  }
+  host.textContent = msg;
+  host.className = `wizard-toast show ${kind === "err" ? "err" : "ok"}`;
+  clearTimeout(host._t);
+  host._t = setTimeout(() => { host.className = "wizard-toast"; }, 4000);
+}
+
 function setActiveStep(route) {
-  activePillarStreams.forEach(es => es.close());
-  activePillarStreams.clear();
-  // WHY: a live call's root element is about to be re-rendered away.
-  if (window.RelayCall) window.RelayCall.hangup();
+  // WHY: a live call's modal is about to be re-rendered away; let the browser
+  // call client tear down its own WebRTC session cleanly.
+  if (window.BuddyVideo) window.BuddyVideo.close();
   const firstVisit = !state.visited.includes(route);
   state.activeStep = route;
   if (firstVisit) state.visited.push(route);
+  autoPointNumber(route);
   persist();
   renderAll();
   // Center the new active section under the sticky timeline.
@@ -3352,27 +3380,6 @@ function setActiveStep(route) {
       setTimeout(() => celebrateUnlock(route), 320);
     }
   });
-}
-
-async function aimPhoneNumberAt(route, btn) {
-  const original = btn.textContent;
-  const statusEl = document.querySelector(`[data-aim-status="${route}"]`);
-  btn.disabled = true;
-  btn.textContent = "Updating…";
-  if (statusEl) { statusEl.textContent = ""; statusEl.className = "step-aim-status"; }
-  const r = await swApi("POST", "/api/setup/route", { route }, { label: "repoint phone to agent" });
-  if (!r.ok) {
-    btn.disabled = false;
-    btn.textContent = original;
-    if (statusEl) { statusEl.textContent = r.data?.error || r.error || "failed"; statusEl.className = "step-aim-status err"; }
-    return;
-  }
-  wizard.setup = r.data?.setup;
-  if (statusEl) { statusEl.textContent = "✓ phone now dials this agent"; statusEl.className = "step-aim-status ok"; }
-  // Hold until the API execution theater finishes playing the REST call,
-  // then re-render so the section updates after the user watches it work.
-  await apiTheater.whenIdle();
-  renderAll();
 }
 
 let _workshopKeysWired = false;
@@ -3421,58 +3428,6 @@ function renderAll() {
     }
     renderOnboarding();
   }
-}
-
-const activePillarStreams = new Map();
-
-async function runPillar(pillar) {
-  const logPane = document.querySelector(`.run-log[data-pillar="${pillar}"]`);
-  if (!logPane) return;
-  activePillarStreams.get(pillar)?.close();
-  logPane.textContent = "";
-
-  const inputsResp = await fetch(`/run/${pillar}/inputs`);
-  const inputsInfo = await inputsResp.json();
-
-  if (inputsInfo.missing && inputsInfo.missing.length > 0) {
-    // The credential gate guarantees creds before the dashboard renders, so this
-    // is a defensive fallback only (e.g. creds cleared server-side mid-session).
-    logPane.textContent = "Credentials are no longer available. Reload to return to setup.";
-    return;
-  }
-
-  const startResp = await fetch(`/run/${pillar}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ inputs: {} }),
-  });
-  const { run_id } = await startResp.json();
-
-  const es = new EventSource(`/run/${pillar}/stream/${run_id}`);
-  activePillarStreams.set(pillar, es);
-  function append(line, isErr) {
-    const span = document.createElement("span");
-    span.textContent = line + "\n";
-    if (isErr) span.style.color = "var(--sw-magenta)";
-    logPane.appendChild(span);
-    logPane.scrollTop = logPane.scrollHeight;
-  }
-  es.addEventListener("stdout", e => append(JSON.parse(e.data).data, false));
-  es.addEventListener("stderr", e => append(JSON.parse(e.data).data, true));
-  function closeStream() {
-    es.close();
-    if (activePillarStreams.get(pillar) === es) activePillarStreams.delete(pillar);
-  }
-  es.addEventListener("exit", e => {
-    const payload = JSON.parse(e.data);
-    append(`[exit code ${payload.data}]`, payload.data !== "0");
-    closeStream();
-  });
-  es.addEventListener("end", closeStream);
-  es.addEventListener("cancelled", () => {
-    append("[run cancelled by newer click]", true);
-    closeStream();
-  });
 }
 
 apiLog.init();

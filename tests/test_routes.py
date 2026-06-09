@@ -168,14 +168,18 @@ def test_landing_has_wizard_milestones():
 
 
 def test_landing_has_workshop_renderer():
-    """Workshop state and pillar runtime are present."""
+    """Workshop state and the Call Fabric pipeline runtime are present."""
     r = requests.get(f"{BASE_URL}/", timeout=5)
     text = r.text
     assert "renderWorkshop" in text
     assert "renderTimeline" in text
     assert "renderStepSection" in text
-    assert "runPillar" in text, "pillar SSE machinery missing"
-    assert 'EventSource(`/run/' in text, "EventSource wiring missing"
+    # The Phase-2 redesign replaced the per-pillar "Run" SSE subprocess demo
+    # (runPillar / EventSource(`/run/...`)) with the interactive Call Fabric
+    # pipeline diagram driven by setCfStage. The orphaned runPillar machinery
+    # was removed; assert the live driver is present instead.
+    assert "runPillar" not in text, "orphaned pillar SSE machinery must stay removed"
+    assert "function setCfStage" in text, "Call Fabric stage driver missing"
 
 
 def test_landing_references_step_routes():
@@ -211,8 +215,9 @@ def test_relay_config_returns_clean_error_without_creds():
     assert "token" in data or "error" in data
 
 
-def test_relay_client_js_served():
-    r = requests.get(f"{BASE_URL}/static/relay-client.js", timeout=5)
+def test_buddy_video_client_js_served():
+    # buddy-video.js is the single browser-call client (relay-client.js retired).
+    r = requests.get(f"{BASE_URL}/static/buddy-video.js", timeout=5)
     assert r.status_code == 200
     body = r.text
     assert "SignalWire.SignalWire" in body
@@ -223,17 +228,23 @@ def test_relay_client_js_served():
 def test_landing_loads_browser_sdk_and_client():
     r = requests.get(f"{BASE_URL}/", timeout=5)
     text = r.text
-    assert "cdn.signalwire.com/@signalwire/js" in text
-    assert "/static/relay-client.js" in text
+    # SDK pinned to v4; the audio-only relay-client.js is no longer loaded.
+    assert "cdn.signalwire.com/@signalwire/js@4.0.0-rc.0" in text
+    assert "/static/relay-client.js" not in text
+    assert "/static/buddy-video.js" in text
 
 
-def test_landing_has_relay_call_panel():
+def test_landing_has_call_fabric_diagram():
+    # The two static "Bonus" cards were replaced by the interactive Call Fabric
+    # pipeline diagram with a single browser-call button.
     r = requests.get(f"{BASE_URL}/", timeout=5)
     text = r.text
-    assert "relay-call-btn" in text
-    assert "relay-hangup-btn" in text
-    assert "relay-root" in text
-    assert "RelayCall" in text
+    assert 'id="buddy-call-btn"' in text
+    assert 'class="cf-pipeline"' in text
+    assert 'data-cf-node="browser"' in text
+    assert "function revealCfNode" in text
+    # The retired audio-only relay wiring is gone.
+    assert "RelayCall" not in text
 
 
 def test_credentials_status_shape():
