@@ -225,6 +225,16 @@ def test_buddy_video_client_js_served():
     assert "requestPermissions" in body
 
 
+def test_static_assets_no_cache_and_unversioned():
+    # /static is served no-cache so a redeploy never hands a returning attendee a
+    # stale bundle (replaces the old ?v= query-string cache-buster on the script).
+    r = requests.get(f"{BASE_URL}/static/buddy-video.js", timeout=5)
+    assert "no-cache" in r.headers.get("cache-control", "").lower()
+    landing = requests.get(f"{BASE_URL}/", timeout=5).text
+    assert "/static/buddy-video.js?v=" not in landing
+    assert '<script src="/static/buddy-video.js">' in landing
+
+
 def test_landing_loads_browser_sdk_and_client():
     r = requests.get(f"{BASE_URL}/", timeout=5)
     text = r.text

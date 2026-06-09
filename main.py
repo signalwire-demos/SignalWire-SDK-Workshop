@@ -549,6 +549,17 @@ import os.path
 if os.path.isdir("web"):
     server.app.mount("/static", StaticFiles(directory="web"), name="static")
 
+    @server.app.middleware("http")
+    async def _no_cache_static(request: Request, call_next):
+        # Force fresh static assets so a redeploy never serves a returning
+        # attendee a stale cached bundle (replaces the old ?v= query-string
+        # cache-buster on buddy-video.js). "no-cache" still allows conditional
+        # revalidation (304s), it just forbids using a cached copy blindly.
+        response = await call_next(request)
+        if request.url.path.startswith("/static/"):
+            response.headers["Cache-Control"] = "no-cache"
+        return response
+
     @server.app.get("/")
     async def landing():
         return FileResponse("web/index.html")
