@@ -28,6 +28,25 @@
   var wasActive = false;
   var els = {};        // cached DOM refs (resolved on open)
   var onEndedCb = null; // optional callback fired after a real call ends
+  var onStatusCb = null; // optional callback fired as the call progresses
+
+  // Emit a coarse pipeline stage to the host page (used to light up the Call
+  // Fabric diagram nodes). Stages, in order: browser | rest | edge | buddy.
+  function emitStage(stage) {
+    if (typeof onStatusCb === "function") {
+      try { onStatusCb(stage); } catch (e) { logErr("onStatus threw:", e); }
+    }
+  }
+
+  // Idempotent "edge" emitter: WebRTC media has connected. Both the SDK
+  // media.connected event and the post-start() fallback call this, so it must
+  // only fire once per call. The flag is reset at the top of startCall().
+  var edgeLit = false;
+  function emitEdge() {
+    if (edgeLit) return;
+    edgeLit = true;
+    emitStage("edge");
+  }
 
   function log() {
     var a = Array.prototype.slice.call(arguments); a.unshift("[buddy-video]");
@@ -152,12 +171,30 @@
       setState("SDK not loaded yet — try again in a moment.", "error");
       return;
     }
-    micMuted = false; camOff = false; wasActive = false;
+    micMuted = false; camOff = false; wasActive = false; edgeLit = false;
+    emitStage("browser");  // the call originates here, in the browser
     try {
       setState("Requesting camera and microphone…", "connecting");
-      // WHY video:true here (vs the audio-only click-to-call): this is the full
-      // video showcase, so we ask for the camera too.
-      await SignalWire.WebRTC.requestPermissions({ audio: true, video: true });
+      // v4 of @signalwire/js has no SignalWire.WebRTC.requestPermissions helper,
+      // so prompt natively via getUserMedia. Microphone is required; the camera
+      // is best-effort (this is the video showcase, but the call still works
+      // audio-only if there's no camera or the user declines video).
+      var permStream = null;
+      try {
+        permStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      } catch (e1) {
+        log("audio+video permission unavailable, trying audio-only:", e1 && e1.message);
+        try {
+          permStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (e2) {
+          logErr("microphone permission denied:", e2);
+          setState("Microphone permission is required to call Buddy.", "error");
+          emitStage(null);
+          return;
+        }
+      }
+      // Release the prompt stream immediately; the SDK acquires its own on dial.
+      permStream.getTracks().forEach(function (t) { t.stop(); });
 
       await populateDevices();   // labels are available once permission is granted
 
@@ -170,37 +207,64 @@
       }
       var cfg = await resp.json();
       log("config:", { destination: cfg.destination, token_chars: cfg.token ? cfg.token.length : 0 });
+      emitStage("rest");  // REST minted the subscriber JWT
 
       setState("Connecting to Buddy…", "connecting");
-      client = await SignalWire.SignalWire({ token: cfg.token });
+      // v4 client: `new SignalWire(new StaticCredentialProvider({ token }))`.
+      // The global is the UMD namespace, so the class is SignalWire.SignalWire
+      // and the provider is SignalWire.StaticCredentialProvider. `new` is
+      // required (the v4 factory is a class, not a callable).
+      client = new SignalWire.SignalWire(
+        new SignalWire.StaticCredentialProvider({ token: cfg.token })
+      );
+      // NB: do NOT light "edge" here — auth alone is not WebRTC media. The edge
+      // node lights only once media actually connects (below), so a dial that
+      // never reaches media never falsely shows "edge".
 
-      call = await client.dial({
-        to: cfg.destination,
+      // v4 dial signature: dial(addressString, options). The destination is the
+      // first positional argument (the old object-with-`to` form is v3-only).
+      call = await client.dial(cfg.destination, {
         audio: true,
         video: true,
+        receiveAudio: true,
+        receiveVideo: true,
         rootElement: els.stage,   // SDK attaches the remote/avatar video here
-        negotiateVideo: true,
       });
 
       CALL_EVENTS.forEach(function (ev) {
         try { call.on(ev, function (p) { log("event:", ev, p); }); } catch (e) { /* unknown event */ }
       });
-      call.on("destroy", onCallEnded);
-      call.on("ended", onCallEnded);
+      // Light the "edge" node the instant real WebRTC media connects (preferred
+      // signal). emitEdge() is idempotent so the post-start() fallback below is
+      // harmless if this event already fired.
+      try { call.on("media.connected", emitEdge); } catch (e) { /* event not supported by this SDK build */ }
+      // v4's call object may not expose .on() (its event API differs from v3);
+      // guard so event wiring can't hard-crash the call. When absent, remote-end
+      // detection degrades gracefully — the Hang up button still tears down via
+      // hangup(), and emitEdge() fires from the post-start() fallback below.
+      if (typeof call.on === "function") {
+        call.on("destroy", onCallEnded);
+        call.on("ended", onCallEnded);
+      }
 
       setState("Negotiating media…", "connecting");
-      await call.start();
+      // v4 may connect on dial() with no separate start(); older builds expose
+      // start(). Feature-detect so we work on both.
+      if (typeof call.start === "function") { await call.start(); }
+      emitEdge();  // fallback: by the time dial/start resolves, media is up
       wasActive = true;
       attachSelfView();
       enableControls(true);
       buildKeypad();
       startTimer();
       setState("In a video call with Buddy", "active");
+      emitStage("buddy");  // Buddy answered — the call is live
       if (els.modal) els.modal.classList.add("bv-connected");
     } catch (e) {
       logErr("video call failed:", e);
       setState("Call failed: " + (e && e.message ? e.message : e), "error");
       enableControls(false);
+      emitStage(null);  // clear any half-lit pipeline nodes so a retry starts clean
     }
   }
 
@@ -228,6 +292,7 @@
     stopTimer();
     enableControls(false);
     setState("Call ended.", "ended");
+    emitStage(null);  // unlight the pipeline nodes so a re-open starts clean
     var hadCall = wasActive;
     call = null;
     if (hadCall && typeof onEndedCb === "function") {
@@ -305,6 +370,7 @@
     resolveEls();
     if (!els.modal) { logErr("modal markup not found"); return; }
     onEndedCb = opts && opts.onEnded ? opts.onEnded : null;
+    onStatusCb = opts && opts.onStatus ? opts.onStatus : null;
     wireOnce();
     ended = false;
     els.modal.hidden = false;
@@ -330,6 +396,8 @@
     client = null;
   }
 
-  window.BuddyVideo = { open: open, close: close };
+  // Public API. `start` is the canonical entry point (opens the modal and
+  // places the call); `open` is kept as a backwards-compatible alias.
+  window.BuddyVideo = { start: open, open: open, close: close };
   console.log("[buddy-video] module loaded");
 })();
