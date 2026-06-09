@@ -20,3 +20,5 @@ calls/
 .workshop_sessions.json
 .workshop_calls.json
 .workshop_config.json
+.workshop_function_health.json
+.workshop_errors.json

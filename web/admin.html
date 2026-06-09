@@ -351,6 +351,68 @@
   .empty h3 { font-size: 16px; color: var(--sw-text); font-weight: 600; }
   .empty p { font-size: 13px; max-width: 320px; }
 
+  /* ---- SWAIG functions grid ---- */
+  #pane-swaig { flex-direction: column; overflow: hidden; }
+  .swaig-scroll { flex: 1; overflow-y: auto; padding: 18px 24px 40px; }
+  .swaig-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px;
+  }
+  .swaig-card {
+    background: var(--sw-card); border: 1px solid var(--sw-border); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 9px;
+    border-left: 3px solid var(--sw-border);
+  }
+  .swaig-card.status-ok { border-left-color: var(--sw-cyan); }
+  .swaig-card.status-failing { border-left-color: var(--sw-magenta); }
+  .swaig-card.status-untested { border-left-color: var(--sw-text-dim); }
+  .swaig-card-head {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 15px; color: var(--sw-text-bright);
+  }
+  .swaig-card-head .swaig-dot { font-size: 13px; line-height: 1; }
+  .swaig-card-head strong { font-family: 'Instrument Sans', sans-serif; font-weight: 600; }
+  .swaig-kind {
+    margin-left: auto; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--sw-text-dim);
+    padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.05);
+  }
+  .swaig-route { font-family: var(--mono); font-size: 11.5px; color: var(--sw-cyan); word-break: break-all; }
+  .swaig-detail {
+    font-family: var(--mono); font-size: 11.5px; color: var(--sw-text-dim);
+    white-space: pre-wrap; word-break: break-word; min-height: 14px;
+  }
+  .swaig-card.status-failing .swaig-detail { color: var(--sw-magenta); }
+  .run-swaig { align-self: flex-start; }
+
+  /* ---- Errors list ---- */
+  #pane-errors { flex-direction: column; overflow: hidden; }
+  .errors-scroll { flex: 1; overflow-y: auto; padding: 18px 24px 40px; display: flex; flex-direction: column; }
+  .errors-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px; flex-shrink: 0;
+  }
+  .errors-head-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--sw-text-dim);
+  }
+  .errors-list { display: flex; flex-direction: column; gap: 10px; }
+  .error-row {
+    background: var(--sw-card); border: 1px solid var(--sw-border); border-radius: 12px;
+    border-left: 3px solid var(--sw-magenta); padding: 13px 16px;
+  }
+  .error-row-top { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .error-src {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--sw-magenta); padding: 2px 8px; border-radius: 999px; background: rgba(247,42,114,0.12);
+  }
+  .error-time { font-family: var(--mono); font-size: 11px; color: var(--sw-text-dim); margin-left: auto; }
+  .error-msg { font-size: 13.5px; color: var(--sw-text-bright); word-break: break-word; }
+  .error-detail {
+    margin-top: 8px; background: #0a0c14; border: 1px solid var(--sw-border); border-radius: 8px;
+    padding: 10px 12px; font-family: var(--mono); font-size: 11.5px; line-height: 1.5;
+    color: var(--sw-text); white-space: pre-wrap; word-break: break-word; overflow-x: auto;
+  }
+
   @media (max-width: 900px) {
     .rail { width: 280px; }
   }
@@ -405,6 +467,12 @@
     </button>
     <button class="tab" data-tab="sessions">
       <span class="tab-dot"></span>Sessions<span class="tab-count" id="count-sessions">0</span>
+    </button>
+    <button class="tab" data-tab="swaig">
+      <span class="tab-dot"></span>SWAIG Functions<span class="tab-count" id="count-swaig">0</span>
+    </button>
+    <button class="tab" data-tab="errors">
+      <span class="tab-dot"></span>Errors<span class="tab-count" id="count-errors">0</span>
     </button>
   </nav>
 
@@ -472,6 +540,34 @@
     </div>
   </section>
 
+  <!-- ===== SWAIG FUNCTIONS PANE ===== -->
+  <section id="pane-swaig" class="pane">
+    <div class="swaig-scroll">
+      <div class="empty" id="swaig-empty">
+        <div class="glyph">ƒ</div>
+        <h3>No SWAIG functions registered</h3>
+        <p>Registered agent functions and their health appear here. Run a test to verify each one.</p>
+      </div>
+      <div class="swaig-grid" id="swaig-grid" style="display:none;"></div>
+    </div>
+  </section>
+
+  <!-- ===== ERRORS PANE ===== -->
+  <section id="pane-errors" class="pane">
+    <div class="errors-scroll">
+      <div class="errors-head">
+        <span class="errors-head-label">Recent errors</span>
+        <button id="clear-errors" class="btn btn-danger">Clear errors</button>
+      </div>
+      <div class="empty" id="errors-empty">
+        <div class="glyph">✅</div>
+        <h3>No errors recorded</h3>
+        <p>SWAIG failures and capture errors are logged here, newest first.</p>
+      </div>
+      <div class="errors-list" id="errors-list" style="display:none;"></div>
+    </div>
+  </section>
+
 <script>
 (function () {
   "use strict";
@@ -528,6 +624,8 @@
     });
     $("pane-calls").classList.toggle("is-active", name === "calls");
     $("pane-sessions").classList.toggle("is-active", name === "sessions");
+    $("pane-swaig").classList.toggle("is-active", name === "swaig");
+    $("pane-errors").classList.toggle("is-active", name === "errors");
   }
 
   // ----- detail sub-tabs -----
@@ -817,6 +915,92 @@
     });
   }
 
+  // ----- render: SWAIG function health -----
+  function renderSwaig(fns) {
+    fns = Array.isArray(fns) ? fns : [];
+    var fails = fns.filter(function (f) { return f.status === "failing"; }).length;
+    $("count-swaig").textContent = String(fails);
+    var grid = $("swaig-grid");
+    var empty = $("swaig-empty");
+    if (fns.length === 0) {
+      grid.style.display = "none";
+      empty.style.display = "flex";
+      grid.innerHTML = "";
+      return;
+    }
+    empty.style.display = "none";
+    grid.style.display = "grid";
+    var html = "";
+    fns.forEach(function (f) {
+      var status = f.status || "untested";
+      var dot = status === "ok" ? "🟢" : (status === "failing" ? "🔴" : "⚪");
+      var lat = (f.last_latency_ms === null || f.last_latency_ms === undefined)
+        ? "" : (" · " + esc(String(f.last_latency_ms)) + "ms");
+      html +=
+        '<div class="swaig-card status-' + esc(status) + '">' +
+          '<div class="swaig-card-head">' +
+            '<span class="swaig-dot">' + dot + "</span>" +
+            "<strong>" + esc(f.name || "unknown") + "</strong>" +
+            '<span class="swaig-kind">' + esc(f.kind || "tool") + "</span>" +
+          "</div>" +
+          '<div class="swaig-route">' + esc(f.route || "—") + lat + "</div>" +
+          '<div class="swaig-detail">' + esc(f.last_detail || "") + "</div>" +
+          '<button class="btn run-swaig" data-fn="' + esc(f.name || "") + '">Run test</button>' +
+        "</div>";
+    });
+    grid.innerHTML = html;
+    Array.prototype.forEach.call(grid.querySelectorAll(".run-swaig"), function (b) {
+      b.addEventListener("click", function () { runSwaig(b.getAttribute("data-fn"), b); });
+    });
+  }
+
+  function runSwaig(name, btn) {
+    btn.disabled = true;
+    var orig = btn.textContent;
+    btn.textContent = "Running…";
+    fetch("/admin/swaig/test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ function: name })
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      btn.textContent = res.ok
+        ? ("✓ " + esc(String(res.latency_ms)) + "ms")
+        : "✗ failed";
+      // the SSE "swaig" event refreshes the card; restore the label after a beat
+      setTimeout(function () { btn.textContent = orig; btn.disabled = false; }, 2500);
+    }).catch(function () { btn.textContent = orig; btn.disabled = false; });
+  }
+
+  // ----- render: errors (newest-first) -----
+  function renderErrors(errs) {
+    errs = Array.isArray(errs) ? errs : [];
+    $("count-errors").textContent = String(errs.length);
+    var list = $("errors-list");
+    var empty = $("errors-empty");
+    if (errs.length === 0) {
+      list.style.display = "none";
+      empty.style.display = "flex";
+      list.innerHTML = "";
+      return;
+    }
+    empty.style.display = "none";
+    list.style.display = "flex";
+    var html = "";
+    errs.forEach(function (e) {
+      var t = (e.at === null || e.at === undefined) ? "—" : fmtTime(e.at);
+      html +=
+        '<div class="error-row">' +
+          '<div class="error-row-top">' +
+            '<span class="error-src">' + esc(e.source || "error") + "</span>" +
+            '<span class="error-time">' + esc(t) + "</span>" +
+          "</div>" +
+          '<div class="error-msg">' + esc(e.message || "") + "</div>" +
+          (e.detail ? '<pre class="error-detail">' + esc(e.detail) + "</pre>" : "") +
+        "</div>";
+    });
+    list.innerHTML = html;
+  }
+
   // ----- render: calls collection (full pipeline) -----
   function renderCalls() {
     $("count-calls").textContent = calls.length;
@@ -913,6 +1097,12 @@
     }
   });
 
+  // ----- clear errors -----
+  $("clear-errors").addEventListener("click", function () {
+    fetch("/admin/errors", { method: "DELETE" }).catch(function () {});
+    // the SSE "errors" event will repaint the (now empty) list.
+  });
+
   // ----- initial load + SSE -----
   function loadInitial() {
     fetch("/admin/calls").then(function (r) { return r.json(); })
@@ -920,6 +1110,10 @@
     fetch("/admin/sessions").then(function (r) { return r.json(); })
       .then(function (d) { sessions = d.sessions || []; renderSessions(); updateSessionChip(); })
       .catch(function () {});
+    fetch("/admin/swaig").then(function (r) { return r.json(); })
+      .then(function (d) { renderSwaig(d.functions || []); }).catch(function () {});
+    fetch("/admin/errors").then(function (r) { return r.json(); })
+      .then(function (d) { renderErrors(d.errors || []); }).catch(function () {});
   }
 
   function connect() {
@@ -935,6 +1129,12 @@
         renderSessions();
         updateSessionChip();
       } catch (e) {}
+    });
+    es.addEventListener("swaig", function (ev) {
+      try { var d = JSON.parse(ev.data); renderSwaig(d.functions || []); } catch (e) {}
+    });
+    es.addEventListener("errors", function (ev) {
+      try { var d = JSON.parse(ev.data); renderErrors(d.errors || []); } catch (e) {}
     });
     es.addEventListener("error", function () {
       setConn("down");
