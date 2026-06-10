@@ -16,7 +16,7 @@ externalPort = 80
 # (SignalWire's cookie-less callbacks could hit an instance that never saw the session)
 # and dropping SSE. reserved_vm matches the app's single-process, stateful design.
 [deployment]
-deploymentTarget = "reserved_vm"
+deploymentTarget = "vm"
 run = ["python", "main.py"]
 build = ["sh", "-c", "pip install ."]
 
