@@ -8,7 +8,7 @@
  * DTMF keypad.
  *
  * Loaded after the @signalwire/js CDN bundle (global `SignalWire`) and reuses
- * the same /api/relay/config endpoint as the audio click-to-call (subscriber
+ * the same /api/relay/config endpoint as the audio click-to-call (guest
  * token + dialable destination).
  *
  * Resilience: the @signalwire/js call-object surface differs slightly across
@@ -207,7 +207,7 @@
       }
       var cfg = await resp.json();
       log("config:", { destination: cfg.destination, token_chars: cfg.token ? cfg.token.length : 0 });
-      emitStage("rest");  // REST minted the subscriber JWT
+      emitStage("rest");  // REST minted the scoped guest token
 
       setState("Connecting to Buddy…", "connecting");
       // v4 client: `new SignalWire(new StaticCredentialProvider({ token }))`.

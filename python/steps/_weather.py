@@ -79,11 +79,19 @@ def fetch_weather(city):
     return sentence
 
 
-def register_weather_tool(agent):
-    """Register get_weather as a server-side SWAIG function on `agent`."""
+def register_weather_tool(agent, advance_to_step=None):
+    """Register get_weather as a server-side SWAIG function on `agent`.
+
+    advance_to_step: if set, the handler will force a step change to that step
+    after fetching weather (used by step11; step09 omits this arg so the flat
+    agent is unaffected).
+    """
     def handler(args, raw_data):
         from signalwire_agents import SwaigFunctionResult
-        return SwaigFunctionResult(fetch_weather((args or {}).get("city")))
+        result = SwaigFunctionResult(fetch_weather((args or {}).get("city")))
+        if advance_to_step:
+            result.swml_change_step(advance_to_step)
+        return result
 
     agent.define_tool(
         name="get_weather",

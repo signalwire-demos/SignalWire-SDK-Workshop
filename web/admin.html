@@ -416,6 +416,27 @@
   @media (max-width: 900px) {
     .rail { width: 280px; }
   }
+
+  /* ---- Shared Dashboard + Timeline styles ---- */
+  .m-section-title { font-size:.72rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    color: var(--sw-text-dim); margin:14px 0 6px; }
+  .m-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; }
+  .m-card { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px 10px; }
+  .m-label { font-size:.68rem; opacity:.6; text-transform:uppercase; letter-spacing:.04em; }
+  .m-value { font-size:1.15rem; font-weight:700; margin-top:2px; }
+  .m-sub { font-size:.7rem; opacity:.6; }
+  .m-rating { margin:10px 0; padding:8px 12px; border-radius:8px; font-weight:700;
+    background:rgba(255,255,255,.05); }
+  .m-rating-excellent{ color:#10b981 } .m-rating-good{ color:#3b82f6 }
+  .m-rating-fair{ color:#f59e0b } .m-rating-needs-improvement{ color:#ef4444 }
+  .tl-phasebar { display:flex; height:22px; border-radius:6px; overflow:hidden; margin-top:6px; }
+  .tl-phase { height:100%; }
+  .tl-legend { display:flex; gap:14px; flex-wrap:wrap; font-size:.72rem; opacity:.8; margin:6px 0 12px; }
+  .tl-legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:middle; }
+  .tl-lane { display:flex; align-items:center; margin:4px 0; }
+  .tl-lane-name { width:96px; font-size:.72rem; text-transform:uppercase; opacity:.7; flex:0 0 96px; }
+  .tl-track { position:relative; height:20px; flex:1; background:rgba(255,255,255,.04); border-radius:4px; }
+  .tl-seg { position:absolute; top:3px; height:14px; min-width:3px; border-radius:3px; background:var(--c,#888); }
 </style>
 </head>
 <body>
@@ -507,6 +528,9 @@
           <button class="subtab" data-sub="swaig">SWAIG Log<span class="badge" id="b-swaig">0</span></button>
           <button class="subtab" data-sub="meta">Meta</button>
           <button class="subtab" data-sub="raw">Raw JSON</button>
+          <button class="subtab" data-sub="state-flow" type="button">State Flow</button>
+          <button class="subtab" data-sub="dashboard" type="button">Dashboard</button>
+          <button class="subtab" data-sub="timeline" type="button">Timeline</button>
         </div>
         <div class="detail-body">
           <div class="subview is-active" data-sub="summary" id="sv-summary"></div>
@@ -515,6 +539,9 @@
           <div class="subview" data-sub="swaig" id="sv-swaig"></div>
           <div class="subview" data-sub="meta" id="sv-meta"></div>
           <div class="subview" data-sub="raw" id="sv-raw"></div>
+          <div class="subview" data-sub="state-flow" id="sv-stateflow"></div>
+          <div class="subview" data-sub="dashboard" id="sv-dashboard"></div>
+          <div class="subview" data-sub="timeline" id="sv-timeline"></div>
         </div>
       </div>
     </div>
@@ -638,6 +665,21 @@
       Array.prototype.forEach.call(document.querySelectorAll(".subview"), function (v) {
         v.classList.toggle("is-active", v.getAttribute("data-sub") === activeSub);
       });
+      if (activeSub === "state-flow") {
+        var rec = calls.filter(function (c) { return c.call_id === selectedCallId; })[0];
+        if (rec) {
+          var sfEl = document.getElementById("sv-stateflow");
+          if (sfEl && window.renderStateFlow) window.renderStateFlow(sfEl, rec.state_flow);
+        }
+      }
+      if (activeSub === "dashboard") {
+        var rec = calls.filter(function (c) { return c.call_id === selectedCallId; })[0];
+        if (rec && window.renderDashboard) window.renderDashboard(document.getElementById("sv-dashboard"), rec.metrics);
+      }
+      if (activeSub === "timeline") {
+        var rec = calls.filter(function (c) { return c.call_id === selectedCallId; })[0];
+        if (rec && window.renderTimeline) window.renderTimeline(document.getElementById("sv-timeline"), rec.timeline);
+      }
     });
   });
 
@@ -866,6 +908,14 @@
 
     // raw
     $("sv-raw").innerHTML = '<pre class="raw">' + esc(JSON.stringify(rec.raw, null, 2)) + "</pre>";
+
+    // state flow
+    if (activeSub === "state-flow") {
+      var sfEl = $("sv-stateflow");
+      if (sfEl && window.renderStateFlow) window.renderStateFlow(sfEl, rec.state_flow);
+    }
+    if (activeSub === "dashboard" && window.renderDashboard) window.renderDashboard($("sv-dashboard"), rec.metrics);
+    if (activeSub === "timeline" && window.renderTimeline) window.renderTimeline($("sv-timeline"), rec.timeline);
   }
 
   function stringify(v) {
@@ -1146,5 +1196,10 @@
   connect();
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>if (window.mermaid) mermaid.initialize({ startOnLoad: false, theme: "dark", securityLevel: "loose" });</script>
+<script src="/static/state-flow.js"></script>
+<script src="/static/metrics.js"></script>
+<script src="/static/timeline.js"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@ lose the room's calls. A monotonic `version` counter lets the SSE endpoint detec
 new records by polling — robust across the SDK's sync/async/thread boundaries.
 """
 import json
+import math
 import os
 import threading
 import time
@@ -28,6 +29,209 @@ def _first(d, *keys):
     return None
 
 
+def extract_state_flow(raw_data):
+    """Reconstruct the agent's step-machine flow from call_log system-log events.
+
+    Mirrors postpromptviewer's extractStateFlow: step_change entries become
+    transitions, function_call entries become function nodes, session_start gives
+    the initial step. Defensive: anything missing degrades to empty/None.
+    """
+    raw_data = raw_data if isinstance(raw_data, dict) else {}
+    transitions, function_calls, initial_step = [], [], None
+    for e in (raw_data.get("call_log") or []):
+        if not isinstance(e, dict) or e.get("role") != "system-log":
+            continue
+        md = e.get("metadata")
+        md = md if isinstance(md, dict) else {}
+        action = e.get("action")
+        if action == "step_change":
+            transitions.append({
+                "from_step": md.get("from_step"),
+                "from_index": md.get("from_index"),
+                "to_step": md.get("to_step"),
+                "to_index": md.get("to_index"),
+                "trigger": md.get("trigger"),
+                "context": md.get("context"),
+                "timestamp": e.get("timestamp"),
+                "content": e.get("content"),
+            })
+        elif action == "function_call":
+            function_calls.append({
+                "function": md.get("function"),
+                "native": md.get("native"),
+                "step": md.get("step"),
+                "step_index": md.get("step_index"),
+                "timestamp": e.get("timestamp"),
+            })
+        elif action == "session_start" and initial_step is None:
+            initial_step = md.get("step")
+    return {"transitions": transitions, "function_calls": function_calls, "initial_step": initial_step}
+
+
+def _us_to_sec(us):
+    return (us or 0) / 1_000_000
+
+
+def _mean(vals):
+    return sum(vals) / len(vals) if vals else 0
+
+
+def _percentile(vals, p):
+    if not vals:
+        return 0
+    s = sorted(vals)
+    idx = (p / 100) * (len(s) - 1)
+    lo, hi = math.floor(idx), math.ceil(idx)
+    if lo == hi:
+        return s[lo]
+    return s[lo] + (s[hi] - s[lo]) * (idx - lo)
+
+
+def _word_count(s):
+    return len(s.split()) if isinstance(s, str) and s.strip() else 0
+
+
+def _num(x):
+    return x if isinstance(x, (int, float)) else 0
+
+
+def extract_metrics(raw_data):
+    """Compute headline call metrics from the post-prompt payload.
+
+    Ported from postpromptviewer's computeMetrics. Defensive: missing data
+    degrades to None/0, never raises.
+    """
+    raw_data = raw_data if isinstance(raw_data, dict) else {}
+    cl = [e for e in (raw_data.get("call_log") or []) if isinstance(e, dict)]
+    times = [t for t in (raw_data.get("times") or []) if isinstance(t, dict)]
+
+    cs, ca = _num(raw_data.get("call_start_date")), _num(raw_data.get("call_answer_date"))
+    a0, a1, ce = _num(raw_data.get("ai_start_date")), _num(raw_data.get("ai_end_date")), _num(raw_data.get("call_end_date"))
+    durations = {
+        "call_total_s": round(_us_to_sec((ce or a1) - cs), 1) if cs else None,
+        "ai_session_s": round(_us_to_sec(a1 - a0), 1) if (a1 and a0) else None,
+        "ring_s": round(_us_to_sec(ca - cs), 1) if (ca and cs) else None,
+        "setup_s": round(_us_to_sec(a0 - ca), 1) if (a0 and ca) else None,
+        "teardown_s": round(_us_to_sec(ce - a1), 1) if (ce and a1) else None,
+    }
+
+    def headline(e):
+        return e.get("audio_latency") or e.get("utterance_latency") or e.get("latency") or 0
+
+    assistant = [headline(e) for e in cl if e.get("role") == "assistant"
+                 and (e.get("latency") is not None or e.get("audio_latency") is not None or e.get("utterance_latency") is not None)]
+    tool = [(e.get("latency") or e.get("execution_latency") or 0) for e in cl
+            if e.get("role") == "tool" and e.get("timestamp")]
+
+    def stats(items):
+        if not items:
+            return None
+        s = sorted(items)
+        return {"avg": round(sum(items) / len(items)), "fastest": min(items), "slowest": max(items),
+                "median": round(s[len(s) // 2]), "count": len(items),
+                "under_target": sum(1 for t in items if t < 1200)}
+
+    a_stats, t_stats = stats(assistant), stats(tool)
+    ans_times = [t.get("answer_time") for t in times
+                 if isinstance(t.get("answer_time"), (int, float)) and t["answer_time"] > 0 and t.get("response_word_count", 0) > 0]
+    if a_stats:
+        a_stats["p95"] = round(_percentile(ans_times, 95) * 1000) if ans_times else None
+    avg = a_stats["avg"] if a_stats else None
+    rating = ("Excellent" if avg < 1200 else "Good" if avg < 1800 else "Fair" if avg < 2500 else "Needs Improvement") if avg is not None else "N/A"
+
+    turns, last, total_words, by_role = 0, None, 0, {}
+    for e in cl:
+        r = e.get("role")
+        by_role[r] = by_role.get(r, 0) + 1
+        total_words += _word_count(e.get("content"))
+        if r in ("user", "assistant") and r != last:
+            turns += 1
+            last = r
+    agent_responses = sum(1 for e in cl if e.get("role") == "assistant"
+                          and isinstance(e.get("content"), str) and e["content"].strip()
+                          and (e.get("audio_latency") or e.get("utterance_latency") or e.get("latency")))
+    user_msgs = [e for e in cl if e.get("role") == "user"]
+    confs = [e.get("confidence") for e in user_msgs if isinstance(e.get("confidence"), (int, float))]
+    resp_wcs = [t.get("response_word_count", 0) for t in times if t.get("response_word_count", 0) > 0]
+    conversation = {
+        "turns": turns, "user_messages": len(user_msgs), "agent_responses": agent_responses,
+        "total_words": total_words,
+        "avg_response_words": round(_mean(resp_wcs)) if resp_wcs else 0,
+        "asr_confidence_avg": round(_mean(confs) * 100, 1) if confs else None,
+        "by_role": by_role,
+    }
+
+    tps = [t.get("tps") for t in times if isinstance(t.get("tps"), (int, float)) and t["tps"] > 0]
+    tokens = {
+        "input": raw_data.get("total_input_tokens"), "output": raw_data.get("total_output_tokens"),
+        "avg_tps": round(_mean(tps)) if tps else 0, "peak_tps": round(max(tps)) if tps else 0,
+        "wire_input": raw_data.get("total_wire_input_tokens"), "wire_output": raw_data.get("total_wire_output_tokens"),
+    }
+
+    swl = [e for e in (raw_data.get("swaig_log") or []) if isinstance(e, dict)]
+    exec_l = [e.get("execution_latency") for e in cl if e.get("role") == "tool" and isinstance(e.get("execution_latency"), (int, float))]
+    func_l = [e.get("function_latency") for e in cl if e.get("role") == "tool" and isinstance(e.get("function_latency"), (int, float))]
+    action_types = set()
+    for e in swl:
+        resp = e.get("post_response") if isinstance(e.get("post_response"), dict) else {}
+        for a in (resp.get("action") or []):
+            if isinstance(a, dict):
+                action_types.update(a.keys())
+    swaig = {
+        "total_calls": len(swl),
+        "avg_execution_ms": round(_mean(exec_l)) if exec_l else None,
+        "avg_function_ms": round(_mean(func_l)) if func_l else None,
+        "action_types": len(action_types),
+        "function_names": sorted({e.get("command_name") for e in swl if e.get("command_name")}),
+    }
+
+    tm = _num(raw_data.get("total_minutes"))
+    billing = {
+        "tts_chars": raw_data.get("total_tts_chars"), "tts_chars_per_min": raw_data.get("total_tts_chars_per_min"),
+        "asr_minutes": raw_data.get("total_asr_minutes"), "total_minutes": raw_data.get("total_minutes"),
+        "call_rate_per_min": round(turns / tm, 1) if tm else None,
+    }
+
+    return {"durations": durations, "latency": {"assistant": a_stats, "tool": t_stats},
+            "rating": rating, "conversation": conversation, "tokens": tokens,
+            "swaig": swaig, "billing": billing}
+
+
+def extract_timeline(raw_data):
+    """Phase bar + per-role swimlane segments for the Timeline view. Defensive."""
+    raw_data = raw_data if isinstance(raw_data, dict) else {}
+    cl = [e for e in (raw_data.get("call_log") or []) if isinstance(e, dict)]
+    cs, ca = _num(raw_data.get("call_start_date")), _num(raw_data.get("call_answer_date"))
+    a0, a1, ce = _num(raw_data.get("ai_start_date")), _num(raw_data.get("ai_end_date")), _num(raw_data.get("call_end_date"))
+
+    phases = []
+
+    def ph(name, start, end):
+        if start and end and end > start:
+            phases.append({"name": name, "start": start, "end": end, "ms": round((end - start) / 1000)})
+
+    ph("Ring", cs, ca)
+    ph("Setup", ca, a0)
+    ph("AI Session", a0, a1)
+    ph("Teardown", a1, ce)
+
+    lanes = {"user": [], "assistant": [], "tool": [], "say": []}
+    for e in cl:
+        r = e.get("role")
+        start = e.get("start_timestamp") or e.get("timestamp")
+        end = e.get("end_timestamp") or e.get("timestamp")
+        if r == "user":
+            lanes["user"].append({"start": start, "end": end, "text": e.get("content"), "confidence": e.get("confidence")})
+        elif r == "assistant":
+            lanes["assistant"].append({"start": start, "end": end, "text": e.get("content"), "latency": e.get("latency"), "barged": bool(e.get("barged"))})
+        elif r == "tool":
+            lanes["tool"].append({"start": start, "end": end, "name": e.get("function_name")})
+        elif r == "system-log" and e.get("action") == "manual_say":
+            lanes["say"].append({"start": start, "end": end, "text": e.get("content")})
+
+    return {"phases": phases, "lanes": lanes, "bounds": {"ai_start": a0 or cs, "ai_end": a1 or ce}}
+
+
 def normalize_post_prompt(agent_name, agent_route, raw_data):
     """Turn a raw post-prompt POST body into a normalized CallRecord dict.
 
@@ -46,7 +250,7 @@ def normalize_post_prompt(agent_name, agent_route, raw_data):
     transcript = [
         {"role": e.get("role"), "content": e.get("content")}
         for e in transcript
-        if isinstance(e, dict)
+        if isinstance(e, dict) and e.get("role") != "system-log"
     ]
 
     # Tool/function calls: SignalWire delivers these in `swaig_log` — each entry
@@ -123,6 +327,9 @@ def normalize_post_prompt(agent_name, agent_route, raw_data):
         "transcript": transcript,
         "tools": tools,
         "swaig": swaig,
+        "state_flow": extract_state_flow(raw_data),
+        "metrics": extract_metrics(raw_data),
+        "timeline": extract_timeline(raw_data),
         "meta": {
             # Real payload uses caller_id_number (top level) and SWMLCall.to/from.
             "caller_id_num": (raw_data.get("caller_id_number")

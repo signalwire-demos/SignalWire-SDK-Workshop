@@ -51,15 +51,16 @@
   /* ============ API ACTIVITY TICKER (full-width, pinned top) ============ */
   .api-ticker {
     position: fixed; top: 0; left: 0; right: 0; z-index: 60;
-    height: 46px;
+    min-height: 44px;
     display: flex; align-items: center; gap: 12px;
-    padding: 0 24px;
+    padding: 10px 18px;
     background: rgba(8,10,14,0.94);
     border-bottom: 1px solid var(--sw-border);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     font-family: 'SF Mono', 'JetBrains Mono', monospace;
-    font-size: 14px;
+    font-size: 1.05rem;
+    letter-spacing: .01em;
     color: var(--sw-text-dim);
     overflow: hidden;
   }
@@ -85,7 +86,7 @@
   .api-ticker-text {
     flex: 1; min-width: 0;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    color: var(--sw-text);
+    color: var(--sw-text); font-weight: 600;
   }
   .api-ticker-ok { color: var(--sw-cyan); }
   .api-ticker-err { color: var(--sw-magenta); }
@@ -96,9 +97,9 @@
     to { transform: translateX(0); opacity: 1; }
   }
 
-  /* ============ BOTTOM-RIGHT STACK: log on top of Buddy ============ */
+  /* ============ BOTTOM-RIGHT STACK: above page content; below bv-modal(300), tour(9000), pp-modal(9500), toast(9999) ============ */
   .bottom-right-stack {
-    position: fixed; right: 18px; bottom: 18px; z-index: 55;
+    position: fixed; right: 18px; bottom: 18px; z-index: 200;
     display: flex; flex-direction: column; align-items: flex-end; gap: 14px;
     pointer-events: none;
   }
@@ -106,15 +107,15 @@
 
   /* ============ FLOATING API LOG (expandable) ============ */
   .api-log {
-    width: 340px; max-width: calc(100vw - 36px);
+    width: min(420px, 90vw);
     background: rgba(12,16,24,0.94);
     border: 1px solid var(--sw-border);
     border-radius: 12px;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 18px 50px -20px rgba(0,0,0,0.6);
+    box-shadow: 0 14px 40px rgba(0,0,0,.5);
     font-family: 'SF Mono', 'JetBrains Mono', monospace;
-    color: var(--sw-text); font-size: 11.5px;
+    color: var(--sw-text); font-size: .92rem;
     transition: width 0.2s ease, height 0.2s ease, padding 0.2s ease;
     overflow: hidden;
   }
@@ -128,7 +129,7 @@
     width: 100%; background: transparent; border: none; color: inherit;
     display: flex; align-items: center; justify-content: space-between;
     padding: 10px 14px; cursor: pointer;
-    font-family: inherit; font-size: 11px;
+    font-family: inherit; font-size: 1rem;
     letter-spacing: 0.06em; text-transform: uppercase; color: var(--sw-text-dim);
     border-bottom: 1px solid var(--sw-border);
   }
@@ -150,7 +151,7 @@
   .api-log-toggle-text { flex: 1; text-align: left; padding-left: 8px; color: var(--sw-text); font-weight: 600; letter-spacing: 0.04em; text-transform: none; font-size: 11.5px; }
   .api-log-toggle-meta { color: var(--sw-text-dim); }
   .api-log-body {
-    max-height: 240px; overflow-y: auto; padding: 8px 12px 12px;
+    max-height: 320px; overflow-y: auto; padding: 8px 12px 12px;
   }
   .api-log.is-collapsed .api-log-body { display: none; }
   .api-log-entry {
@@ -1230,8 +1231,8 @@
     .receipts-section { padding: 0 16px; }
     .receipts-body { grid-template-columns: 1fr; }
     .receipt { transform: rotate(0) !important; } /* skip rotation on mobile for cleaner stack */
-    /* Ticker tighter on mobile (still larger than before for readability) */
-    .api-ticker { height: 40px; font-size: 12.5px; padding: 0 14px; gap: 9px; }
+    /* Ticker compact on mobile but respects min-height so larger text won't clip */
+    .api-ticker { min-height: 44px; font-size: 0.95rem; padding: 6px 14px; gap: 9px; }
     .api-ticker-eyebrow { font-size: 11px; }
     .topbar { top: 40px; }
     .big-number { font-size: 32px; }
@@ -1492,6 +1493,102 @@
     .bv-stage-wrap { margin: 10px; }
     .bv-keypad { grid-template-columns: repeat(3, 48px); }
   }
+
+  .presenter-script {
+    margin: 14px 0 4px;
+    padding: 12px 14px;
+    border-left: 4px solid var(--sw-magenta);
+    background: rgba(247, 42, 114, 0.08);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+  .presenter-script .ps-label {
+    display: inline-block;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin-right: 6px;
+    opacity: 0.85;
+  }
+
+  /* ---- Coachmark tour (tour.js) ---- */
+  .tour-overlay { position: fixed; inset: 0; z-index: 9000; pointer-events: auto;
+    background: rgba(2, 6, 23, 0.66); }
+  .tour-cutout { position: absolute; border-radius: 10px;
+    box-shadow: 0 0 0 9999px rgba(2,6,23,0.66); transition: all .18s ease; }
+  .tour-tip { position: fixed; z-index: 9001; max-width: 320px; padding: 14px 16px;
+    background: #0b1220; color: #e5e7eb; border: 1px solid rgba(255,255,255,.12);
+    border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
+  .tour-title { font-weight: 700; margin-bottom: 6px; }
+  .tour-body { font-size: .92rem; line-height: 1.45; opacity: .92; }
+  .tour-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+  .tour-count { font-size: .8rem; opacity: .6; }
+  .tour-btn { background: var(--sw-blue); color: #fff; border: 0; border-radius: 8px;
+    padding: 6px 12px; cursor: pointer; font-weight: 600; }
+  .tour-btn.ghost { background: transparent; color: #cbd5e1; border: 1px solid rgba(255,255,255,.18); margin-right: 6px; }
+  .hint-dot { display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; border-radius: 50%; background: var(--sw-magenta);
+    color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 6px; vertical-align: middle;
+    position: relative; }
+  .hint-pop { position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+    background: #0b1220; color: #e5e7eb; border: 1px solid rgba(255,255,255,.15);
+    border-radius: 8px; padding: 8px 10px; font-size: .82rem; line-height: 1.4;
+    white-space: normal; width: 220px; z-index: 9100; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    pointer-events: auto; }
+  /* Post-prompt reveal modal */
+  .pp-modal { position: fixed; inset: 0; z-index: 9500; display: flex;
+    align-items: center; justify-content: center; background: rgba(2,6,23,.7); }
+  .pp-modal[hidden] { display: none; }
+  .pp-modal-card { width: min(720px, 92vw); max-height: 86vh; overflow: auto;
+    background: #0b1220; color: #e5e7eb; border: 1px solid rgba(255,255,255,.12);
+    border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.55); }
+  .pp-modal-head, .pp-modal-foot { display: flex; align-items: center;
+    justify-content: space-between; padding: 14px 18px; }
+  .pp-modal-head { border-bottom: 1px solid rgba(255,255,255,.10); }
+  .pp-modal-foot { border-top: 1px solid rgba(255,255,255,.10); }
+  .pp-modal-body { padding: 16px 18px; }
+  .pp-close { background: transparent; border: 0; color: #cbd5e1; font-size: 24px; cursor: pointer; }
+  .pp-warn { color: var(--sw-orange); font-weight: 600; }
+  .pp-kv { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  .pp-kv td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,.08); vertical-align: top; }
+  .pp-kv td:first-child { color: #93c5fd; font-weight: 600; white-space: nowrap; width: 30%; }
+  .pp-section-label { padding: 12px 18px 4px; font-size: .72rem; font-weight: 700;
+    letter-spacing: .06em; text-transform: uppercase; color: var(--sw-text-dim);
+    border-top: 1px solid rgba(255,255,255,.08); margin-top: 6px; }
+  .pp-stateflow { padding: 8px 18px 16px; min-height: 48px; overflow-x: auto; }
+  .pp-stateflow .mermaid { display: flex; justify-content: center; }
+  .postprompt-cta { max-width: 640px; margin: 32px auto; padding: 0 20px; text-align: center; }
+  .postprompt-cta .muted { margin-top: 10px; font-size: .9rem; opacity: .7; }
+  /* Make the post-prompt reveal button big and ripple so attendees notice it. */
+  #open-postprompt { font-size: 1.15rem; padding: 16px 30px; border-radius: 12px;
+    font-weight: 700; position: relative; animation: pp-cta-pulse 2.2s ease-in-out infinite; }
+  @keyframes pp-cta-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(4, 78, 244, .55); }
+    70%  { box-shadow: 0 0 0 18px rgba(4, 78, 244, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(4, 78, 244, 0); }
+  }
+  @media (prefers-reduced-motion: reduce) { #open-postprompt { animation: none; } }
+
+  /* ---- Shared Dashboard + Timeline styles ---- */
+  .m-section-title { font-size:.72rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    color: var(--sw-text-dim); margin:14px 0 6px; }
+  .m-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; }
+  .m-card { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px 10px; }
+  .m-label { font-size:.68rem; opacity:.6; text-transform:uppercase; letter-spacing:.04em; }
+  .m-value { font-size:1.15rem; font-weight:700; margin-top:2px; }
+  .m-sub { font-size:.7rem; opacity:.6; }
+  .m-rating { margin:10px 0; padding:8px 12px; border-radius:8px; font-weight:700;
+    background:rgba(255,255,255,.05); }
+  .m-rating-excellent{ color:#10b981 } .m-rating-good{ color:#3b82f6 }
+  .m-rating-fair{ color:#f59e0b } .m-rating-needs-improvement{ color:#ef4444 }
+  .tl-phasebar { display:flex; height:22px; border-radius:6px; overflow:hidden; margin-top:6px; }
+  .tl-phase { height:100%; }
+  .tl-legend { display:flex; gap:14px; flex-wrap:wrap; font-size:.72rem; opacity:.8; margin:6px 0 12px; }
+  .tl-legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:middle; }
+  .tl-lane { display:flex; align-items:center; margin:4px 0; }
+  .tl-lane-name { width:96px; font-size:.72rem; text-transform:uppercase; opacity:.7; flex:0 0 96px; }
+  .tl-track { position:relative; height:20px; flex:1; background:rgba(255,255,255,.04); border-radius:4px; }
+  .tl-seg { position:absolute; top:3px; height:14px; min-width:3px; border-radius:3px; background:var(--c,#888); }
 </style>
 </head>
 <body>
@@ -1580,6 +1677,27 @@
   </div>
 </div>
 
+<!-- Post-prompt reveal modal — shows the data Buddy captured from the final call -->
+<div id="postprompt-modal" class="pp-modal" hidden aria-modal="true" role="dialog" aria-label="Buddy post-prompt">
+  <div class="pp-modal-card">
+    <header class="pp-modal-head">
+      <h3>📊 Buddy's Post-Prompt — Final Version</h3>
+      <button id="postprompt-close" class="pp-close" aria-label="Close">×</button>
+    </header>
+    <div id="postprompt-body" class="pp-modal-body"><p class="muted">Loading…</p></div>
+    <div class="pp-section-label">State Flow</div>
+    <div id="postprompt-stateflow" class="pp-stateflow"></div>
+    <div class="pp-section-label">Metrics</div>
+    <div id="postprompt-dashboard" class="pp-stateflow"></div>
+    <div class="pp-section-label">Timeline</div>
+    <div id="postprompt-timeline" class="pp-stateflow"></div>
+    <footer class="pp-modal-foot">
+      <span class="pp-warn">⚠ The workshop isn't over!</span>
+      <button id="postprompt-next" class="tour-btn" type="button">Next: call Buddy from your browser →</button>
+    </footer>
+  </div>
+</div>
+
 <main id="app">
   <p style="text-align:center;padding:120px 20px;color:var(--sw-text-dim);">Loading…</p>
 </main>
@@ -1589,6 +1707,12 @@
      Fabric diagram renders. -->
 <script src="https://cdn.signalwire.com/@signalwire/js@4.0.0-rc.0"></script>
 <script src="/static/buddy-video.js"></script>
+<script src="/static/tour.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>if (window.mermaid) mermaid.initialize({ startOnLoad: false, theme: "dark", securityLevel: "loose" });</script>
+<script src="/static/state-flow.js"></script>
+<script src="/static/metrics.js"></script>
+<script src="/static/timeline.js"></script>
 
 <script>
 /* =========================================================================
@@ -1602,6 +1726,7 @@ const STEPS_META = [
     name: "Hello Agent",
     callPrompt: "just say hi — Buddy answers the phone and introduces himself.",
     tagline: "Buddy comes online",
+    presenterScript: "This is Buddy at his simplest: a class, a voice, and one paragraph of instructions. Call the number and say hi. Watch the prompt panel on the right — that personality text IS the agent. Change one line and he becomes someone else.",
     codeSpotlight: {
       power: "Buddy wakes up and can hold a conversation",
       lang: "step04_hello.py",
@@ -1640,6 +1765,7 @@ const STEPS_META = [
     name: "Hardcoded Jokes",
     callPrompt: "Ask Buddy to tell you a joke.",
     tagline: "Buddy learns jokes",
+    presenterScript: "Now I hand Buddy a skill. define_tool registers a function the AI can call on its own. Ask him for a joke. Notice there's no phone menu — the AI decides when to reach for the tool based on what you said.",
     codeSpotlight: {
       power: "Buddy can reach for a joke mid-call",
       lang: "step06_hardcoded_jokes.py",
@@ -1678,6 +1804,7 @@ const STEPS_META = [
     name: "Live API Jokes",
     callPrompt: "Ask Buddy to tell you a joke — this version fetches one from a live API.",
     tagline: "Buddy calls a live API",
+    presenterScript: "Same joke ability, but the handler now calls a live API on the internet. Ask again and you get a fresh joke every time. This is how Buddy reaches real systems mid-call.",
     codeSpotlight: {
       power: "Buddy fetches a fresh joke from the internet",
       lang: "step07_api_jokes.py",
@@ -1714,6 +1841,7 @@ const STEPS_META = [
     name: "Weather + Jokes",
     callPrompt: "Ask Buddy what the weather is like in Chicago.",
     tagline: "Buddy checks the weather",
+    presenterScript: "Buddy now takes parameters. Ask for the weather in your city. The AI pulls the city out of your sentence and passes it to the function — no forms, no buttons.",
     codeSpotlight: {
       power: "Buddy checks the weather without touching your server",
       lang: "step08_weather.py",
@@ -1751,6 +1879,7 @@ const STEPS_META = [
     name: "Polished Agent",
     callPrompt: "Ask for a joke, then the weather in Chicago — notice the smoother, polished replies.",
     tagline: "Buddy gets polished",
+    presenterScript: "Same capabilities, better behavior. I've tuned the prompt and the AI settings so Buddy stays on track and sounds natural. Watch how much the prompt panel has grown.",
     codeSpotlight: {
       power: "Buddy gets a personality and tuned timing",
       lang: "step09_polish.py",
@@ -1788,6 +1917,7 @@ const STEPS_META = [
     name: "Agent with Skills",
     callPrompt: "Ask Buddy what the weather is like, then ask for a joke — both now come from reusable skills.",
     tagline: "Buddy gains skills",
+    presenterScript: "Skills are pre-built capabilities you add in one line. I bolt one on and Buddy instantly gains a whole new ability with no custom code.",
     codeSpotlight: {
       power: "Buddy gains date/time and math in two lines",
       lang: "step10_skills.py",
@@ -1823,6 +1953,7 @@ const STEPS_META = [
     name: "Complete Agent",
     callPrompt: "Ask Buddy for the weather in Chicago and a dad joke — this is the full production-ready agent.",
     tagline: "Buddy goes production-ready",
+    presenterScript: "This is the finished Buddy: every capability and a polished prompt. After you call this version, we'll look at exactly what Buddy captured on the call — then call him straight from the browser, no phone needed.",
     codeSpotlight: {
       power: "Buddy is reorganized into clean, production-ready methods",
       lang: "step11_complete.py",
@@ -3004,18 +3135,24 @@ function renderWorkshop() {
       </div>
     </section>
 
-    <section class="preview-section">
+    <section class="preview-section" id="workshop-pillars">
       <div class="preview-inner">
         <div class="preview-head">
           <h2>Give Buddy a new capability</h2>
           <p>Buddy starts by just answering the phone, then gains a new capability at every version — all the way to production-ready. Scroll, use ← → keys, or click any node.</p>
+          <button id="tour-replay" class="tour-btn ghost" type="button">Show me around</button>
         </div>
       </div>
-      <div class="timeline-sticky"><div class="timeline-sticky-inner"><div id="running-version-badge" class="running-version-badge"></div>${renderTimeline()}</div></div>
+      <div class="timeline-sticky"><div class="timeline-sticky-inner"><div id="running-version-badge" class="running-version-badge"></div>${renderStepTimeline()}</div></div>
       ${renderStepsStack()}
     </section>
 
     ${renderReceiptsSection()}
+
+    <div class="postprompt-cta">
+      <button id="open-postprompt" class="tour-btn" type="button">📊 See what Buddy captured</button>
+      <p class="muted">After you've called the final version of Buddy, open this to view the data he pulled from your call.</p>
+    </div>
 
     <section class="cf-section" id="cf-section">
       <div class="cf-head">
@@ -3147,6 +3284,8 @@ function renderWorkshop() {
     }));
   }
   renderPinnedHeader();  // populate the always-visible number badge once the DOM is in place
+  // Notify hint-dot helper that the step detail content has been (re)written to DOM.
+  document.dispatchEvent(new CustomEvent("roadshow:version-rendered"));
 }
 
 function renderPinnedUrlCard() {
@@ -3172,7 +3311,7 @@ function renderPinnedHeader() {
     : "";
 }
 
-function renderTimeline() {
+function renderStepTimeline() {
   let html = `<div class="timeline">`;
   STEPS_META.forEach((s, i) => {
     if (i > 0) {
@@ -3271,6 +3410,10 @@ function renderStepSection(step, i) {
   const body = `
     <div class="step-detail-body">
       <p class="desc">${escapeHtml(step.desc)}</p>
+      ${step.presenterScript ? `
+      <div class="presenter-script" role="note" aria-label="Presenter script">
+        <span class="ps-label">🎤 SAY:</span> ${escapeHtml(step.presenterScript)}
+      </div>` : ""}
       ${callCta}
       ${renderCodeSpotlight(step)}
       ${renderTrySaying(step.prompts)}
@@ -3434,6 +3577,183 @@ apiLog.init();
 receipts.init();
 apiTheater.init();
 loadConfig();
+</script>
+
+<!-- Tour wiring + hint dots (depends on tour.js and page state) -->
+<script>
+(function () {
+  function buildTour() {
+    var steps = [
+      { target: ".step-detail-body a, a[href*='/docs']",
+        title: "📖 Documentation",
+        body: "At each step, click on the documentation to learn more about what Buddy just gained." },
+      { target: "#running-version-badge",
+        title: "Buddy's version",
+        body: "This shows which version of Buddy is live. Each level adds one new capability." },
+      { target: ".step-call-cta",
+        title: "Call Buddy",
+        body: "Call this number to talk to Buddy at the current version over the phone." },
+      { target: "#open-postprompt",
+        title: "See what Buddy captured",
+        body: "After you've called the final version, open this to see the data Buddy pulled from your call." }
+    ];
+    return new window.RoadshowTour(steps);
+  }
+  var _activeTour = null;
+  function startTour() {
+    if (_activeTour) { _activeTour.end(); }
+    _activeTour = buildTour();
+    _activeTour.start();
+  }
+
+  // Auto-start once, the first time the level-up section is visible.
+  // Must run after renderAll() populates the DOM, so wire inside version-rendered.
+  document.addEventListener("roadshow:version-rendered", function wireAutoTour() {
+    document.removeEventListener("roadshow:version-rendered", wireAutoTour);
+    var section = document.getElementById("workshop-pillars");
+    if (section && !localStorage.getItem("roadshow.tourSeen")) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) {
+            localStorage.setItem("roadshow.tourSeen", "1");
+            io.disconnect();
+            setTimeout(startTour, 400);
+          }
+        });
+      }, { threshold: 0.3 });
+      io.observe(section);
+    }
+  });
+
+  // ---- Hint dots ----
+  function addHint(target, tip) {
+    var t = document.querySelector(target);
+    if (!t || t.dataset.hinted) return;
+    t.dataset.hinted = "1";
+    var dot = document.createElement("span");
+    dot.className = "hint-dot";
+    dot.textContent = "?";
+    dot.title = tip;
+    dot.setAttribute("role", "button");
+    dot.setAttribute("aria-label", tip);
+    dot.style.position = "relative";
+    // Lightweight tooltip — no alert(); toggles a .hint-pop div on click.
+    dot.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      var existing = dot.querySelector(".hint-pop");
+      if (existing) {
+        existing.remove();
+        return;
+      }
+      var pop = document.createElement("span");
+      pop.className = "hint-pop";
+      pop.textContent = tip;
+      pop.addEventListener("click", function (ev) { ev.stopPropagation(); });
+      dot.appendChild(pop);
+      // Dismiss when clicking outside.
+      function dismiss(e) {
+        if (!dot.contains(e.target)) {
+          pop.remove();
+          document.removeEventListener("click", dismiss);
+        }
+      }
+      setTimeout(function () { document.addEventListener("click", dismiss); }, 0);
+    });
+    t.appendChild(dot);
+  }
+
+  // Re-attach on each version render; safe due to the data-hinted guard.
+  function refreshHints() {
+    addHint("#running-version-badge", "This is Buddy's current version. Each level adds one capability.");
+    addHint(".step-call-cta", "Call this number to talk to Buddy at the current version.");
+  }
+  document.addEventListener("roadshow:version-rendered", refreshHints);
+
+  // Re-wire tour replay when workshop re-renders (renderAll replaces the DOM).
+  document.addEventListener("roadshow:version-rendered", function () {
+    var btn = document.getElementById("tour-replay");
+    if (btn && !btn._tourWired) {
+      btn._tourWired = true;
+      btn.addEventListener("click", startTour);
+    }
+  });
+})();
+</script>
+
+<script>
+/* Post-prompt reveal modal wiring */
+(function () {
+  var modal = document.getElementById("postprompt-modal");
+  var body = document.getElementById("postprompt-body");
+  var closeBtn = document.getElementById("postprompt-close");
+  var nextBtn = document.getElementById("postprompt-next");
+  if (!modal) return;
+
+  function row(k, v) {
+    return "<tr><td>" + escapeHtml(k) + "</td><td>" +
+      escapeHtml(typeof v === "string" ? v : JSON.stringify(v, null, 2)) + "</td></tr>";
+  }
+
+  function render(call) {
+    var sfEl = document.getElementById("postprompt-stateflow");
+    var dEl = document.getElementById("postprompt-dashboard");
+    var tEl = document.getElementById("postprompt-timeline");
+    if (!call) {
+      body.innerHTML = '<p class="muted">No call captured yet for the final version. ' +
+        'Call Buddy at the final version first, then come back.</p>';
+      if (sfEl) sfEl.innerHTML = "";
+      if (dEl) dEl.innerHTML = "";
+      if (tEl) tEl.innerHTML = "";
+      return;
+    }
+    var rows = "";
+    var summary = (call.summary && (call.summary.parsed || call.summary.raw)) || "(no summary)";
+    rows += row("Summary", summary);
+    (call.tools || []).forEach(function (t, i) {
+      rows += row("tool[" + i + "] " + (t.name || "?"), t.result != null ? t.result : t.args);
+    });
+    if (call.meta) {
+      if (call.meta.from) rows += row("from", call.meta.from);
+      if (call.meta.to) rows += row("to", call.meta.to);
+    }
+    body.innerHTML = '<table class="pp-kv">' + rows + "</table>";
+    if (sfEl && window.renderStateFlow) window.renderStateFlow(sfEl, call && call.state_flow);
+    if (dEl && window.renderDashboard) window.renderDashboard(dEl, call && call.metrics);
+    if (tEl && window.renderTimeline) window.renderTimeline(tEl, call && call.timeline);
+  }
+
+  function open() {
+    modal.hidden = false;
+    modal.setAttribute("aria-hidden", "false");
+    body.innerHTML = '<p class="muted">Loading…</p>';
+    fetch("/api/postprompt/final")
+      .then(function (r) { return r.json(); })
+      .then(function (d) { render(d.found ? d.call : null); })
+      .catch(function () { render(null); });
+  }
+  function close() {
+    modal.hidden = true;
+    modal.setAttribute("aria-hidden", "true");
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !modal.hidden) close();
+  });
+
+  // #open-postprompt is rendered dynamically inside #app and recreated on every
+  // workshop re-render, so bind via delegation on a static ancestor rather than a
+  // one-time reference (which would silently miss the button).
+  document.addEventListener("click", function (e) {
+    if (e.target && e.target.closest && e.target.closest("#open-postprompt")) open();
+  });
+  if (closeBtn) closeBtn.addEventListener("click", close);
+  modal.addEventListener("click", function (e) { if (e.target === modal) close(); });
+  if (nextBtn) nextBtn.addEventListener("click", function () {
+    close();
+    var cf = document.getElementById("cf-section");
+    if (cf) cf.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+})();
 </script>
 </body>
 </html>

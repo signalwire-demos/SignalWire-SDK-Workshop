@@ -14,7 +14,8 @@ phone numbers.
 Capabilities:
   1. List phone numbers on the project (Relay REST: client.phone_numbers.list)
   2. Provision the AI agent as a dialable SWML webhook resource (Fabric REST)
-  3. Mint a short-lived subscriber token for the browser SDK
+  3. Mint tokens for the browser SDK: the live /api/relay/config path mints a
+     scoped guest token; the standalone main() script still mints a subscriber token
 
 Cross-process address cache:
   The REST demo subprocess and the live /api/relay/config in the parent server
@@ -27,6 +28,8 @@ import json
 import os
 import pathlib
 import sys
+import time
+import requests
 from urllib.parse import urlsplit, urlunsplit, quote
 
 from signalwire_agents.rest.client import SignalWireClient
@@ -259,6 +262,46 @@ def mint_subscriber_token(reference=DEFAULT_REFERENCE, client=None, creds=None):
     sid = data.get("subscriber_id", "")
     _log(f"minted token for subscriber_id={sid}")
     return data["token"], sid
+
+
+def agent_address_id(client=None, creds=None):
+    """Return the Fabric address UUID for the agent's SWML webhook resource.
+
+    Guest tokens are scoped by address id (not the dial string). The dial
+    string still comes from ensure_agent_handler(); this returns the matching
+    address's `id` from the same addresses listing.
+    """
+    client = client or _client(creds)
+    # WHY re-resolve: the address cache stores only the dial string, not the
+    # resource id, so this function must look it up independently to stay standalone.
+    resource_id, _ = _find_swml_webhook(client)
+    if not resource_id:
+        raise RuntimeError("agent SWML webhook not found; provision the agent first")
+    addrs = client.fabric.swml_webhooks.list_addresses(resource_id)
+    data = addrs.get("data", [])
+    if not data:
+        raise RuntimeError("agent SWML webhook resource has no addresses; re-provision the agent")
+    return data[0]["id"]
+
+
+def mint_guest_token(address_id, creds=None, ttl_secs=3600 * 24):
+    """Mint a scoped guest token for the browser SDK. No subscriber created.
+
+    Matches the canonical demos (cinebot/example): POST to the Fabric guests
+    endpoint with project Basic auth, scoped to a single address. Returns the
+    token string.
+    """
+    project, token, space = _creds(creds)
+    _log(f"minting guest token (address_id={address_id})")
+    resp = requests.post(
+        f"https://{space}/api/fabric/guests/tokens",
+        json={"allowed_addresses": [address_id], "expire_at": int(time.time()) + ttl_secs},
+        auth=(project, token),
+        headers={"Content-Type": "application/json", "Accept": "application/json"},
+        timeout=10,
+    )
+    resp.raise_for_status()
+    return resp.json()["token"]
 
 
 def main():

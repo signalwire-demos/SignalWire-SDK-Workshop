@@ -431,6 +431,20 @@ async def admin_export(request: Request):
     )
 
 
+FINAL_VERSION_ROUTE = "/step11"  # Version 7 "Complete Agent"
+
+
+@server.app.get("/api/postprompt/final")
+async def postprompt_final(request: Request):
+    """Latest captured post-prompt for the final Buddy version (browser-call showcase)."""
+    calls = [c for c in call_store.STORE.all() if c.get("agent_route") == FINAL_VERSION_ROUTE]
+    if not calls:
+        return JSONResponse({"found": False, "call": None})
+    latest = max(calls, key=lambda c: c.get("received_at", 0))
+    safe = {k: v for k, v in latest.items() if k != "raw"}
+    return JSONResponse({"found": True, "call": safe})
+
+
 @server.app.get("/admin/config")
 async def admin_get_config(request: Request):
     """Current runtime config (public URL + SWAIG basic auth) for the admin page."""
@@ -556,7 +570,10 @@ if os.path.isdir("web"):
         # cache-buster on buddy-video.js). "no-cache" still allows conditional
         # revalidation (304s), it just forbids using a cached copy blindly.
         response = await call_next(request)
-        if request.url.path.startswith("/static/"):
+        # No-cache the static bundle AND the HTML documents that load it (/ and
+        # /admin). Otherwise a returning attendee gets a stale cached index whose
+        # inline JS is out of date (e.g. a pre-fix modal that won't open).
+        if request.url.path.startswith("/static/") or request.url.path in ("/", "/admin"):
             response.headers["Cache-Control"] = "no-cache"
         return response
 
@@ -686,23 +703,24 @@ async def run_stream(pillar: str, run_id: str):
     return StreamingResponse(gen(), media_type="text/event-stream")
 
 # ---------------------------------------------------------------------------
-# Step 13 RELAY: subscriber token + agent address for the browser SDK
+# Step 13 RELAY: guest token + agent address for the browser SDK
 # ---------------------------------------------------------------------------
 
 @server.app.get("/api/relay/config")
 async def relay_config(request: Request):
-    from python.steps.step12_rest_demo import DEFAULT_REFERENCE, ensure_agent_handler, mint_subscriber_token
+    from python.steps.step12_rest_demo import agent_address_id, ensure_agent_handler, mint_guest_token
     creds = creds_for(request)
     if not creds:
         return JSONResponse({"error": "missing credentials"}, status_code=400)
     session = _SESSIONS.ensure(request.state.session_id)
     try:
-        reference = os.environ.get("SUBSCRIBER_REFERENCE", DEFAULT_REFERENCE)
         # Browser calls (audio + video) reach the COMPLETE agent (/step11): it has
-        # every capability plus the video avatar, so it's the best showcase. The
-        # phone number's own routing is a separate resource and is unaffected.
-        destination = await asyncio.to_thread(ensure_agent_handler, _effective_base(), "/step11", None, creds, session, request.state.session_id)
-        token, sub_id = await asyncio.to_thread(mint_subscriber_token, reference, None, creds)
+        # every capability plus the video avatar, so it's the best showcase.
+        destination = await asyncio.to_thread(
+            ensure_agent_handler, _effective_base(), "/step11", None, creds, session, request.state.session_id
+        )
+        address_id = await asyncio.to_thread(agent_address_id, None, creds)
+        token = await asyncio.to_thread(mint_guest_token, address_id, creds)
         _SESSIONS.save()
         return JSONResponse({"token": token, "destination": destination})
     except Exception as e:  # noqa: BLE001

@@ -3,6 +3,7 @@
 These do not start a server; they assert on the shipped HTML/JS source so the
 wizard's user-facing copy and key behaviors can't silently regress.
 """
+import re
 from pathlib import Path
 
 import pytest
@@ -139,3 +140,94 @@ def test_buddy_video_uses_v4_client_api(buddy_video_js):
     assert "await SignalWire.SignalWire({ token" not in buddy_video_js
     # v4 dial takes the destination as a positional arg, not a {to:...} object.
     assert "client.dial(cfg.destination," in buddy_video_js
+
+
+def test_every_version_has_presenter_script(html):
+    # STEPS_META has 7 version objects; each must define presenterScript.
+    version_count = len(re.findall(r'step:\s*"Version \d+"', html))
+    presenter_count = len(re.findall(r'presenterScript:\s*"', html))
+    assert version_count == 7
+    assert presenter_count == 7
+
+
+def test_doc_links_are_relative_paths(html):
+    # Every STEPS_META docs url must be a relative path (prefixed by DOCS_BASE),
+    # never a hardcoded developer.signalwire.com link.
+    assert "developer.signalwire.com" not in html
+    urls = re.findall(r'url:\s*"(/[^"]+)"', html)
+    assert urls, "expected relative doc urls in STEPS_META"
+
+
+def test_tour_is_wired_with_doc_callout_first(html):
+    assert "tour.js" in html
+    assert "RoadshowTour" in html
+    assert "roadshow.tourSeen" in html  # localStorage gate
+    # The explicit requested first callout copy:
+    assert "click on the documentation to learn more" in html.lower()
+    assert 'id="tour-replay"' in html  # replay button present
+
+
+def test_postprompt_modal_present(html):
+    assert 'id="postprompt-modal"' in html
+    assert 'id="open-postprompt"' in html
+    assert "/api/postprompt/final" in html
+    # handoff into the browser-call section:
+    assert 'id="postprompt-next"' in html
+
+
+def test_postprompt_open_is_delegated(html):
+    # #open-postprompt is rendered dynamically inside #app and recreated on every
+    # workshop re-render, so a one-time getElementById().addEventListener at load
+    # silently misses it. The open trigger MUST be bound via event delegation on a
+    # static ancestor (document) so it survives re-renders.
+    assert ('closest("#open-postprompt")' in html
+            or "closest('#open-postprompt')" in html), \
+        "post-prompt open must use document-level delegation, not a load-time direct binding"
+
+
+def test_status_banners_present(html):
+    assert 'id="api-ticker"' in html
+    assert 'id="bottom-right-stack"' in html
+    assert 'id="api-log"' in html
+
+
+def test_state_flow_wired_in_modal(html):
+    assert "state-flow.js" in html
+    assert "mermaid" in html.lower()
+    assert 'id="postprompt-stateflow"' in html
+
+
+def test_postprompt_button_is_prominent(html):
+    # The "See what Buddy captured" button is enlarged and ripples/pulses so
+    # attendees notice the post-prompt reveal (instead of an auto-overlay).
+    assert "pp-cta-pulse" in html  # the ripple/pulse keyframe
+    assert "#open-postprompt {" in html  # dedicated enlarge rule
+
+
+import pathlib
+def test_admin_has_state_flow_subtab():
+    admin = pathlib.Path("web/admin.html").read_text(encoding="utf-8")
+    assert "state-flow.js" in admin
+    assert 'data-sub="state-flow"' in admin
+    assert 'id="sv-stateflow"' in admin
+
+
+def test_dashboard_timeline_assets_referenced(html):
+    assert "metrics.js" in html and "timeline.js" in html
+    assert 'id="postprompt-dashboard"' in html
+    assert 'id="postprompt-timeline"' in html
+
+
+def test_admin_has_dashboard_timeline_subtabs():
+    admin = pathlib.Path("web/admin.html").read_text(encoding="utf-8")
+    assert "metrics.js" in admin and "timeline.js" in admin
+    assert 'data-sub="dashboard"' in admin and 'id="sv-dashboard"' in admin
+    assert 'data-sub="timeline"' in admin and 'id="sv-timeline"' in admin
+
+
+def test_no_local_renderTimeline_shadows_global(html):
+    # index.html must NOT declare a top-level `function renderTimeline` — it would
+    # overwrite window.renderTimeline (the swimlane renderer from timeline.js) and
+    # break the modal Timeline. The progress-UI function is renderStepTimeline.
+    assert "function renderTimeline(" not in html
+    assert "renderStepTimeline" in html

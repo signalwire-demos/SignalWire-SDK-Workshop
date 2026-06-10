@@ -235,6 +235,18 @@ def test_static_assets_no_cache_and_unversioned():
     assert '<script src="/static/buddy-video.js">' in landing
 
 
+def test_html_documents_are_no_cache():
+    # The / and /admin HTML documents must ALSO be no-cache. Otherwise a returning
+    # attendee gets a stale cached index that serves old inline JS (e.g. a pre-fix
+    # post-prompt modal that won't open). /static was already no-cache; the HTML
+    # documents that load it must be too.
+    for path in ("/", "/admin"):
+        r = requests.get(f"{BASE_URL}{path}", timeout=5)
+        assert r.status_code == 200, f"{path} -> {r.status_code}"
+        assert "no-cache" in r.headers.get("cache-control", "").lower(), \
+            f"{path} should send Cache-Control: no-cache"
+
+
 def test_landing_loads_browser_sdk_and_client():
     r = requests.get(f"{BASE_URL}/", timeout=5)
     text = r.text

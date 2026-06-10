@@ -24,7 +24,7 @@ class CompleteAgent(AgentBase):
 
         self._configure_voice()
         self._configure_params()
-        self._configure_prompts()
+        self._configure_contexts()
         self._register_joke_function()
         self._register_weather()
         self._register_skills()
@@ -68,55 +68,117 @@ class CompleteAgent(AgentBase):
             **CAPTURE_PARAMS,
         })
 
-    # -- Prompts ------------------------------------------------------------
+    # -- Prompt as a contexts/steps state machine ---------------------------
+    # WHY: a state machine makes the platform emit `step_change` events into
+    # call_log, which powers the State Flow tree (observability) and is the
+    # live demonstration of System-Directed AI. Buddy's tools are unchanged;
+    # each topic step just scopes which tool the AI may call.
 
-    def _configure_prompts(self):
-        self.prompt_add_section(
-            "Personality",
-            "You are Buddy, a cheerful and witty AI phone assistant. "
-            "You have a warm, upbeat personality and you genuinely enjoy "
-            "helping people. You're a bit of a dad joke enthusiast. "
-            "Think of yourself as that friendly neighbor who always "
-            "has a joke ready and knows what the weather is like.",
-        )
-        self.prompt_add_section(
-            "Voice Style",
-            body="Since this is a phone conversation:",
-            bullets=[
-                "Keep responses to 1-2 sentences when possible",
-                "Use conversational language, not formal or robotic",
-                "React naturally to what the caller says",
-                "Use smooth transitions between topics",
-            ],
-        )
-        self.prompt_add_section(
-            "Capabilities",
-            body="You can help with:",
-            bullets=[
-                "Weather: current conditions for any city worldwide",
-                "Jokes: endless supply of fresh dad jokes",
-                "Date and time: current time in any timezone",
-                "Math: calculations, percentages, unit conversions",
-                "General chat: friendly conversation on any topic",
-            ],
-        )
-        self.prompt_add_section(
-            "Physical Description",
-            body="When a caller reaches you over video, you are shown as an avatar:",
-            bullets=[
-                "You appear as a friendly, glowing robot with an upbeat expression.",
-                "If someone asks how you look or comments on your appearance, "
-                "play along warmly -- you're a cheerful little robot.",
-                "You can see the caller's video, so feel free to react to what "
-                "you can see when it's relevant.",
-            ],
-        )
-        self.prompt_add_section(
-            "Greeting",
-            "When the call starts, introduce yourself as Buddy and "
-            "briefly mention what you can help with. Keep the greeting "
-            "to one or two sentences -- don't list every capability.",
-        )
+    def _configure_contexts(self):
+        contexts = self.define_contexts()
+        ctx = contexts.add_context("default")
+
+        # Global persona — applies across every step.
+        ctx.add_section("Personality",
+            "You are Buddy, a cheerful, witty AI phone assistant who loves dad "
+            "jokes. You are giving the caller a short guided tour of what you can do.")
+        ctx.add_section("Voice Style",
+            "Phone conversation: 1-2 sentences per turn, warm and natural, react to "
+            "the caller, and keep the tour moving briskly from one stop to the next.")
+        ctx.add_section("Physical Description",
+            "Over video you appear as a friendly glowing robot; play along warmly if "
+            "asked about your appearance.")
+        ctx.add_section("Tour rule",
+            "This is a guided tour with distinct steps. Finish the current step's "
+            "task, then move to the next step. Do not skip ahead or jump around.")
+
+        def conv(name, task, criteria, nexts):
+            s = ctx.add_step(name, task=task, criteria=criteria)
+            s.set_functions("none")          # expose no business tools; navigation only
+            s.set_valid_steps(nexts)
+            return s
+
+        def tool(name, task, criteria, fns, nexts):
+            s = ctx.add_step(name, task=task, criteria=criteria)
+            s.set_functions(fns)
+            s.set_valid_steps(nexts)
+            return s
+
+        conv("greeting",
+             "Welcome the caller warmly and tell them you'll give a quick guided "
+             "tour of what you can do.",
+             "The caller has been welcomed and knows a tour is starting.",
+             ["get_name"])
+        conv("get_name",
+             "Ask the caller's first name, then greet them by it.",
+             "The caller has given a name (or declined).",
+             ["menu"])
+        conv("menu",
+             "Tell them the tour will cover the weather, a joke, the time, and a "
+             "quick calculation. Then start with the weather.",
+             "The caller knows what's coming.",
+             ["weather_ask"])
+
+        conv("weather_ask",
+             "Ask which city they'd like the weather for.",
+             "The caller has named a city, or declined.",
+             ["weather_fetch"])
+        tool("weather_fetch",
+             "Call get_weather for the city the caller named.",
+             "Weather has been retrieved.",
+             ["get_weather"], ["weather_deliver"])
+        conv("weather_deliver",
+             "Share the weather warmly in a sentence, then move on to a joke.",
+             "The weather was shared.",
+             ["joke_intro"])
+
+        conv("joke_intro",
+             "Offer the caller a dad joke.",
+             "The caller is ready for a joke, or you can simply proceed.",
+             ["joke_tell"])
+        tool("joke_tell",
+             "Tell the caller a joke using tell_joke.",
+             "A joke has been told.",
+             ["tell_joke"], ["joke_react"])
+        conv("joke_react",
+             "React playfully to your own joke, then move on to the time.",
+             "You reacted to the joke.",
+             ["time_intro"])
+
+        conv("time_intro",
+             "Offer to tell the caller the current date and time.",
+             "The caller is ready for the time, or you can simply proceed.",
+             ["time_fetch"])
+        tool("time_fetch",
+             "Get the current date and time.",
+             "The date/time was retrieved.",
+             ["get_current_time", "get_current_date"], ["time_deliver"])
+        conv("time_deliver",
+             "Share the date and time, then move on to a quick calculation.",
+             "The time was shared.",
+             ["math_intro"])
+
+        conv("math_intro",
+             "Offer to do a quick calculation; ask what they'd like computed.",
+             "The caller has given something to calculate, or declined.",
+             ["math_solve"])
+        tool("math_solve",
+             "Solve the caller's calculation using calculate.",
+             "The calculation was solved.",
+             ["calculate"], ["math_deliver"])
+        conv("math_deliver",
+             "Share the answer, then recap the tour.",
+             "The answer was shared.",
+             ["recap"])
+
+        conv("recap",
+             "Recap the tour: the weather, a joke, the time, and a calculation you did together.",
+             "The tour has been recapped.",
+             ["wrap_up"])
+        conv("wrap_up",
+             "Warmly thank the caller, invite them to call back anytime, and say goodbye.",
+             "The caller has been thanked and the call is ending.",
+             [])
 
     # -- Dad jokes (custom function, runs on our server) --------------------
 
@@ -150,10 +212,10 @@ class CompleteAgent(AgentBase):
             data = resp.json()
             joke = data.get("joke")
             if not joke:
-                return FunctionResult("I couldn't find a joke this time. Try again!")
-            return FunctionResult(f"Here's a dad joke: {joke}")
+                return FunctionResult("I couldn't find a joke this time. Try again!").swml_change_step("joke_react")
+            return FunctionResult(f"Here's a dad joke: {joke}").swml_change_step("joke_react")
         except requests.RequestException:
-            return FunctionResult("My joke service is taking a break. Try again in a moment!")
+            return FunctionResult("My joke service is taking a break. Try again in a moment!").swml_change_step("joke_react")
 
     # -- Weather (server-side SWAIG tool, runs on our server) ----------------
 
@@ -161,8 +223,10 @@ class CompleteAgent(AgentBase):
         # Server-side define_tool, NOT a serverless DataMap: a real workshop call
         # proved SignalWire's DataMap engine left every ${...} empty for this
         # function. Fetching + formatting here is deterministic. See _weather.py.
+        # advance_to_step forces a webhook_action transition to weather_deliver,
+        # making the State Flow tree show a ⚡ forced edge for this step.
         from python.steps._weather import register_weather_tool
-        register_weather_tool(self)
+        register_weather_tool(self, advance_to_step="weather_deliver")
 
     # -- Built-in skills ----------------------------------------------------
 
@@ -174,9 +238,17 @@ class CompleteAgent(AgentBase):
 
     def _configure_post_prompt(self):
         self.set_post_prompt(
-            "Summarize this conversation in 2-3 sentences. "
-            "Note what the caller asked about (weather, jokes, time, math, etc.) "
-            "and how the interaction went.",
+            "After the call ends, return ONLY a JSON object (no prose, no "
+            "markdown) in exactly this shape:\n"
+            "{\n"
+            '  "summary": "2-3 sentence summary of the call",\n'
+            '  "topics_handled": ["weather", "jokes"],\n'
+            '  "decisions": [{"step": "weather", "note": "what happened or which tool was used"}],\n'
+            '  "outcome": "completed"\n'
+            "}\n"
+            "For topics_handled, include only the topics actually discussed "
+            "(any of: weather, jokes, time, math, chat). "
+            "Set outcome to one of: completed, abandoned, transferred."
         )
 
     def on_swml_request(self, request_data=None, callback_path=None, request=None):
