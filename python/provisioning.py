@@ -18,7 +18,7 @@ import time
 
 from python.steps import step12_rest_demo as step12
 
-FRIENDLY_NAME = "Chicago Roadshow 2026 — Buddy"
+FRIENDLY_NAME = "Agents SDK Workshop — Buddy"
 
 HANDLER_NAME = step12.HANDLER_NAME
 DEFAULT_AGENT_PATH = step12.DEFAULT_AGENT_PATH

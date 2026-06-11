@@ -56,7 +56,11 @@ def test_postprompt_final_empty_state(monkeypatch):
     client = TestClient(main.server.app)
     r = client.get("/api/postprompt/final")
     assert r.status_code == 200
-    assert r.json() == {"found": False, "call": None}
+    body = r.json()
+    assert body["found"] is False and body["call"] is None
+    # The definition graph ships even with no captured call, so the viewer
+    # can show the full (dimmed) state machine.
+    assert body["agent_graph"]["initial_step"] == "greeting"
 
 
 def test_postprompt_final_includes_state_flow(monkeypatch):

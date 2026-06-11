@@ -1,8 +1,8 @@
 {
-  "name": "chicago-roadshow-2026-typescript",
+  "name": "signalwire-agents-sdk-workshop-typescript",
   "version": "0.1.0",
   "private": true,
-  "description": "Type-checkable TypeScript siblings of the Chicago Roadshow workshop steps. Reference-only; not executed at workshop runtime.",
+  "description": "Type-checkable TypeScript siblings of the SignalWire Agents SDK Workshop steps. Reference-only; not executed at workshop runtime.",
   "scripts": {
     "check": "tsc --noEmit"
   },

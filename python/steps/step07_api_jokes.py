@@ -63,7 +63,7 @@ class JokeAgent(AgentBase):
         try:
             resp = requests.get(
                 "https://icanhazdadjoke.com/",
-                headers={"Accept": "application/json", "User-Agent": "chicago-roadshow-2026"},
+                headers={"Accept": "application/json", "User-Agent": "signalwire-agents-sdk-workshop"},
                 timeout=5,
             )
             resp.raise_for_status()

@@ -16,6 +16,6 @@ def expect_ok(result_text, needle):
 
 CASES = [
     {"function": "tell_joke",   "args": {},                      "expect": ""},
-    {"function": "get_weather", "args": {"city": "Chicago"},     "expect": "Chicago"},
+    {"function": "get_weather", "args": {"city": "Denver"},      "expect": "Denver"},
     {"function": "calculate",   "args": {"expression": "2 + 2"}, "expect": "4"},
 ]

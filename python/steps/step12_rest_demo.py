@@ -35,10 +35,10 @@ from urllib.parse import urlsplit, urlunsplit, quote
 from signalwire_agents.rest.client import SignalWireClient
 from signalwire_agents.rest._base import SignalWireRestError
 
-HANDLER_NAME = "Chicago Roadshow 2026 Agent"
+HANDLER_NAME = "Agents SDK Workshop Agent"
 DEFAULT_AGENT_PATH = "/step04"
 AGENT_PATH = DEFAULT_AGENT_PATH  # alias for callers that import this
-DEFAULT_REFERENCE = "roadshow-attendee"
+DEFAULT_REFERENCE = "workshop-attendee"
 
 # WHY in the project root: both the subprocess and the parent server have CWD
 # at the project root when launched as documented, and the resolved path here
@@ -203,7 +203,10 @@ def ensure_agent_handler(public_base=None, route=None, client=None, creds=None, 
 
     _log(f"fetching addresses for SWML webhook {resource_id}")
     addrs = client.fabric.swml_webhooks.list_addresses(resource_id)
-    address = addrs["data"][0]["channels"]["audio"]
+    channels = addrs["data"][0]["channels"]
+    # Prefer the video channel (Buddy renders a video avatar; the click-to-call
+    # widget is video-capable); fall back to audio for audio-only resources.
+    address = channels.get("video") or channels["audio"]
     _log(f"agent dial address: {address}")
     if cache is not None:
         cache["agent_address"] = address

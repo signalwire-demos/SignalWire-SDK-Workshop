@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the Chicago Roadshow 2026 SignalWire workshop are documented here.
+All notable changes to the SignalWire Agents SDK Workshop are documented here.
 
 ## 2026-05-28
 

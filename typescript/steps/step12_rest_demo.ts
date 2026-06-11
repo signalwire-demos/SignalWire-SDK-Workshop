@@ -2,9 +2,9 @@
 // (TypeScript sibling, reference-only). Matches python/steps/step12_rest_demo.py.
 // Uses fetch against the Fabric REST API; no SignalWire package import needed.
 
-const HANDLER_NAME = "Chicago Roadshow 2026 Agent";
+const HANDLER_NAME = "Agents SDK Workshop Agent";
 const AGENT_PATH = "/step11";
-const DEFAULT_REFERENCE = "roadshow-attendee";
+const DEFAULT_REFERENCE = "workshop-attendee";
 
 function creds(): { project: string; token: string; space: string } {
   const project = process.env["SIGNALWIRE_PROJECT_ID"];
