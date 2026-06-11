@@ -109,10 +109,10 @@ def test_record_call_helper_feeds_store(monkeypatch, tmp_path):
 # caller/dialed numbers in `caller_id_number` + `SWMLCall`, project in `project_id`.
 REAL_PAYLOAD = {
     "call_id": "real-1",
-    "caller_id_number": "+14803769009",
-    "caller_id_name": "+14803769009",
-    "project_id": "5d30e1ba-32c2-4d62-b94c-4855c2ba739e",
-    "space_id": "304597b9-4d2b-4049-aee0-a303468b5eeb",
+    "caller_id_number": "+13125550100",
+    "caller_id_name": "+13125550100",
+    "project_id": "11111111-2222-3333-4444-555555555555",
+    "space_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
     "post_prompt_data": {
         "raw": "Caller asked for a joke and the weather in Chicago.",
         "parsed": [{"topic": "weather", "city": "Chicago"}],
@@ -134,9 +134,9 @@ REAL_PAYLOAD = {
         {"command_name": "get_weather", "command_arg": "{\"city\":\"Chicago\"}",
          "post_response": {"response": "Weather in Chicago: overcast, 78F."}},
     ],
-    "SWMLCall": {"to": "+18152425477", "from": "+14803769009", "direction": "inbound"},
+    "SWMLCall": {"to": "+13125550199", "from": "+13125550100", "direction": "inbound"},
     "SWMLVars": {"ai_result": "ok"},
-    "global_data": {"caller_id_number": "+14803769009"},
+    "global_data": {"caller_id_number": "+13125550100"},
 }
 
 
@@ -157,9 +157,9 @@ def test_normalize_transcript_keeps_role_and_content():
 
 def test_normalize_meta_reads_caller_and_swmlcall():
     rec = call_store.normalize_post_prompt("complete-agent", "/step11", REAL_PAYLOAD)
-    assert rec["meta"]["caller_id_num"] == "+14803769009"
-    assert rec["meta"]["to"] == "+18152425477"
-    assert rec["meta"]["from"] == "+14803769009"
+    assert rec["meta"]["caller_id_num"] == "+13125550100"
+    assert rec["meta"]["to"] == "+13125550199"
+    assert rec["meta"]["from"] == "+13125550100"
     assert rec["meta"]["direction"] == "inbound"
 
 
