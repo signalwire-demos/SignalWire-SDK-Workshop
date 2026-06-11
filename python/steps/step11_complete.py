@@ -20,7 +20,12 @@ from signalwire_agents import AgentBase, SwaigFunctionResult as FunctionResult
 
 class CompleteAgent(AgentBase):
     def __init__(self, route="/"):
-        super().__init__(name="complete-agent", route=route)
+        # record_call=True makes the rendered SWML start a background stereo
+        # recording (answer -> record_call -> ai); the platform then returns
+        # record_call_url in SWMLVars on the post-prompt payload, which powers
+        # the admin Recording tab. wav per the SWML record_call schema.
+        super().__init__(name="complete-agent", route=route,
+                         record_call=True, record_format="wav", record_stereo=True)
 
         self._configure_voice()
         self._configure_params()
@@ -105,8 +110,9 @@ class CompleteAgent(AgentBase):
             return s
 
         conv("greeting",
-             "Welcome the caller warmly and tell them you'll give a quick guided "
-             "tour of what you can do.",
+             "Welcome the caller warmly, mention this demo call is recorded for "
+             "the workshop, and tell them you'll give a quick guided tour of "
+             "what you can do.",
              "The caller has been welcomed and knows a tour is starting.",
              ["get_name"])
         conv("get_name",

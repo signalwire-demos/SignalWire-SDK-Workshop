@@ -86,3 +86,15 @@ def test_postprompt_final_includes_metrics_timeline():
     assert body["found"] is True
     assert "metrics" in body["call"] and "timeline" in body["call"]
     assert body["call"]["metrics"]["latency"]["assistant"]["count"] == 1
+
+
+def test_postprompt_final_includes_charts():
+    import call_store, main
+    call_store.STORE.clear()
+    call_store.STORE.record("complete-agent", "/step11", {
+        "call_id": "charts-call",
+        "call_log": [{"role": "assistant", "content": "hi", "latency": 900, "timestamp": 1}],
+    })
+    body = TestClient(main.server.app).get("/api/postprompt/final").json()
+    assert body["found"] is True
+    assert body["call"]["charts"]["latency_breakdown"][0]["total"] == 900

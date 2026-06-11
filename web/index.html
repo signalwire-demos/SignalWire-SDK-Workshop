@@ -1574,6 +1574,8 @@
     color: var(--sw-text-dim); margin:14px 0 6px; }
   .m-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; }
   .m-card { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px 10px; }
+  .chart-block { margin: 14px 0 22px; }
+  .chart-wrap { position: relative; height: 220px; }
   .m-label { font-size:.68rem; opacity:.6; text-transform:uppercase; letter-spacing:.04em; }
   .m-value { font-size:1.15rem; font-weight:700; margin-top:2px; }
   .m-sub { font-size:.7rem; opacity:.6; }
@@ -1691,6 +1693,8 @@
     <div id="postprompt-dashboard" class="pp-stateflow"></div>
     <div class="pp-section-label">Timeline</div>
     <div id="postprompt-timeline" class="pp-stateflow"></div>
+    <div class="pp-section-label">Charts</div>
+    <div id="postprompt-charts" class="pp-stateflow"></div>
     <footer class="pp-modal-foot">
       <span class="pp-warn">⚠ The workshop isn't over!</span>
       <button id="postprompt-next" class="tour-btn" type="button">Next: call Buddy from your browser →</button>
@@ -1713,6 +1717,8 @@
 <script src="/static/state-flow.js"></script>
 <script src="/static/metrics.js"></script>
 <script src="/static/timeline.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="/static/charts.js"></script>
 
 <script>
 /* =========================================================================
@@ -3698,12 +3704,16 @@ loadConfig();
     var sfEl = document.getElementById("postprompt-stateflow");
     var dEl = document.getElementById("postprompt-dashboard");
     var tEl = document.getElementById("postprompt-timeline");
+    var cEl = document.getElementById("postprompt-charts");
     if (!call) {
       body.innerHTML = '<p class="muted">No call captured yet for the final version. ' +
         'Call Buddy at the final version first, then come back.</p>';
       if (sfEl) sfEl.innerHTML = "";
       if (dEl) dEl.innerHTML = "";
       if (tEl) tEl.innerHTML = "";
+      // renderCharts(null) (vs clearing innerHTML) also destroys live Chart instances.
+      if (cEl && window.renderCharts) window.renderCharts(cEl, null);
+      else if (cEl) cEl.innerHTML = "";
       return;
     }
     var rows = "";
@@ -3720,6 +3730,7 @@ loadConfig();
     if (sfEl && window.renderStateFlow) window.renderStateFlow(sfEl, call && call.state_flow);
     if (dEl && window.renderDashboard) window.renderDashboard(dEl, call && call.metrics);
     if (tEl && window.renderTimeline) window.renderTimeline(tEl, call && call.timeline);
+    if (cEl && window.renderCharts) window.renderCharts(cEl, call && call.charts);
   }
 
   function open() {

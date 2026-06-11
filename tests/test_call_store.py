@@ -170,3 +170,87 @@ def test_normalize_tools_fallback_to_call_log_when_no_swaig_log():
     assert rec["tools"][0]["name"] == "tell_joke"
     # result paired from the following role:"tool" message's content
     assert "dad joke" in (rec["tools"][0]["result"] or "")
+
+
+def test_transcript_entries_carry_metric_badges():
+    raw = {
+        "call_log": [
+            {"role": "assistant", "content": "Hi!", "latency": 700,
+             "utterance_latency": 900, "audio_latency": 1100,
+             "tool_calls": [{"function": {"name": "get_weather"}}]},
+            {"role": "user", "content": "hello", "confidence": 0.93,
+             "barge_count": 1, "merge_count": 2, "metadata": {"barged": True}},
+            {"role": "assistant", "content": "slow", "latency": 2600},
+            {"role": "system-log", "action": "noop", "content": "x"},
+        ],
+    }
+    rec = call_store.normalize_post_prompt("a", "/r", raw)
+    t = rec["transcript"]
+    assert len(t) == 3                      # system-log still excluded
+    a1 = t[0]
+    assert a1["latency"] == 700 and a1["audio_latency"] == 1100
+    assert a1["rating"] == "Excellent"      # headline 1100 < 1200
+    assert a1["tool_calls"] == 1
+    u = t[1]
+    assert u["confidence"] == 0.93 and u["barge_count"] == 1
+    assert u["merge_count"] == 2 and u["barged"] is True
+    a2 = t[2]
+    assert a2["rating"] == "Needs Improvement"
+
+
+def test_transcript_plain_entries_stay_minimal():
+    rec = call_store.normalize_post_prompt("a", "/r", {
+        "call_log": [{"role": "user", "content": "hi"}]})
+    assert rec["transcript"][0] == {"role": "user", "content": "hi"}
+
+
+def test_summary_includes_substituted():
+    rec = call_store.normalize_post_prompt("a", "/r", {
+        "post_prompt_data": {"raw": "r", "substituted": "s", "parsed": [{"k": 1}]}})
+    assert rec["summary"]["substituted"] == "s"
+
+
+def test_extract_global_data_sections():
+    gd = call_store.extract_global_data({
+        "global_data": {"workshop_session_id": "abc"},
+        "SWMLVars": {"userVariables": {"ua": "x"}, "record_call_url": "u", "extra": 1},
+        "SWMLCall": {"call_id": "c1", "direction": "inbound"},
+        "params": {"verbose_logs": True},
+        "prompt_vars": {"ai_instructions": "…"},
+        "previous_contexts": [{"role": "system"}],
+    })
+    assert gd["global_data"] == {"workshop_session_id": "abc"}
+    assert gd["user_variables"] == {"ua": "x"}
+    assert gd["swml_vars"] == {"record_call_url": "u", "extra": 1}   # userVariables removed
+    assert gd["call_metadata"]["call_id"] == "c1"
+    assert gd["params"] == {"verbose_logs": True}
+    assert gd["prompt_vars"] == {"ai_instructions": "…"}
+    assert gd["previous_contexts"] == [{"role": "system"}]
+
+
+def test_extract_global_data_omits_empty_sections():
+    assert call_store.extract_global_data({"global_data": {}}) == {}
+    assert call_store.extract_global_data(None) == {}
+
+
+def test_normalize_includes_global_data():
+    rec = call_store.normalize_post_prompt("a", "/r", {"global_data": {"k": "v"}})
+    assert rec["global_data"] == {"global_data": {"k": "v"}}
+
+
+def test_extract_recording_from_swml_vars():
+    rec = call_store.extract_recording({
+        "SWMLVars": {"record_call_url": "https://files.example/r.wav",
+                     "record_call_result": "success", "record_call_start": 123}})
+    assert rec == {"url": "https://files.example/r.wav", "result": "success", "start": 123}
+
+
+def test_extract_recording_absent():
+    assert call_store.extract_recording({}) == {"url": None, "result": None, "start": None}
+    assert call_store.extract_recording(None)["url"] is None
+
+
+def test_normalize_includes_recording():
+    rec = call_store.normalize_post_prompt("a", "/r", {
+        "SWMLVars": {"record_call_url": "u"}})
+    assert rec["recording"]["url"] == "u"

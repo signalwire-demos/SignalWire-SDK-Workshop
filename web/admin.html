@@ -290,6 +290,40 @@
     white-space: pre-wrap; word-break: break-word; color: var(--sw-text);
   }
 
+  /* transcript filters + observability badges */
+  .jt-node summary { cursor: pointer; list-style: none; padding: 2px 0; }
+  .jt-node summary::before { content: "▶ "; font-size: 9px; color: var(--sw-text-dim, #a0a0aa); }
+  .jt-node[open] > summary::before { content: "▼ "; }
+  .jt-children { margin-left: 16px; border-left: 1px solid rgba(255,255,255,.08); padding-left: 10px; }
+  .jt-leaf { padding: 1px 0; font-family: ui-monospace, monospace; font-size: 12px; }
+  .jt-key { color: #60a5fa; }
+  .jt-meta { color: var(--sw-text-dim, #a0a0aa); font-size: 11px; }
+  .jt-val.jt-string { color: #22c55e; } .jt-val.jt-number { color: #FFD700; }
+  .jt-val.jt-boolean { color: #f472b6; } .jt-val.jt-null { color: #a0a0aa; }
+  .swaig-actions { margin: 4px 0 6px; }
+  .tr-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; }
+  .tr-chip { padding: 3px 10px; border: 1px solid var(--sw-border, #2a2d42); border-radius: 999px;
+    font-size: 12px; cursor: pointer; opacity: .55; user-select: none; }
+  .tr-chip.is-on { opacity: 1; border-color: var(--sw-blue, #044EF4); }
+  .turn-badges { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .tr-badge { font-size: 11px; padding: 1px 8px; border-radius: 999px;
+    background: rgba(255,255,255,.06); color: var(--sw-text-dim, #a0a0aa); }
+  .tr-badge.tr-warn { color: #ef4444; }
+  .rec-controls { display: flex; align-items: center; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+  .rec-legend { display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+    color: var(--sw-text-dim, #a0a0aa); font-size: 12px; }
+  .rec-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-left: 10px; }
+  .rec-dot.rec-user { background: rgba(16,185,129,0.8); margin-left: 0; }
+  .rec-dot.rec-asst { background: rgba(59,130,246,0.8); }
+  .tr-rate-excellent { color: #22c55e; } .tr-rate-good { color: #60a5fa; }
+  .tr-rate-fair { color: var(--sw-gold, #FFD700); } .tr-rate-needs-improvement { color: #ef4444; }
+
+  /* post-prompt three-tab view */
+  .pp-tabs { display: flex; gap: 6px; margin: 0 0 8px; }
+  .pp-tab { padding: 4px 12px; border: 1px solid var(--sw-border, #2a2d42); border-radius: 6px;
+    background: transparent; color: inherit; font-size: 12px; cursor: pointer; }
+  .pp-tab.is-active { border-color: var(--sw-blue, #044EF4); background: rgba(4,78,244,.12); }
+
   /* tools */
   .tool-card { background: var(--sw-card); border: 1px solid var(--sw-border); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
   .tool-name { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--sw-gold); margin-bottom: 8px; }
@@ -422,6 +456,8 @@
     color: var(--sw-text-dim); margin:14px 0 6px; }
   .m-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; }
   .m-card { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px 10px; }
+  .chart-block { margin: 14px 0 22px; }
+  .chart-wrap { position: relative; height: 220px; }
   .m-label { font-size:.68rem; opacity:.6; text-transform:uppercase; letter-spacing:.04em; }
   .m-value { font-size:1.15rem; font-weight:700; margin-top:2px; }
   .m-sub { font-size:.7rem; opacity:.6; }
@@ -531,6 +567,9 @@
           <button class="subtab" data-sub="state-flow" type="button">State Flow</button>
           <button class="subtab" data-sub="dashboard" type="button">Dashboard</button>
           <button class="subtab" data-sub="timeline" type="button">Timeline</button>
+          <button class="subtab" data-sub="charts" type="button">Charts</button>
+          <button class="subtab" data-sub="global-data" type="button">Global Data</button>
+          <button class="subtab" data-sub="recording" type="button">Recording</button>
         </div>
         <div class="detail-body">
           <div class="subview is-active" data-sub="summary" id="sv-summary"></div>
@@ -542,6 +581,9 @@
           <div class="subview" data-sub="state-flow" id="sv-stateflow"></div>
           <div class="subview" data-sub="dashboard" id="sv-dashboard"></div>
           <div class="subview" data-sub="timeline" id="sv-timeline"></div>
+          <div class="subview" data-sub="charts" id="sv-charts"></div>
+          <div class="subview" data-sub="global-data" id="sv-globaldata"></div>
+          <div class="subview" data-sub="recording" id="sv-recording"></div>
         </div>
       </div>
     </div>
@@ -680,6 +722,18 @@
         var rec = calls.filter(function (c) { return c.call_id === selectedCallId; })[0];
         if (rec && window.renderTimeline) window.renderTimeline(document.getElementById("sv-timeline"), rec.timeline);
       }
+      if (activeSub === "charts") {
+        var rec = calls.filter(function (c) { return c.call_id === selectedCallId; })[0];
+        if (rec && window.renderCharts) window.renderCharts(document.getElementById("sv-charts"), rec.charts);
+      }
+      if (activeSub === "global-data") {
+        var rec = calls.filter(function (c) { return c.call_id === selectedCallId; })[0];
+        if (rec && window.renderGlobalData) window.renderGlobalData(document.getElementById("sv-globaldata"), rec.global_data);
+      }
+      if (activeSub === "recording") {
+        var rec = calls.filter(function (c) { return c.call_id === selectedCallId; })[0];
+        if (rec && window.renderRecording) window.renderRecording(document.getElementById("sv-recording"), rec.recording);
+      }
     });
   });
 
@@ -797,7 +851,7 @@
       '<span><span class="k">project</span> <span class="pid">' + esc(o.pid) + "</span></span>";
     $("d-sub").innerHTML = subHtml;
 
-    // summary
+    // summary + post-prompt three-tab view (Raw / Substituted / Parsed)
     var sv = $("sv-summary");
     var sm = rec.summary || {};
     var sHtml = "";
@@ -813,25 +867,115 @@
       sHtml = '<div class="empty" style="padding:40px 0;"><h3>No summary</h3>' +
         "<p>This call did not include post-prompt summary data.</p></div>";
     }
+    sHtml += '<div class="section-label">Post-Prompt</div>' +
+      '<div class="pp-tabs">' +
+        '<button class="pp-tab is-active" data-pp="raw" type="button">Raw</button>' +
+        '<button class="pp-tab" data-pp="substituted" type="button">Substituted</button>' +
+        '<button class="pp-tab" data-pp="parsed" type="button">Parsed</button>' +
+      '</div>' +
+      '<pre class="raw" id="pp-tab-body"></pre>';
     sv.innerHTML = sHtml;
+    (function () {
+      var content = {
+        raw: sm.raw || "(not provided)",
+        substituted: sm.substituted || "(not provided)",
+        parsed: (sm.parsed !== null && sm.parsed !== undefined)
+          ? JSON.stringify(sm.parsed, null, 2) : "(not provided)"
+      };
+      var bodyEl = document.getElementById("pp-tab-body");
+      function show(which) { bodyEl.textContent = content[which]; }
+      Array.prototype.forEach.call(sv.querySelectorAll(".pp-tab"), function (b) {
+        b.addEventListener("click", function () {
+          Array.prototype.forEach.call(sv.querySelectorAll(".pp-tab"), function (x) {
+            x.classList.toggle("is-active", x === b);
+          });
+          show(b.getAttribute("data-pp"));
+        });
+      });
+      show("raw");
+    })();
 
-    // transcript
+    // transcript — filterable, with per-turn observability badges
     var tr = rec.transcript || [];
     $("b-transcript").textContent = tr.length;
     var tv = $("sv-transcript");
     if (tr.length === 0) {
       tv.innerHTML = '<div class="empty" style="padding:40px 0;"><h3>No transcript</h3></div>';
     } else {
-      var th = "";
-      tr.forEach(function (turn) {
-        var role = (turn.role || "—").toLowerCase();
-        th +=
-          '<div class="turn">' +
-            '<div class="turn-role ' + esc(role) + '">' + esc(turn.role || "—") + "</div>" +
-            '<div class="turn-bubble">' + esc(turn.content) + "</div>" +
-          "</div>";
+      tv.innerHTML =
+        '<div class="tr-filters" id="tr-filters">' +
+          '<span class="tr-chip is-on" data-trrole="user">User</span>' +
+          '<span class="tr-chip is-on" data-trrole="assistant">Assistant</span>' +
+          '<span class="tr-chip is-on" data-trrole="tool">Tool</span>' +
+          '<span class="tr-chip" data-trflag="barged">🔴 Barge-in</span>' +
+          '<span class="tr-chip" data-trflag="tool_calls">🔧 Tool calls</span>' +
+          '<select id="tr-rating" class="filter">' +
+            '<option value="">All ratings</option>' +
+            '<option>Excellent</option><option>Good</option>' +
+            '<option>Fair</option><option>Needs Improvement</option>' +
+          '</select>' +
+          '<input id="tr-search" class="filter" type="search" placeholder="Search…">' +
+          '<span class="muted" id="tr-count"></span>' +
+        '</div>' +
+        '<div id="transcript-list"></div>';
+
+      var roleOn = { user: true, assistant: true, tool: true };
+      var flagOn = { barged: false, tool_calls: false };
+      var ratingSel = "", query = "";
+
+      function badges(turn) {
+        var b = "";
+        if (turn.rating) {
+          var cls = turn.rating.toLowerCase().replace(/\s+/g, "-");
+          b += '<span class="tr-badge tr-rate-' + esc(cls) + '">⏱ ' + esc(turn.rating) + "</span>";
+        }
+        if (turn.latency != null) b += '<span class="tr-badge">' + esc(turn.latency) + " ms</span>";
+        if (turn.audio_latency != null) b += '<span class="tr-badge">audio ' + esc(turn.audio_latency) + " ms</span>";
+        if (turn.confidence != null) b += '<span class="tr-badge">conf ' + esc(Math.round(turn.confidence * 100)) + "%</span>";
+        if (turn.barge_count) b += '<span class="tr-badge tr-warn">🔴 barge ×' + esc(turn.barge_count) + "</span>";
+        if (turn.merge_count) b += '<span class="tr-badge">🔀 merged ×' + esc(turn.merge_count) + "</span>";
+        if (turn.tool_calls) b += '<span class="tr-badge">🔧 tools ' + esc(turn.tool_calls) + "</span>";
+        return b ? '<div class="turn-badges">' + b + "</div>" : "";
+      }
+
+      function renderTranscriptList() {
+        var shown = 0, th = "";
+        tr.forEach(function (turn) {
+          var role = (turn.role || "—").toLowerCase();
+          if (roleOn[role] === false) return;
+          if (flagOn.barged && !(turn.barged || turn.barge_count)) return;
+          if (flagOn.tool_calls && !turn.tool_calls) return;
+          if (ratingSel && turn.rating !== ratingSel) return;
+          if (query && String(turn.content || "").toLowerCase().indexOf(query) === -1) return;
+          shown++;
+          th +=
+            '<div class="turn">' +
+              '<div class="turn-role ' + esc(role) + '">' + esc(turn.role || "—") + "</div>" +
+              '<div class="turn-bubble">' + esc(turn.content) + badges(turn) + "</div>" +
+            "</div>";
+        });
+        $("transcript-list").innerHTML = th ||
+          '<div class="empty" style="padding:40px 0;"><h3>No matching turns</h3></div>';
+        $("tr-count").textContent = shown + " / " + tr.length;
+      }
+
+      Array.prototype.forEach.call(tv.querySelectorAll(".tr-chip"), function (chip) {
+        chip.addEventListener("click", function () {
+          var role = chip.getAttribute("data-trrole");
+          var flag = chip.getAttribute("data-trflag");
+          chip.classList.toggle("is-on");
+          if (role) roleOn[role] = chip.classList.contains("is-on");
+          if (flag) flagOn[flag] = chip.classList.contains("is-on");
+          renderTranscriptList();
+        });
       });
-      tv.innerHTML = th;
+      document.getElementById("tr-rating").addEventListener("change", function () {
+        ratingSel = this.value; renderTranscriptList();
+      });
+      document.getElementById("tr-search").addEventListener("input", function () {
+        query = this.value.toLowerCase(); renderTranscriptList();
+      });
+      renderTranscriptList();
     }
 
     // tools
@@ -866,21 +1010,56 @@
       swv.innerHTML = '<div class="empty" style="padding:40px 0;"><h3>No SWAIG calls</h3>' +
         "<p>No functions were invoked on this call.</p></div>";
     } else {
+      // Keep only dict entries so indexes line up with rec.swaig, which
+      // call_store builds by skipping non-dict swaig_log entries.
+      var rawSwaigLog = ((rec.raw && rec.raw.swaig_log) || []).filter(function (e) {
+        return e && typeof e === "object" && !Array.isArray(e);
+      });
+      function treeOrText(v, label) {
+        if (v === null || v === undefined || v === "") return "<pre>—</pre>";
+        // Degrade to flat <pre> if json-tree.js failed to load (matches the
+        // window.renderCharts-style guards used elsewhere).
+        if (!window.jsonTreeHtml) return "<pre>" + esc(stringify(v)) + "</pre>";
+        if (typeof v === "string") {
+          try { var parsed = JSON.parse(v); return window.jsonTreeHtml(parsed, label); }
+          catch (e) { return "<pre>" + esc(v) + "</pre>"; }
+        }
+        if (typeof v === "object") return window.jsonTreeHtml(v, label);
+        return "<pre>" + esc(String(v)) + "</pre>";
+      }
       var sh = "";
-      swaig.forEach(function (s) {
+      swaig.forEach(function (s, i) {
         var emptyResp = (s.response === null || s.response === undefined || s.response === "");
         var bad = !!s.error || emptyResp;
         var flag = s.error
           ? '<span style="color:var(--sw-magenta);">⚠ ' + esc(stringify(s.error)) + "</span>"
           : (emptyResp ? '<span style="color:var(--sw-gold,#FFD700);">⚠ empty response</span>' : "");
+        var rl = rawSwaigLog[i] || {};
+        var actions = [];
+        if (rl.post_response && Array.isArray(rl.post_response.action)) {
+          rl.post_response.action.forEach(function (a) {
+            if (a && typeof a === "object") {
+              Object.keys(a).forEach(function (k) { actions.push(k); });
+            }
+          });
+        }
+        var when = rl.epoch_time || s.epoch_time;
         sh +=
           '<div class="tool-card"' + (bad ? ' style="border-color:var(--sw-magenta);"' : "") + ">" +
             '<div class="tool-name">ƒ ' + esc(s.name || "unknown") +
-              (flag ? '  ' + flag : "") + "</div>" +
+              (when ? ' <span class="muted" style="font-weight:400;">' + esc(fmtTimeShort(when)) + "</span>" : "") +
+              (flag ? "  " + flag : "") + "</div>" +
+            (actions.length
+              ? '<div class="swaig-actions">' + actions.map(function (a) {
+                  return '<span class="tr-badge">' + esc(a) + "</span>";
+                }).join(" ") + "</div>"
+              : '<div class="swaig-actions" style="display:none;"></div>') +
             '<div class="kv">' +
-              '<span class="k">args</span><pre>' + esc(stringify(s.args)) + "</pre>" +
+              '<span class="k">args</span><div>' + treeOrText(s.args, "args") + "</div>" +
               '<span class="k">url called</span><pre>' + esc(s.url || "—") + "</pre>" +
-              '<span class="k">response</span><pre>' + esc(emptyResp ? "(empty)" : stringify(s.response)) + "</pre>" +
+              '<span class="k">response</span><div>' + treeOrText(emptyResp ? null : s.response, "response") + "</div>" +
+              (rl.post_data ? '<span class="k">request body</span><div>' + treeOrText(rl.post_data, "post_data") + "</div>" : "") +
+              (rl.post_response ? '<span class="k">response body</span><div>' + treeOrText(rl.post_response, "post_response") + "</div>" : "") +
               (s.http_code ? '<span class="k">http</span><pre>' + esc(String(s.http_code)) + "</pre>" : "") +
             "</div>" +
           "</div>";
@@ -916,6 +1095,9 @@
     }
     if (activeSub === "dashboard" && window.renderDashboard) window.renderDashboard($("sv-dashboard"), rec.metrics);
     if (activeSub === "timeline" && window.renderTimeline) window.renderTimeline($("sv-timeline"), rec.timeline);
+    if (activeSub === "charts" && window.renderCharts) window.renderCharts($("sv-charts"), rec.charts);
+    if (activeSub === "global-data" && window.renderGlobalData) window.renderGlobalData($("sv-globaldata"), rec.global_data);
+    if (activeSub === "recording" && window.renderRecording) window.renderRecording($("sv-recording"), rec.recording);
   }
 
   function stringify(v) {
@@ -1201,5 +1383,11 @@
 <script src="/static/state-flow.js"></script>
 <script src="/static/metrics.js"></script>
 <script src="/static/timeline.js"></script>
+<script src="/static/json-tree.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="/static/charts.js"></script>
+<script src="/static/global-data.js"></script>
+<script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
+<script src="/static/recording.js"></script>
 </body>
 </html>

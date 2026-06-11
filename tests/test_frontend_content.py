@@ -231,3 +231,97 @@ def test_no_local_renderTimeline_shadows_global(html):
     # break the modal Timeline. The progress-UI function is renderStepTimeline.
     assert "function renderTimeline(" not in html
     assert "renderStepTimeline" in html
+
+
+ADMIN = pathlib.Path(__file__).resolve().parent.parent / "web" / "admin.html"
+CHARTS_JS = pathlib.Path(__file__).resolve().parent.parent / "web" / "charts.js"
+
+
+@pytest.fixture(scope="module")
+def admin_html() -> str:
+    return ADMIN.read_text(encoding="utf-8")
+
+
+def test_charts_js_exists_and_exports_renderer():
+    src = CHARTS_JS.read_text(encoding="utf-8")
+    assert "renderCharts" in src
+    assert "latency_breakdown" in src and "swaig_by_command" in src
+
+
+def test_admin_has_charts_subtab_and_wiring(admin_html):
+    assert 'data-sub="charts"' in admin_html
+    assert 'id="sv-charts"' in admin_html
+    assert "chart.umd.min.js" in admin_html
+    assert "/static/charts.js" in admin_html
+    assert "renderCharts" in admin_html
+
+
+def test_index_modal_has_charts_section(html):
+    assert 'id="postprompt-charts"' in html
+    assert "chart.umd.min.js" in html
+    assert "/static/charts.js" in html
+    assert "renderCharts" in html
+
+
+def test_admin_transcript_has_filters_and_badges(admin_html):
+    assert 'id="tr-filters"' in admin_html       # filter bar
+    assert 'data-trrole="user"' in admin_html    # role chips
+    assert 'id="tr-search"' in admin_html        # search box
+    assert 'id="tr-rating"' in admin_html        # rating dropdown
+    assert "renderTranscriptList" in admin_html  # re-render on filter change
+    assert "turn-badges" in admin_html           # badge row class
+
+
+def test_admin_summary_has_postprompt_three_tabs(admin_html):
+    for tab in ('data-pp="raw"', 'data-pp="substituted"', 'data-pp="parsed"'):
+        assert tab in admin_html
+    assert 'id="pp-tab-body"' in admin_html
+
+
+JSON_TREE_JS = pathlib.Path(__file__).resolve().parent.parent / "web" / "json-tree.js"
+
+
+def test_json_tree_module_exists():
+    src = JSON_TREE_JS.read_text(encoding="utf-8")
+    assert "jsonTreeHtml" in src and "renderJsonTree" in src
+    assert "<details" in src        # native collapse/expand
+
+
+def test_admin_swaig_uses_json_trees(admin_html):
+    assert "/static/json-tree.js" in admin_html
+    assert "jsonTreeHtml" in admin_html
+    assert "post_response" in admin_html      # raw swaig_log surfaced
+    assert "swaig-actions" in admin_html      # action[] badges
+
+
+GLOBAL_DATA_JS = pathlib.Path(__file__).resolve().parent.parent / "web" / "global-data.js"
+
+
+def test_global_data_module_exists():
+    src = GLOBAL_DATA_JS.read_text(encoding="utf-8")
+    assert "renderGlobalData" in src and "jsonTreeHtml" in src
+
+
+def test_admin_has_global_data_subtab(admin_html):
+    assert 'data-sub="global-data"' in admin_html
+    assert 'id="sv-globaldata"' in admin_html
+    assert "/static/global-data.js" in admin_html
+    assert "renderGlobalData" in admin_html
+
+
+RECORDING_JS = pathlib.Path(__file__).resolve().parent.parent / "web" / "recording.js"
+
+
+def test_recording_module_exists():
+    src = RECORDING_JS.read_text(encoding="utf-8")
+    assert "renderRecording" in src
+    assert "WaveSurfer" in src
+    assert "<audio" in src          # graceful fallback
+
+
+def test_admin_has_recording_subtab(admin_html):
+    assert 'data-sub="recording"' in admin_html
+    assert 'id="sv-recording"' in admin_html
+    assert "wavesurfer" in admin_html        # CDN tag
+    assert "/static/recording.js" in admin_html
+    assert "renderRecording" in admin_html

@@ -95,6 +95,24 @@ def _num(x):
     return x if isinstance(x, (int, float)) else 0
 
 
+def _sanitize_tps(v):
+    return v if isinstance(v, (int, float)) and math.isfinite(v) and 0 < v < 1e9 else 0
+
+
+def _rating(ms):
+    """Response-time rating, same thresholds as postpromptviewer."""
+    if not isinstance(ms, (int, float)):
+        return None
+    return ("Excellent" if ms < 1200 else "Good" if ms < 1800
+            else "Fair" if ms < 2500 else "Needs Improvement")
+
+
+def _headline_latency(e):
+    """The user-perceived latency of a call_log entry: audio wins, then
+    utterance, then raw LLM latency (postpromptviewer convention)."""
+    return e.get("audio_latency") or e.get("utterance_latency") or e.get("latency") or 0
+
+
 def extract_metrics(raw_data):
     """Compute headline call metrics from the post-prompt payload.
 
@@ -115,10 +133,7 @@ def extract_metrics(raw_data):
         "teardown_s": round(_us_to_sec(ce - a1), 1) if (ce and a1) else None,
     }
 
-    def headline(e):
-        return e.get("audio_latency") or e.get("utterance_latency") or e.get("latency") or 0
-
-    assistant = [headline(e) for e in cl if e.get("role") == "assistant"
+    assistant = [_headline_latency(e) for e in cl if e.get("role") == "assistant"
                  and (e.get("latency") is not None or e.get("audio_latency") is not None or e.get("utterance_latency") is not None)]
     tool = [(e.get("latency") or e.get("execution_latency") or 0) for e in cl
             if e.get("role") == "tool" and e.get("timestamp")]
@@ -137,7 +152,7 @@ def extract_metrics(raw_data):
     if a_stats:
         a_stats["p95"] = round(_percentile(ans_times, 95) * 1000) if ans_times else None
     avg = a_stats["avg"] if a_stats else None
-    rating = ("Excellent" if avg < 1200 else "Good" if avg < 1800 else "Fair" if avg < 2500 else "Needs Improvement") if avg is not None else "N/A"
+    rating = _rating(avg) or "N/A"
 
     turns, last, total_words, by_role = 0, None, 0, {}
     for e in cl:
@@ -149,7 +164,7 @@ def extract_metrics(raw_data):
             last = r
     agent_responses = sum(1 for e in cl if e.get("role") == "assistant"
                           and isinstance(e.get("content"), str) and e["content"].strip()
-                          and (e.get("audio_latency") or e.get("utterance_latency") or e.get("latency")))
+                          and _headline_latency(e))
     user_msgs = [e for e in cl if e.get("role") == "user"]
     confs = [e.get("confidence") for e in user_msgs if isinstance(e.get("confidence"), (int, float))]
     resp_wcs = [t.get("response_word_count", 0) for t in times if t.get("response_word_count", 0) > 0]
@@ -161,7 +176,8 @@ def extract_metrics(raw_data):
         "by_role": by_role,
     }
 
-    tps = [t.get("tps") for t in times if isinstance(t.get("tps"), (int, float)) and t["tps"] > 0]
+    tps = [_sanitize_tps(t.get("tps")) for t in times]
+    tps = [v for v in tps if v > 0]
     tokens = {
         "input": raw_data.get("total_input_tokens"), "output": raw_data.get("total_output_tokens"),
         "avg_tps": round(_mean(tps)) if tps else 0, "peak_tps": round(max(tps)) if tps else 0,
@@ -195,6 +211,139 @@ def extract_metrics(raw_data):
     return {"durations": durations, "latency": {"assistant": a_stats, "tool": t_stats},
             "rating": rating, "conversation": conversation, "tokens": tokens,
             "swaig": swaig, "billing": billing}
+
+
+def extract_charts(raw_data):
+    """Chart-ready series for the six Charts graphs. Formulas ported from
+    postpromptviewer src/components/charts.js + lib/metrics/*. Defensive."""
+    raw_data = raw_data if isinstance(raw_data, dict) else {}
+    cl = [e for e in (raw_data.get("call_log") or []) if isinstance(e, dict)]
+    times = [t for t in (raw_data.get("times") or []) if isinstance(t, dict)]
+
+    # 1. Latency breakdown — one stacked row per assistant/tool entry with latency.
+    breakdown, r_i, t_i = [], 0, 0
+    for e in cl:
+        role = e.get("role")
+        if role not in ("assistant", "tool"):
+            continue
+        lat = e.get("latency") or 0
+        ul = e.get("utterance_latency") or 0
+        al = e.get("audio_latency") or 0
+        total = al or ul or lat
+        if not total:
+            continue
+        if role == "assistant":
+            r_i += 1
+            label = "R%d" % r_i
+        else:
+            t_i += 1
+            label = "T%d" % t_i
+        breakdown.append({"label": label, "role": role, "llm": lat,
+                          "utterance": max(0, ul - lat), "audio": max(0, al - ul),
+                          "total": total})
+
+    def _mm(items):
+        return ({"min": min(items), "avg": round(_mean(items)), "max": max(items)}
+                if items else None)
+
+    latency_stats = {
+        "assistant": _mm([b["total"] for b in breakdown if b["role"] == "assistant"]),
+        "tool": _mm([b["total"] for b in breakdown if b["role"] == "tool"]),
+    }
+
+    # 2. Tokens/s per turn — tool turns have no spoken words and <=1 token.
+    tps = []
+    for i, t in enumerate(times):
+        is_tool = (t.get("response_word_count") or 0) == 0 and (t.get("tokens") or 0) <= 1
+        tps.append({"label": ("T%d" if is_tool else "R%d") % (i + 1),
+                    "tps": round(_sanitize_tps(t.get("tps"))),
+                    "tokens": t.get("tokens") or 0, "is_tool": is_tool})
+
+    # 3/4. ASR confidence + speech-detection timing per user message.
+    asr, n = [], 0
+    for e in cl:
+        if e.get("role") != "user":
+            continue
+        n += 1
+        conf = e.get("confidence")
+        s2t = e.get("speaking_to_turn_detection") or 0
+        t2f = e.get("turn_detection_to_final_event") or 0
+        s2f = e.get("speaking_to_final_event") or 0
+        barge = s2t < 0
+        text = e.get("content") if isinstance(e.get("content"), str) else ""
+        asr.append({"label": "Msg %d" % n, "text": text[:60],
+                    "confidence_pct": round(conf * 100) if isinstance(conf, (int, float)) else None,
+                    "s2t": max(0, s2t),
+                    "t2f": max(0, s2f) if barge else max(0, t2f),
+                    "barge": barge, "merged": (e.get("merge_count") or 0) > 1})
+
+    # 5. Role doughnut.
+    roles = {}
+    for e in cl:
+        r = e.get("role") or "unknown"
+        roles[r] = roles.get(r, 0) + 1
+
+    # 6. SWAIG latency by command — tool call_log entries carry both latencies.
+    groups = {}
+    for e in cl:
+        if e.get("role") != "tool":
+            continue
+        g = groups.setdefault(e.get("function_name") or "unknown",
+                              {"count": 0, "exec": [], "func": []})
+        g["count"] += 1
+        if isinstance(e.get("execution_latency"), (int, float)):
+            g["exec"].append(e["execution_latency"])
+        if isinstance(e.get("function_latency"), (int, float)):
+            g["func"].append(e["function_latency"])
+    swaig_by_command = [
+        {"name": name, "count": g["count"],
+         "avg_execution_ms": round(_mean(g["exec"])) if g["exec"] else 0,
+         "avg_function_ms": round(_mean(g["func"])) if g["func"] else 0}
+        for name, g in sorted(groups.items())
+    ]
+
+    return {"latency_breakdown": breakdown, "latency_stats": latency_stats,
+            "tps": tps, "asr": asr, "roles": roles,
+            "swaig_by_command": swaig_by_command}
+
+
+def extract_global_data(raw_data):
+    """Global Data snapshot sections (only non-empty ones), mirroring
+    postpromptviewer's Global Data tab. Defensive."""
+    raw_data = raw_data if isinstance(raw_data, dict) else {}
+    out = {}
+    gd = raw_data.get("global_data")
+    if isinstance(gd, dict) and gd:
+        out["global_data"] = gd
+    sv = raw_data.get("SWMLVars")
+    sv = sv if isinstance(sv, dict) else {}
+    uv = sv.get("userVariables")
+    if isinstance(uv, dict) and uv:
+        out["user_variables"] = uv
+    rest = {k: v for k, v in sv.items() if k != "userVariables"}
+    if rest:
+        out["swml_vars"] = rest
+    sc = raw_data.get("SWMLCall")
+    if isinstance(sc, dict) and sc:
+        out["call_metadata"] = sc
+    for key in ("params", "prompt_vars"):
+        v = raw_data.get(key)
+        if isinstance(v, dict) and v:
+            out[key] = v
+    pc = raw_data.get("previous_contexts")
+    if isinstance(pc, list) and pc:
+        out["previous_contexts"] = pc
+    return out
+
+
+def extract_recording(raw_data):
+    """Recording pointer from SWMLVars (set by the record_call SWML verb)."""
+    raw_data = raw_data if isinstance(raw_data, dict) else {}
+    sv = raw_data.get("SWMLVars")
+    sv = sv if isinstance(sv, dict) else {}
+    return {"url": sv.get("record_call_url"),
+            "result": sv.get("record_call_result"),
+            "start": sv.get("record_call_start")}
 
 
 def extract_timeline(raw_data):
@@ -246,12 +395,30 @@ def normalize_post_prompt(agent_name, agent_route, raw_data):
     summary_parsed = ppd.get("parsed") if isinstance(ppd, dict) else None
 
     # Transcript: prefer processed call_log, fall back to raw_call_log.
-    transcript = raw_data.get("call_log") or raw_data.get("raw_call_log") or []
-    transcript = [
-        {"role": e.get("role"), "content": e.get("content")}
-        for e in transcript
-        if isinstance(e, dict) and e.get("role") != "system-log"
-    ]
+    # Entries are enriched with per-turn observability fields when present
+    # (latency/confidence/barge/merge/tool_calls/rating); plain entries stay
+    # {role, content} so existing consumers are unaffected.
+    transcript = []
+    for e in (raw_data.get("call_log") or raw_data.get("raw_call_log") or []):
+        if not isinstance(e, dict) or e.get("role") == "system-log":
+            continue
+        entry = {"role": e.get("role"), "content": e.get("content")}
+        for k in ("latency", "utterance_latency", "audio_latency",
+                  "confidence", "barge_count", "merge_count"):
+            if isinstance(e.get(k), (int, float)):
+                entry[k] = e[k]
+        md = e.get("metadata") if isinstance(e.get("metadata"), dict) else {}
+        barged = e.get("barged", md.get("barged"))
+        if barged is not None:
+            entry["barged"] = bool(barged)
+        tc = e.get("tool_calls")
+        if isinstance(tc, list) and tc:
+            entry["tool_calls"] = len(tc)
+        if e.get("role") == "assistant":
+            head = _headline_latency(e)
+            if head:
+                entry["rating"] = _rating(head)
+        transcript.append(entry)
 
     # Tool/function calls: SignalWire delivers these in `swaig_log` — each entry
     # carries the function name (`command_name`), its arguments (`command_arg`),
@@ -323,13 +490,17 @@ def normalize_post_prompt(agent_name, agent_route, raw_data):
         "received_at": time.time(),
         "agent_name": agent_name,
         "agent_route": agent_route,
-        "summary": {"raw": summary_raw, "parsed": summary_parsed},
+        "summary": {"raw": summary_raw, "parsed": summary_parsed,
+                    "substituted": ppd.get("substituted") if isinstance(ppd, dict) else None},
         "transcript": transcript,
         "tools": tools,
         "swaig": swaig,
         "state_flow": extract_state_flow(raw_data),
         "metrics": extract_metrics(raw_data),
         "timeline": extract_timeline(raw_data),
+        "charts": extract_charts(raw_data),
+        "global_data": extract_global_data(raw_data),
+        "recording": extract_recording(raw_data),
         "meta": {
             # Real payload uses caller_id_number (top level) and SWMLCall.to/from.
             "caller_id_num": (raw_data.get("caller_id_number")

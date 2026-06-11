@@ -1,5 +1,6 @@
 # tests/test_state_flow.py
 import sys
+import json
 sys.path.insert(0, ".")
 
 
@@ -132,3 +133,32 @@ def test_transcript_excludes_system_log():
     roles = [t["role"] for t in rec["transcript"]]
     assert roles == ["user", "assistant"]
     assert "system-log" not in roles
+
+
+def test_buddy_records_calls_stereo_wav():
+    swml = _complete_swml()
+    main = swml["sections"]["main"]
+    rc = [v for s in main if isinstance(s, dict) for k, v in s.items() if k == "record_call"]
+    assert rc, "step11 SWML must contain a record_call verb"
+    assert rc[0]["format"] == "wav"
+    assert rc[0]["stereo"] is True
+    keys = [k for s in main if isinstance(s, dict) for k in s.keys()]
+    assert keys.index("record_call") < keys.index("ai")
+
+
+def test_step09_does_not_record():
+    import json
+    from python.steps.step09_polish import PolishedAgent
+    a = PolishedAgent(route="/step09")
+    swml = a._render_swml()
+    swml = json.loads(swml) if isinstance(swml, str) else swml
+    keys = [k for s in swml["sections"]["main"] if isinstance(s, dict) for k in s.keys()]
+    assert "record_call" not in keys
+
+
+def test_greeting_mentions_recording():
+    swml = _complete_swml()
+    ai = [v for s in swml["sections"]["main"] if isinstance(s, dict) for k, v in s.items() if k == "ai"][0]
+    steps = {s["name"]: s for s in ai["prompt"]["contexts"]["default"]["steps"]}
+    text = json.dumps(steps["greeting"])
+    assert "record" in text.lower()
