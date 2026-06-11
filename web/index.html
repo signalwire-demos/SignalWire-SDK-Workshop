@@ -344,17 +344,18 @@
     transform: translateX(-50%) translateY(-12px);
     z-index: 75; opacity: 0;
     background: linear-gradient(135deg, rgba(4,78,244,0.95), rgba(247,42,114,0.92));
-    color: #fff; padding: 12px 22px; border-radius: 999px;
-    box-shadow: 0 18px 48px -16px rgba(247,42,114,0.55);
+    color: #fff; padding: 12px 20px; border-radius: 10px;
+    border: 1px solid #40E0D0;
+    box-shadow: 0 4px 20px rgba(64,224,208,.3);
     display: inline-flex; align-items: center; gap: 12px;
-    font-size: 14px; font-weight: 600; letter-spacing: 0.01em;
+    font-size: 16px; font-weight: 700; letter-spacing: 0.01em;
     transition: opacity 0.25s ease, transform 0.35s cubic-bezier(0.2, 1.5, 0.3, 1);
     pointer-events: none;
   }
   .toast-unlock.is-visible { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .toast-unlock .toast-unlock-icon { font-size: 18px; }
+  .toast-unlock .toast-unlock-icon { font-size: 22px; }
   .toast-unlock strong { letter-spacing: 0.06em; font-weight: 700; }
-  .toast-unlock .toast-unlock-sub { color: rgba(255,255,255,0.85); margin-left: 6px; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; }
+  .toast-unlock .toast-unlock-sub { color: rgba(255,255,255,0.85); margin-left: 6px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; }
 
   .confetti-burst {
     position: fixed; width: 0; height: 0; z-index: 65; pointer-events: none;
@@ -1044,6 +1045,12 @@
   .workshop-hero .helper {
     margin: 16px auto 0; max-width: 640px; font-size: 14px; color: var(--sw-text-dim);
   }
+  .advanced-number { margin-top: 14px; }
+  .advanced-number > summary {
+    cursor: pointer; color: var(--sw-text-dim); font-size: 13px;
+    list-style-position: inside;
+  }
+  .advanced-number > summary:hover { color: var(--sw-text-bright); }
 
   /* Timeline (interactive) */
   .timeline {
@@ -1439,7 +1446,7 @@
 <div class="api-ticker" id="api-ticker" aria-live="polite">
   <span class="api-ticker-eyebrow">SignalWire REST</span>
   <span class="api-ticker-dot"></span>
-  <span class="api-ticker-text" id="api-ticker-text">idle — waiting for activity</span>
+  <span class="api-ticker-text" id="api-ticker-text">idle, waiting for activity</span>
 </div>
 
 <div class="bottom-right-stack" id="bottom-right-stack">
@@ -1469,7 +1476,7 @@
 <div id="postprompt-modal" class="pp-modal" hidden aria-modal="true" role="dialog" aria-label="Buddy post-prompt">
   <div class="pp-modal-card">
     <header class="pp-modal-head">
-      <h3>📊 Buddy's Post-Prompt — Final Version</h3>
+      <h3>📊 Buddy's Post-Prompt: Final Version</h3>
       <button id="postprompt-close" class="pp-close" aria-label="Close">×</button>
     </header>
     <nav class="pp-tabs" role="tablist" aria-label="Post-prompt views">
@@ -1501,7 +1508,7 @@
 <section class="cf-section" id="cf-section" hidden>
   <div class="cf-head">
     <div class="label">The whole platform, end to end</div>
-    <h2>Talk to Buddy from your browser — and watch the wire</h2>
+    <h2>Talk to Buddy from your browser, and watch the wire</h2>
     <p>One call, three views: the click-to-call widget in front, RELAY + the Agents SDK behind it.</p>
   </div>
 
@@ -1518,25 +1525,25 @@
 <section class="finale" id="grand-finale" hidden aria-hidden="true">
       <div class="finale-inner">
         <div class="finale-eyebrow">Workshop complete</div>
-        <h2 class="finale-title">You just built — and called — a <span class="accent">real AI agent</span>.</h2>
-        <p class="finale-sub">From an empty Space to a live conversation: you provisioned a phone number over the REST API, gave Buddy new capabilities, dialed him over the phone, and just talked to him in your browser over SignalWire RELAY. That is the whole platform, end to end.</p>
+        <h2 class="finale-title">You built, and called, a <span class="accent">real AI agent</span>.</h2>
+        <p class="finale-sub">From an empty Space to a live conversation: you provisioned a phone number over the REST API, gave Buddy new capabilities, dialed him over the phone, and talked to him in your browser over SignalWire RELAY. That is the whole platform, end to end.</p>
 
         <div class="finale-grid">
           <div class="finale-col">
             <h3>See what you built in your dashboard</h3>
             <p class="finale-col-sub">Open your SignalWire Space and look at the resources this workshop created for you:</p>
             <ul class="finale-checklist">
-              <li><strong>Phone Numbers</strong> — the number you provisioned is listed and routed to Buddy.</li>
-              <li><strong>Resources · Call Fabric</strong> — Buddy is a dialable resource (an external SWML handler) you can address from anywhere.</li>
-              <li><strong>Call Logs</strong> — both your phone call and your browser call appear here with timing and status.</li>
-              <li><strong>AI · Conversation summaries</strong> — the post-prompt summary of your chat with Buddy. View raw logs at <a href="https://postpromptviewer.signalwire.io/" target="_blank" rel="noopener noreferrer">postpromptviewer.signalwire.io</a>.</li>
+              <li><strong>Phone Numbers</strong>: the number you provisioned is listed and routed to Buddy.</li>
+              <li><strong>Resources · Call Fabric</strong>: Buddy is a dialable resource (an external SWML handler) you can address from anywhere.</li>
+              <li><strong>Call Logs</strong>: both your phone call and your browser call appear here with timing and status.</li>
+              <li><strong>AI · Conversation summaries</strong>: the post-prompt summary of your chat with Buddy. View raw logs at <a href="https://postpromptviewer.signalwire.io/" target="_blank" rel="noopener noreferrer">postpromptviewer.signalwire.io</a>.</li>
             </ul>
             <a class="finale-btn primary" href="https://signalwire.com/signin" target="_blank" rel="noopener noreferrer">Open my SignalWire Dashboard →</a>
           </div>
 
           <div class="finale-col">
             <h3>Make it your own</h3>
-            <p class="finale-col-sub">Every agent in this workshop is open source. The fastest way to build your own is to start from a working one: clone a demo, swap in your own prompt and tools, and you have a production-ready agent. This workshop's repo is built the same way — fork it and customize.</p>
+            <p class="finale-col-sub">Every agent in this workshop is open source. The fastest way to build your own is to start from a working one: clone a demo, swap in your own prompt and tools, and you have a production-ready agent. This workshop's repo is built the same way: fork it and customize.</p>
             <div class="finale-btn-row">
               <a class="finale-btn primary" href="https://github.com/jongray00/Chicago-Roadshow-2026/fork" target="_blank" rel="noopener noreferrer">Fork this workshop repo →</a>
               <a class="finale-btn" href="https://github.com/signalwire-demos" target="_blank" rel="noopener noreferrer">Browse all SignalWire demos →</a>
@@ -1546,7 +1553,7 @@
 
         <div class="finale-demos">
           <h3>Featured demos to build from</h3>
-          <p class="finale-col-sub">Recommended starting points from the SignalWire Demos collection — each is a complete, customizable agent.</p>
+          <p class="finale-col-sub">Recommended starting points from the SignalWire Demos collection. Each is a complete, customizable agent.</p>
           <div class="finale-demos-grid" id="finale-demos-grid"></div>
         </div>
 
@@ -1562,7 +1569,9 @@
 
 
 <!-- sw-click-to-call widget + Live Wire feed for the in-browser call section. -->
-<script src="https://unpkg.com/@signalwire/web-components/dist/embed/signalwire-web-components-embed.iife.js"></script>
+<!-- Pinned: 4.0.0-rc.0 ('latest') ships the remote stream in a <video muted>
+     element, so the agent is inaudible. beta.12 is the last unmuted build. -->
+<script src="https://unpkg.com/@signalwire/web-components@4.0.0-beta.12/dist/embed/signalwire-web-components-embed.iife.js"></script>
 <script src="/static/live-wire.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 <script>if (window.mermaid) mermaid.initialize({ startOnLoad: false, theme: "dark", securityLevel: "loose" });</script>
@@ -1582,7 +1591,7 @@ const STEPS_META = [
     route: "/step04",
     step: "Version 1",
     name: "Hello Agent",
-    callPrompt: "just say hi — Buddy answers the phone and introduces himself.",
+    callPrompt: "say hi. Buddy answers and introduces himself.",
     tagline: "Buddy comes online",
     codeSpotlight: {
       power: "Buddy wakes up and can hold a conversation",
@@ -1595,15 +1604,15 @@ const STEPS_META = [
         { t: '            "You are Buddy, a friendly phone assistant.")', new: true },
       ],
       methods: [
-        { call: "AgentBase", does: "The starting point. Your agent is just a Python class built on top of this — everything else is a method you call on it." },
-        { call: "add_language()", does: "Sets the voice and language Buddy speaks in. \"rime.spore\" is the voice — swap that one string and he sounds like someone else." },
-        { call: "prompt_add_section()", does: "Buddy's instructions, in plain English. This text IS his personality — edit it and you've changed the agent." },
+        { call: "AgentBase", does: "The starting point. Your agent is a Python class built on this; everything else is a method you call on it." },
+        { call: "add_language()", does: "Sets Buddy's voice and language. Swap the \"rime.spore\" string and he sounds like someone else." },
+        { call: "prompt_add_section()", does: "Buddy's instructions, in plain English. This text IS his personality; edit it and you've changed the agent." },
       ],
-      buddy: "prompt_add_section is literally my personality. Change that text and you change who I am.",
-      unlocks: "A class, a voice, and one paragraph of instructions — that's a working phone agent.",
+      buddy: "prompt_add_section is my personality. Change that text and you change me.",
+      unlocks: "A class, a voice, one paragraph of instructions: a working phone agent.",
     },
     stem: "step04_hello",
-    desc: "The simplest possible agent. Call your number and have a basic conversation with Buddy. Proves everything works end to end.",
+    desc: "The simplest possible agent. Call your number and Buddy answers. Proves the whole pipeline works.",
     whatsNew: "Foundation: AgentBase, add_language(), prompt_add_section(), post-prompt summaries",
     capabilities: ["Chat"],
     newCapabilities: ["Chat"],
@@ -1620,7 +1629,7 @@ const STEPS_META = [
     route: "/step06",
     step: "Version 2",
     name: "Hardcoded Jokes",
-    callPrompt: "Ask Buddy to tell you a joke.",
+    callPrompt: "ask Buddy for a joke.",
     tagline: "Buddy learns jokes",
     codeSpotlight: {
       power: "Buddy can reach for a joke mid-call",
@@ -1634,14 +1643,14 @@ const STEPS_META = [
         { t: "    return FunctionResult(random.choice(JOKES))", new: true },
       ],
       methods: [
-        { call: "define_tool()", does: "Registers a function the AI can call on its own. You write what it does; the AI decides when to use it based on what the caller says. (SignalWire calls these SWAIG functions.)" },
+        { call: "define_tool()", does: "Registers a function the AI calls on its own. You write it; the AI picks the moment. (SignalWire calls these SWAIG functions.)" },
         { call: "FunctionResult()", does: "What your function hands back for Buddy to say out loud." },
       ],
-      buddy: "define_tool() hands me a new ability the AI can call on its own, whenever a caller asks.",
-      unlocks: "One define_tool() call = one new thing the AI can do — no phone menus, no \"press 1\", no training.",
+      buddy: "define_tool() hands me a new ability. I use it whenever a caller asks.",
+      unlocks: "One define_tool() call = one new ability. No phone menus, no training.",
     },
     stem: "step06_hardcoded_jokes",
-    desc: "Teaches the AI to tell jokes using a SWAIG function. The handler picks a random joke from a hardcoded list.",
+    desc: "Buddy's first tool. The handler returns a random joke from a hardcoded list.",
     whatsNew: "First SWAIG function: define_tool() with a custom handler that returns FunctionResult",
     capabilities: ["Chat", "Jokes (list)"],
     newCapabilities: ["Jokes (list)"],
@@ -1658,7 +1667,7 @@ const STEPS_META = [
     route: "/step07",
     step: "Version 3",
     name: "Live API Jokes",
-    callPrompt: "Ask Buddy to tell you a joke — this version fetches one from a live API.",
+    callPrompt: "ask Buddy for a joke. This version fetches a fresh one every time.",
     tagline: "Buddy calls a live API",
     codeSpotlight: {
       power: "Buddy fetches a fresh joke from the internet",
@@ -1671,14 +1680,14 @@ const STEPS_META = [
         { t: '    return FunctionResult(f"Dad joke: {joke}")' },
       ],
       methods: [
-        { call: "on_tell_joke()", does: "The function's handler — your own Python code. Because it runs on your server, it can do anything Python can." },
-        { call: "requests.get()", does: "Here it calls a live website for a brand-new joke every time, instead of reading from a fixed list." },
+        { call: "on_tell_joke()", does: "The function's handler, your own Python code. It runs on your server, so it can do anything Python can." },
+        { call: "requests.get()", does: "Calls a live API for a brand-new joke every time, instead of reading a fixed list." },
       ],
-      buddy: "Same tool, but now I call out to the internet for a brand new joke every single time.",
-      unlocks: "Your handler is just code, so any tool can reach any API, database, or system you already have.",
+      buddy: "Same tool, but now I fetch a brand-new joke from the internet.",
+      unlocks: "Your handler is plain code: any tool can reach any API, database, or system.",
     },
     stem: "step07_api_jokes",
-    desc: "Replaces hardcoded jokes with fresh ones from the API Ninjas Dad Jokes API. Every call gets a different joke.",
+    desc: "Same tool, but the handler now fetches a fresh joke from a live API.",
     whatsNew: "Calling an external REST API from a custom function handler",
     capabilities: ["Chat", "Jokes (API)"],
     newCapabilities: ["Jokes (API)"],
@@ -1694,7 +1703,7 @@ const STEPS_META = [
     route: "/step08",
     step: "Version 4",
     name: "Weather + Jokes",
-    callPrompt: "Ask Buddy what the weather is like in your city.",
+    callPrompt: "ask Buddy for the weather in your city.",
     tagline: "Buddy checks the weather",
     codeSpotlight: {
       power: "Buddy checks the weather without touching your server",
@@ -1707,14 +1716,14 @@ const STEPS_META = [
         { t: 'DataMap("get_weather").webhook("GET", WEATHER_URL)', new: true },
       ],
       methods: [
-        { call: "DataMap()", does: "Describes an API call that SignalWire makes for you, on their own servers. No server of yours to host, no webhook to expose — you just declare the request and the reply." },
+        { call: "DataMap()", does: "Describes an API call SignalWire makes for you, on their servers. You declare the request and the reply; nothing runs on your box." },
         { call: ".webhook(\"GET\", URL)", does: "The actual API call DataMap runs. The contrast to remember: define_tool runs on YOUR server, DataMap runs on SignalWire's." },
       ],
-      buddy: "DataMap lets SignalWire make the API call for me. define_tool runs on your box; DataMap runs on theirs.",
-      unlocks: "Two ways to add a tool — your server (define_tool) or SignalWire's (DataMap). Same agent, your call.",
+      buddy: "DataMap lets SignalWire make the API call for me. Your box stays out of it.",
+      unlocks: "Two ways to add a tool: your server (define_tool) or SignalWire's (DataMap).",
     },
     stem: "step08_weather",
-    desc: "Adds weather lookups using DataMap - a serverless approach where SignalWire calls the weather API directly.",
+    desc: "Adds weather with DataMap: SignalWire calls the weather API for you, serverlessly.",
     whatsNew: "DataMap: declare an API call and SignalWire executes it. Your server never handles the weather request.",
     capabilities: ["Chat", "Jokes (API)", "Weather"],
     newCapabilities: ["Weather"],
@@ -1731,7 +1740,7 @@ const STEPS_META = [
     route: "/step09",
     step: "Version 5",
     name: "Polished Agent",
-    callPrompt: "Ask for a joke, then the weather in your city — notice the smoother, polished replies.",
+    callPrompt: "ask for a joke, then the weather. Notice the smoother replies.",
     tagline: "Buddy gets polished",
     codeSpotlight: {
       power: "Buddy gets a personality and tuned timing",
@@ -1744,14 +1753,14 @@ const STEPS_META = [
         { t: 'self.add_hints(["Buddy", "weather", "forecast"])', new: true },
       ],
       methods: [
-        { call: "set_params()", does: "The dials for how Buddy behaves — like how long a pause means \"I'm done talking\" (600ms), and when to gently check back in after silence. This is what stops him sounding robotic." },
-        { call: "add_hints()", does: "Words to listen for. Telling the speech recognizer to expect \"Buddy\", \"weather\", and so on helps it hear them correctly." },
+        { call: "set_params()", does: "Buddy's behavior dials: how long a pause means \"done talking\" (600ms), when to check back in after silence." },
+        { call: "add_hints()", does: "Words to listen for. The speech recognizer expects \"Buddy\" and \"weather\", so it hears them correctly." },
       ],
-      buddy: "set_params is my dials: how fast I respond, how I sound. This is where I stop sounding like a robot.",
-      unlocks: "Same features as before — just tuned timing and sharper listening for a natural conversation.",
+      buddy: "set_params is my dials. This is where I stop sounding like a robot.",
+      unlocks: "Tuned timing and sharper listening: a natural conversation.",
     },
     stem: "step09_polish",
-    desc: "Same capabilities as Step 8, but with a much better conversation experience. Better personality, timing, and speech recognition.",
+    desc: "Same capabilities, better conversation: tuned timing, personality, and speech recognition.",
     whatsNew: "UX tuning: set_params() for timing, add_hints() for speech recognition, richer prompts, varied fillers",
     capabilities: ["Chat", "Jokes (API)", "Weather"],
     newCapabilities: [],
@@ -1768,7 +1777,7 @@ const STEPS_META = [
     route: "/step10",
     step: "Version 6",
     name: "Agent with Skills",
-    callPrompt: "Ask Buddy what the weather is like, then ask for a joke — both now come from reusable skills.",
+    callPrompt: "ask Buddy the time in Tokyo, then for an 18% tip on $47.50.",
     tagline: "Buddy gains skills",
     codeSpotlight: {
       power: "Buddy gains date/time and math in two lines",
@@ -1779,14 +1788,14 @@ const STEPS_META = [
         { t: 'self.add_skill("math")', new: true },
       ],
       methods: [
-        { call: "add_skill(\"datetime\")", does: "Adds a ready-made capability in one line — no function to write. Date and time just work, with options like the default timezone." },
-        { call: "add_skill(\"math\")", does: "Same idea: instant math — tips, percentages, conversions — with zero extra code." },
+        { call: "add_skill(\"datetime\")", does: "Adds a ready-made capability in one line, no function to write. Options like default timezone included." },
+        { call: "add_skill(\"math\")", does: "Same idea: instant math (tips, percentages, conversions) with zero extra code." },
       ],
-      buddy: "add_skill() is the cheat code. One line and I can do a whole new thing, with no handler to write.",
-      unlocks: "Skills are pre-built tools that ship with the SDK. One line each — it wires up the function, the prompt, and the hints for you.",
+      buddy: "add_skill() is the cheat code. One line, one whole new ability.",
+      unlocks: "One line per skill wires up the function, the prompt, and the hints.",
     },
     stem: "step10_skills",
-    desc: "Adds date/time and math capabilities with just two lines of code. Skills are pre-built capabilities that ship with the SDK.",
+    desc: "Date/time and math in two lines. Skills are pre-built tools that ship with the SDK.",
     whatsNew: "Built-in skills: add_skill() for instant capabilities with zero handler code",
     capabilities: ["Chat", "Jokes (API)", "Weather", "Date/Time", "Math"],
     newCapabilities: ["Date/Time", "Math"],
@@ -1803,7 +1812,7 @@ const STEPS_META = [
     route: "/step11",
     step: "Version 7",
     name: "Complete Agent",
-    callPrompt: "Ask Buddy for the weather in your city and a dad joke — this is the full production-ready agent.",
+    callPrompt: "ask Buddy for the weather and a dad joke. The full agent.",
     tagline: "Buddy goes production-ready",
     codeSpotlight: {
       power: "Buddy is reorganized into clean, production-ready methods",
@@ -1816,14 +1825,14 @@ const STEPS_META = [
         { t: "    self._register_skills()", new: true },
       ],
       methods: [
-        { call: "_configure_voice() / _configure_prompts()", does: "The same setup as before, just split into small, clearly-named methods instead of one giant __init__." },
-        { call: "_register_joke_function() / _register_skills()", does: "Each capability's wiring lives in its own method, so the agent stays easy to read and easy to grow." },
+        { call: "_configure_voice() / _configure_prompts()", does: "The same setup, split into small, clearly-named methods instead of one giant __init__." },
+        { call: "_register_joke_function() / _register_skills()", does: "Each capability's wiring lives in its own method, so the agent stays readable and growable." },
       ],
-      buddy: "Same me, just tidy. Everything split into _configure_* and _register_* methods so I'm easy to grow.",
-      unlocks: "Nothing new for the caller — this is the clean structure you'd use to build a real, larger agent.",
+      buddy: "Same me, tidier. Split into _configure_* and _register_* methods.",
+      unlocks: "Nothing new for the caller. This is the structure for a real, larger agent.",
     },
     stem: "step11_complete",
-    desc: "Everything polished and organized into clean private methods. The production-ready pattern for building larger agents.",
+    desc: "Everything organized into clean private methods. The production-ready pattern for larger agents.",
     whatsNew: "Production organization: _configure_*() and _register_*() method pattern for clean, maintainable code",
     capabilities: ["Chat", "Jokes (API)", "Weather", "Date/Time", "Math"],
     newCapabilities: [],
@@ -2482,8 +2491,8 @@ function renderOnboarding() {
     <section class="hero">
       <div class="hero-inner">
         <div style="text-align:center;"><div class="hero-eyebrow">SignalWire Agents SDK Workshop · 60 minutes</div></div>
-        <h1>Build your first <span class="accent">AI phone agent</span> in three steps.</h1>
-        <p class="hero-sub">Log in with your SignalWire credentials and we'll use the REST API to buy and provision a real phone number for <strong>Buddy</strong>, a pre-built AI agent. Then give Buddy new capabilities and call him right from your browser — no dashboard clicks, no ngrok.</p>
+        <h1>SignalWire <span class="accent">AI Workshop</span></h1>
+        <p class="hero-sub">Setup for this Workshop is as easy as 1,2,3 Log in. Get a number. Call your AI Agent</p>
         ${renderMilestones()}
         <div id="wizard-card-host">${renderWizardCard()}</div>
         <div class="skip-link">
@@ -2573,13 +2582,12 @@ function renderMilestoneCreds() {
     <div class="wizard-card">
       <div class="wizard-eyebrow">Step 1 of 3 · SignalWire credentials</div>
       <h2>Log in to your SignalWire Space.</h2>
-      <p class="lead">Your credentials are the keys that let this workshop call the SignalWire <strong>REST API</strong> on your behalf — to buy a phone number, configure your agent, and more. Brand new? Create a free Space below; it takes about a minute.</p>
 
       <a href="https://signalwire.com/signup" target="_blank" rel="noopener noreferrer" class="signup-invite">
         <div class="signup-invite-text">
           <div class="signup-invite-eyebrow">New to SignalWire?</div>
           <div class="signup-invite-headline">Create your free Space</div>
-          <div class="signup-invite-sub">Free trial credits included — no card required.</div>
+          <div class="signup-invite-sub">Free trial credits included, no card required.</div>
         </div>
         <div class="signup-invite-cta">Sign up free <span aria-hidden="true">→</span></div>
       </a>
@@ -2630,7 +2638,7 @@ function renderMilestoneNumber() {
       <p class="wizard-helper">Different number? <a href="#" id="wiz-buy-instead">Search and purchase a new one →</a></p>`;
   } else if (searched && searched.length > 0) {
     body = `
-      <p class="lead">No phone numbers on your project yet — here are three available US local numbers. Pick one to purchase. ${sdkBadge("SDK · client.phone_numbers.create")}</p>
+      <p class="lead">No phone numbers on your project yet. Here are three available US local numbers. Pick one to purchase. ${sdkBadge("SDK · client.phone_numbers.create")}</p>
       <div class="number-grid">
         ${searched.map(n => `
           <button class="number-card available" data-buy-number="${escapeHtml(n.phone_number)}">
@@ -2648,7 +2656,7 @@ function renderMilestoneNumber() {
   } else {
     // No existing numbers — show search form
     body = `
-      <p class="lead">No numbers on your project yet. Search for an available US local number to purchase — optionally filter by area code. ${sdkBadge("SDK · client.phone_numbers.search")}</p>
+      <p class="lead">No numbers on your project yet. Search for an available US local number to purchase, optionally filtered by area code. ${sdkBadge("SDK · client.phone_numbers.search")}</p>
       ${renderSearchForm()}`;
   }
   const error = wizard.errorMsg ? `<p class="wizard-error">${escapeHtml(wizard.errorMsg)}</p>` : "";
@@ -2656,7 +2664,6 @@ function renderMilestoneNumber() {
     <div class="wizard-card">
       <div class="wizard-eyebrow">Step 2 of 3 · Phone number</div>
       <h2>Connect a phone number to Buddy, a pre-built AI agent.</h2>
-      <p class="lead">A phone number is how people reach Buddy by phone. We'll buy and provision one for you over the SignalWire REST API — every call below is the same API you'd use in your own code.</p>
       ${body}
       ${error}
       <div class="wizard-nav">
@@ -2679,15 +2686,13 @@ function renderSearchForm() {
 
 function renderMilestoneDone() {
   const phone = wizard.setup?.phone_number || "";
-  const source = wizard.setup?.source || "configured";
-  const sourceLabel = source === "purchased" ? "purchased" : "reusing existing";
   return `
     <div class="wizard-card wizard-card-success">
       <div class="wizard-eyebrow">Step 3 of 3 · You're live</div>
       <h2>Your AI agent Buddy is connected.</h2>
       <div class="big-number">${escapeHtml(formatPhone(phone))}</div>
-      <p class="lead">Buddy is live at <strong>Version 1 · Hello Agent</strong>, ${sourceLabel === 'purchased' ? 'on the number you just purchased' : 'on your number'}, wired up over the SignalWire REST API. Dial from any phone — Buddy will pick up and say hello.</p>
-      <p class="wizard-helper">An AI agent can be reached two ways: <strong>dialed over the phone</strong> like you just set up, or <strong>connected over the internet</strong> straight from a browser. You'll do the browser call at the end with SignalWire RELAY. First, give Buddy a new capability below — each version adds one, and your number automatically re-points to whichever version you're viewing.</p>
+      <p class="lead">Dial it from any phone. Buddy picks up.</p>
+      <p class="wizard-helper">Next: give Buddy new capabilities, one version at a time. Your number follows whichever version you pick. At the end, you'll call Buddy straight from your browser. No phone needed.</p>
       <div class="wizard-nav">
         <button class="btn-secondary" id="wiz-restart">Start over</button>
         <span class="step-counter">Done</span>
@@ -2758,6 +2763,7 @@ async function submitCredentials() {
     SIGNALWIRE_PROJECT_ID: project,
     SIGNALWIRE_TOKEN: token,
     SIGNALWIRE_SPACE: space,
+    verify: true,  // live-check against the Space so typos fail here, with a message
   }, { label: "store credentials" });
   if (!r.ok || !r.data?.configured) {
     wizard.pending = false;
@@ -2832,7 +2838,7 @@ async function selectNumber(payload) {
 }
 
 async function restartWizard() {
-  if (!confirm("Forget the configured phone number? This won't release the number from your SignalWire account — it just resets the workshop wizard.")) return;
+  if (!confirm("Forget the configured phone number? This won't release the number from your SignalWire account. It resets the workshop wizard.")) return;
   await swApi("POST", "/api/setup/reset", undefined, { label: "reset workshop state" });
   wizard.numbers = null; wizard.searched = null; wizard.setup = null; wizard.errorMsg = "";
   state.milestone = 1;
@@ -2885,8 +2891,8 @@ function renderLockedPreviews() {
     <section class="pillars-section" id="pillars-section">
       <div class="pillars-head">
         <div class="label">The whole platform, end to end</div>
-        <h2>Call Buddy from your browser — no phone, no dialing</h2>
-        <p>SignalWire is more than AI voice. Once you've made your first call, the same REST API mints a token your browser uses to open a live WebRTC call straight to Buddy — all from this page, no phone required.</p>
+        <h2>Call Buddy from your browser. No phone, no dialing</h2>
+        <p>SignalWire is more than AI voice. Once you've made your first call, the same REST API mints a token your browser uses to open a live WebRTC call straight to Buddy. All from this page, no phone required.</p>
       </div>
       <div class="pillars-grid">
         <div class="pillar-card rest locked" aria-disabled="true">
@@ -2927,7 +2933,7 @@ function bootC2C() {
       _c2cBooted = false;
       var p = document.createElement("p");
       p.className = "muted";
-      p.textContent = "Call widget failed to load — check network.";
+      p.textContent = "Call widget failed to load. Check network.";
       var rb = document.createElement("button");
       rb.className = "cta-btn";
       rb.id = "c2c-retry";
@@ -2998,9 +3004,11 @@ function renderWorkshop() {
           <span class="sep" aria-hidden="true">·</span>
           <button type="button" class="link-button" id="restart-wizard-link">Restart wizard</button>
         </div>
-        <h1>You're up and running.</h1>
-        <div class="pinned-url">${renderPinnedUrlCard()}</div>
-        <p class="helper">Paste this URL into your existing SWML Script in the dashboard, then call your number. Click any step below to switch.</p>
+        <details class="advanced-number">
+          <summary>Advanced: use your own number</summary>
+          <div class="pinned-url">${renderPinnedUrlCard()}</div>
+          <p class="helper">Paste this URL into your existing SWML Script in the dashboard, then call your number.</p>
+        </details>
       </div>
     </section>
 
@@ -3008,7 +3016,7 @@ function renderWorkshop() {
       <div class="preview-inner">
         <div class="preview-head">
           <h2>Give Buddy a new capability</h2>
-          <p>Buddy starts by just answering the phone, then gains a new capability at every version — all the way to production-ready. Scroll, use ← → keys, or click any node.</p>
+          <p>Each version adds one. Click any node to switch. Your number follows.</p>
         </div>
       </div>
       <div class="timeline-sticky"><div class="timeline-sticky-inner"><div id="running-version-badge" class="running-version-badge"></div>${renderStepTimeline()}</div></div>
@@ -3256,7 +3264,7 @@ function autoPointNumber(route) {
     const r = await swApi("POST", "/api/setup/route", { route }, { label: "re-point phone to this version" });
     _autoPointInFlight = false;
     if (!r.ok) {
-      showToast(`Couldn't re-point your number — tap a version to retry.`, "err");
+      showToast(`Couldn't re-point your number. Tap a version to retry.`, "err");
       return;
     }
     wizard.setup = r.data?.setup;

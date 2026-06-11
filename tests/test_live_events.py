@@ -204,3 +204,89 @@ def test_sse_payload_excludes_raw_data():
     assert "scrub_probe" in body
     assert "secret_url" not in body and "u:p@h" not in body
     assert '"data"' not in body
+
+
+# ---------------------------------------------------------------------------
+# Debug-event type derivation: the SDK labels any payload without 'label' or
+# 'action' as "unknown" (web_mixin.py), and the platform's debug webhook
+# payloads carry neither. The bus must derive a presentable type from the
+# payload body so the Live Wire panel never shows bare "unknown" rows.
+# ---------------------------------------------------------------------------
+
+def test_derive_keeps_real_event_types():
+    assert live_events.derive_event_type("step_change", {"step": "weather"}) == "step_change"
+
+
+def test_derive_explicit_type_keys():
+    assert live_events.derive_event_type("unknown", {"event_type": "ai_start"}) == "ai_start"
+    assert live_events.derive_event_type("unknown", {"type": "utterance"}) == "utterance"
+    assert live_events.derive_event_type(None, {"event": "barge"}) == "barge"
+
+
+def test_derive_conversation_roles():
+    assert live_events.derive_event_type("unknown", {"role": "assistant", "content": "Hi!"}) == "ai_response"
+    assert live_events.derive_event_type("unknown", {"role": "user", "content": "joke please"}) == "caller_speech"
+    assert live_events.derive_event_type("unknown", {"role": "tool", "content": "result"}) == "tool_result"
+
+
+def test_derive_swaig_and_steps():
+    assert live_events.derive_event_type("unknown", {"command_name": "get_weather"}) == "function:get_weather"
+    assert live_events.derive_event_type("unknown", {"function_name": "tell_joke"}) == "function:tell_joke"
+    assert live_events.derive_event_type("unknown", {"step_name": "menu"}) == "step_change"
+
+
+def test_derive_alien_payload_names_its_key_instead_of_unknown():
+    t = live_events.derive_event_type("unknown", {"call_id": "x", "barge_count": 2})
+    assert t == "event:barge_count"
+
+
+def test_derive_hopeless_payloads_stay_unknown():
+    assert live_events.derive_event_type("unknown", {}) == "unknown"
+    assert live_events.derive_event_type(None, "not a dict") == "unknown"
+
+
+def test_emit_applies_derivation_and_summary_shows_content():
+    bus = _fresh()
+    bus.emit("ai", "unknown", {"role": "assistant", "content": "Here's a dad joke."})
+    e = bus.since(0)[0]
+    assert e["type"] == "ai_response"
+    assert "unknown" not in e["summary"]
+    assert "dad joke" in e["summary"]
+
+
+# ---------------------------------------------------------------------------
+# Real platform envelope (verified live 2026-06-11): every debug POST is
+# {"call_info": {...routing metadata...}, "<event_name>": {...payload...}}.
+# The event name is the sibling key of call_info; the inner dict is the data.
+# ---------------------------------------------------------------------------
+
+_CI = {"project_id": "p", "space_id": "s", "call_id": "c",
+       "content_type": "text/json", "content_disposition": "post_data",
+       "conversation_type": "voice"}
+
+
+def test_derive_unwraps_call_info_envelope():
+    assert live_events.derive_event_type(
+        "unknown", {"call_info": _CI, "filler": {"text": "So", "filler_type": "thinking"}}) == "filler"
+    assert live_events.derive_event_type(
+        "unknown", {"call_info": _CI, "speech_detect": {"text": "joke", "source": "live"}}) == "speech_detect"
+    assert live_events.derive_event_type(
+        "unknown", {"call_info": _CI, "session_end": {"reason": "normal", "duration_ms": 19777}}) == "session_end"
+
+
+def test_envelope_summary_includes_inner_payload():
+    bus = _fresh()
+    bus.emit("ai", "unknown", {"call_info": _CI,
+                               "speech_detect": {"text": "tell me a joke", "source": "live"}})
+    e = bus.since(0)[0]
+    assert e["type"] == "speech_detect"
+    assert "tell me a joke" in e["summary"]
+
+
+def test_post_prompt_summary_never_leaks_token_url():
+    bus = _fresh()
+    bus.emit("ai", "unknown", {"call_info": _CI,
+                               "post_prompt": {"url": "https://x/step11/post_prompt/?__token=SECRET"}})
+    e = bus.since(0)[0]
+    assert e["type"] == "post_prompt"
+    assert "SECRET" not in e["summary"] and "__token" not in e["summary"]

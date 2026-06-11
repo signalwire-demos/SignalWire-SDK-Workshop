@@ -60,7 +60,15 @@ class ConfigStore:
 
     # ----- auto-detection -----
     def set_detected_base(self, base):
-        """Record the public base seen on a real request. Returns True if changed."""
+        """Record the public base seen on a real request. Returns True if changed.
+
+        Dotless hosts are rejected: a public base must be an FQDN, and the
+        hosts that reach here without one (starlette's 'testserver',
+        'localhost') would poison the persisted config for later live runs.
+        """
+        host = (base or "").split("://", 1)[-1].split("/", 1)[0].split(":", 1)[0]
+        if "." not in host:
+            return False
         with self._lock:
             if not base or self._data.get("detected_base") == base:
                 return False
@@ -84,10 +92,12 @@ class ConfigStore:
 
     # ----- effective values -----
     def effective_base(self, env_default=None):
+        # Explicit operator intent (admin override, then env var) outranks the
+        # auto-detected guess; detection exists for Replit where no env is set.
         with self._lock:
             override = self._data.get("public_base")
             detected = self._data.get("detected_base")
-        return override or detected or os.environ.get("SWML_PROXY_URL_BASE") or env_default
+        return override or os.environ.get("SWML_PROXY_URL_BASE") or detected or env_default
 
     def effective_auth(self):
         with self._lock:
@@ -104,7 +114,7 @@ class ConfigStore:
             detected = self._data.get("detected_base")
         user, pw = self.effective_auth()
         return {
-            "public_base": override or detected or os.environ.get("SWML_PROXY_URL_BASE") or env_default or "",
+            "public_base": override or os.environ.get("SWML_PROXY_URL_BASE") or detected or env_default or "",
             "public_base_overridden": bool(override),
             "public_base_detected": detected or "",
             "auth_user": user,

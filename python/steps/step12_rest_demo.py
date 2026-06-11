@@ -35,6 +35,8 @@ from urllib.parse import urlsplit, urlunsplit, quote
 from signalwire_agents.rest.client import SignalWireClient
 from signalwire_agents.rest._base import SignalWireRestError
 
+from creds_normalize import normalize_space
+
 HANDLER_NAME = "Agents SDK Workshop Agent"
 DEFAULT_AGENT_PATH = "/step04"
 AGENT_PATH = DEFAULT_AGENT_PATH  # alias for callers that import this
@@ -56,20 +58,32 @@ def _log(msg):
 
 def _creds(creds=None):
     """Return (project, token, space). Prefer explicit creds (in-process,
-    per-session); fall back to env (the standalone subprocess path)."""
+    per-session); fall back to env (the standalone subprocess path).
+
+    The space is re-normalized here as defense in depth: session creds arrive
+    normalized, but env creds (Replit Secrets, .env) can hold any pasted form,
+    e.g. 'https://demo.signalwire.com'.
+    """
     if creds:
         try:
-            return (creds["SIGNALWIRE_PROJECT_ID"], creds["SIGNALWIRE_TOKEN"], creds["SIGNALWIRE_SPACE"])
+            triple = (creds["SIGNALWIRE_PROJECT_ID"], creds["SIGNALWIRE_TOKEN"], creds["SIGNALWIRE_SPACE"])
         except KeyError as missing:
             raise RuntimeError(f"missing required credential: {missing.args[0]}") from None
+    else:
+        try:
+            triple = (
+                os.environ["SIGNALWIRE_PROJECT_ID"],
+                os.environ["SIGNALWIRE_TOKEN"],
+                os.environ["SIGNALWIRE_SPACE"],
+            )
+        except KeyError as missing:
+            raise RuntimeError(f"missing required env var: {missing.args[0]}") from None
+    project, token, space = triple
     try:
-        return (
-            os.environ["SIGNALWIRE_PROJECT_ID"],
-            os.environ["SIGNALWIRE_TOKEN"],
-            os.environ["SIGNALWIRE_SPACE"],
-        )
-    except KeyError as missing:
-        raise RuntimeError(f"missing required env var: {missing.args[0]}") from None
+        space = normalize_space(space)
+    except ValueError as e:
+        raise RuntimeError(f"invalid SIGNALWIRE_SPACE: {e}") from None
+    return (project.strip(), token.strip(), space)
 
 
 def _client(creds=None):
@@ -303,6 +317,11 @@ def mint_guest_token(address_id, creds=None, ttl_secs=3600 * 24):
         headers={"Content-Type": "application/json", "Accept": "application/json"},
         timeout=10,
     )
+    if not resp.ok:
+        # The body names the actual problem (bad address id, auth, plan limits);
+        # without it a failed mint surfaces only as an opaque 4xx in the caller.
+        _log(f"guest token mint FAILED: HTTP {resp.status_code} from "
+             f"https://{space}/api/fabric/guests/tokens: {resp.text[:300]}")
     resp.raise_for_status()
     return resp.json()["token"]
 

@@ -64,8 +64,8 @@ def test_persistent_number_badge_and_call_prompts(html):
     assert "running-version-badge" in html
     # Each version carries a curated "call Buddy and ask him" prompt.
     assert "callPrompt:" in html
-    assert "Ask Buddy to tell you a joke" in html
-    assert "what the weather" in html
+    assert "ask Buddy for a joke." in html
+    assert "the weather in your city" in html
     # The per-step dial sub-line is conditional on whether the number is
     # currently pointed at that version, so both phrasings must be present.
     assert "Your number already dials this version." in html
@@ -352,3 +352,42 @@ def test_finale_is_static_below_call_section_and_retriggered(html):
     assert "_browserCallEnded" in html
     # showGrandFinale is invoked somewhere beyond its definition
     assert html.count("showGrandFinale(") >= 2
+
+
+def test_web_components_embed_is_version_pinned(html):
+    # The unpinned unpkg URL serves 'latest'; 4.0.0-rc.0 introduced a remote
+    # <video muted> regression that silences the agent entirely. Pin to
+    # 4.0.0-beta.12 (last build whose remote media element is unmuted) so a
+    # future 'latest' can't silently change call behavior mid-workshop.
+    m = re.search(r'unpkg\.com/@signalwire/web-components@([^/"]+)/', html)
+    assert m, "web-components embed script URL must be version-pinned"
+    assert m.group(1) == "4.0.0-beta.12"
+
+
+def test_hero_is_signalwire_ai_workshop(html):
+    assert "SignalWire <span class=\"accent\">AI Workshop</span>" in html
+    assert "Build your first <span class=\"accent\">AI phone agent</span>" not in html
+    # The user explicitly chose this wording; do not "fix" the banned word.
+    assert "Setup for this Workshop is as easy as 1,2,3" in html
+
+
+def test_wizard_leads_deleted(html):
+    assert "Your credentials are the keys" not in html
+    assert "A phone number is how people reach Buddy" not in html
+    assert "Dial it from any phone. Buddy picks up." in html
+    assert "An AI agent can be reached two ways" not in html
+
+
+def test_workshop_top_band_collapsed(html):
+    assert "You're up and running." not in html
+    assert "Advanced: use your own number" in html
+    assert "Each version adds one. Click any node to switch. Your number follows." in html
+
+
+def test_steps_meta_copy_budgets(html):
+    import re
+    block = html[html.index("const STEPS_META"):html.index("PILLAR_CARDS")]
+    assert "—" not in block, "em-dashes are banned in card copy"
+    assert not re.search(r"\bjust\b", block), "'just' is banned in card copy"
+    for m in re.finditer(r'desc: "([^"]+)"', block):
+        assert len(m.group(1).split()) <= 16, f"lead too long: {m.group(1)}"
