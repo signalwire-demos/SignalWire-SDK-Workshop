@@ -18,7 +18,6 @@ externalPort = 80
 [deployment]
 deploymentTarget = "vm"
 run = ["python", "main.py"]
-build = ["sh", "-c", "pip install ."]
 
 [agent]
 expertMode = true
