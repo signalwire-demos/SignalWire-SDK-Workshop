@@ -1,0 +1,1 @@
+- [Deployment publish blockers](deployment-publish-blockers.md) — invalid `.replit` deploymentTarget value fails schema validation; deploy security scan also bundles gitignored runtime files (live secrets there block publish even when git-tracked scans are clean).
