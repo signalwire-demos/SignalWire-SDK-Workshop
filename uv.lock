@@ -145,33 +145,6 @@ wheels = [
 ]
 
 [[package]]
-name = "chicago-roadshow-2026"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "fastapi" },
-    { name = "requests" },
-    { name = "signalwire-agents" },
-    { name = "uvicorn" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "httpx" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "fastapi", specifier = ">=0.111" },
-    { name = "requests", specifier = ">=2.32" },
-    { name = "signalwire-agents", specifier = ">=1.1.0" },
-    { name = "uvicorn", specifier = ">=0.30" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "httpx", specifier = ">=0.27" }]
-
-[[package]]
 name = "click"
 version = "8.4.1"
 source = { registry = "https://pypi.org/simple" }
@@ -625,6 +598,33 @@ sdist = { url = "https://files.pythonhosted.org/packages/02/62/001c77d025b13cc95
 wheels = [
     { url = "https://files.pythonhosted.org/packages/09/f6/972079b8cd1507cefa4a0736d94d7aa94ad327f0c79930bd0c0ab1dbb68e/signalwire_agents-1.1.0-py3-none-any.whl", hash = "sha256:4148e2806991ddf5f72e8740447cc59dfe821a65efe4f0505629f45b4b9e4955", size = 583124, upload-time = "2026-03-17T20:24:10.051Z" },
 ]
+
+[[package]]
+name = "signalwire-agents-sdk-workshop"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "fastapi" },
+    { name = "requests" },
+    { name = "signalwire-agents" },
+    { name = "uvicorn" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "httpx" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fastapi", specifier = ">=0.111" },
+    { name = "requests", specifier = ">=2.32" },
+    { name = "signalwire-agents", specifier = ">=1.1.0" },
+    { name = "uvicorn", specifier = ">=0.30" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "httpx", specifier = ">=0.27" }]
 
 [[package]]
 name = "signalwire-pom"

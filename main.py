@@ -31,6 +31,7 @@ from replit_setup import startup
 import session_store
 import call_store
 import config_store
+import agent_graph
 from urllib.parse import urlparse
 
 
@@ -434,15 +435,42 @@ async def admin_export(request: Request):
 FINAL_VERSION_ROUTE = "/step11"  # Version 7 "Complete Agent"
 
 
+def _final_agent_graph():
+    """Definition graph for the final Buddy version; safe empty fallback."""
+    agent = registered_agents.get(FINAL_VERSION_ROUTE)
+    if not agent:
+        return {"initial_step": None, "steps": []}
+    try:
+        return agent_graph.build_graph(agent)
+    except Exception:  # noqa: BLE001 — viewer is best-effort, never 500
+        return {"initial_step": None, "steps": []}
+
+
 @server.app.get("/api/postprompt/final")
 async def postprompt_final(request: Request):
     """Latest captured post-prompt for the final Buddy version (browser-call showcase)."""
+    graph = _final_agent_graph()
     calls = [c for c in call_store.STORE.all() if c.get("agent_route") == FINAL_VERSION_ROUTE]
     if not calls:
-        return JSONResponse({"found": False, "call": None})
+        return JSONResponse({"found": False, "call": None, "agent_graph": graph})
     latest = max(calls, key=lambda c: c.get("received_at", 0))
     safe = {k: v for k, v in latest.items() if k != "raw"}
-    return JSONResponse({"found": True, "call": safe})
+    return JSONResponse({"found": True, "call": safe, "agent_graph": graph})
+
+
+@server.app.get("/api/agent/graph")
+async def api_agent_graph(request: Request):
+    """Full contexts/steps definition graph for a registered agent."""
+    route = request.query_params.get("route", FINAL_VERSION_ROUTE)
+    agent = registered_agents.get(route)
+    if not agent:
+        return JSONResponse({"found": False, "route": route,
+                             "initial_step": None, "steps": []})
+    try:
+        g = agent_graph.build_graph(agent)
+    except Exception:  # noqa: BLE001
+        g = {"initial_step": None, "steps": []}
+    return JSONResponse({"found": bool(g["steps"]), "route": route, **g})
 
 
 @server.app.get("/admin/config")
@@ -537,6 +565,41 @@ async def admin_stream(request: Request):
     return StreamingResponse(gen(), media_type="text/event-stream")
 
 # ---------------------------------------------------------------------------
+# Live Wire — public SSE feed for the browser-call Live Wire panel
+# ---------------------------------------------------------------------------
+
+@server.app.get("/api/live-events")
+async def live_events_stream(request: Request):
+    """Public SSE feed for the Live Wire panel (browser-call section).
+
+    SECURITY: this endpoint is unauthenticated, so events are reduced to the
+    server-built summary fields only. Raw `data` stays in the bus (debug
+    payload shapes are unvetted and webhook URLs can embed basic-auth creds).
+    """
+    import live_events as _le
+
+    def _public(e):
+        return {k: e[k] for k in ("seq", "ts", "source", "type", "summary")}
+
+    async def gen():
+        last = 0
+        # replay a short tail so a freshly-opened panel shows recent context
+        for e in _le.BUS.since(0)[-20:]:
+            last = e["seq"]
+            yield f"event: live\ndata: {_json.dumps([_public(e)])}\n\n"
+        while True:
+            if await request.is_disconnected():
+                return
+            if _le.BUS.version > last:
+                evs = _le.BUS.since(last)
+                last = evs[-1]["seq"]
+                yield f"event: live\ndata: {_json.dumps([_public(e) for e in evs])}\n\n"
+            yield ": keepalive\n\n"
+            await asyncio.sleep(0.5)
+
+    return StreamingResponse(gen(), media_type="text/event-stream")
+
+# ---------------------------------------------------------------------------
 # Source viewer - lets the landing page link to /source/agents/step04_hello.py
 # ---------------------------------------------------------------------------
 
@@ -566,8 +629,7 @@ if os.path.isdir("web"):
     @server.app.middleware("http")
     async def _no_cache_static(request: Request, call_next):
         # Force fresh static assets so a redeploy never serves a returning
-        # attendee a stale cached bundle (replaces the old ?v= query-string
-        # cache-buster on buddy-video.js). "no-cache" still allows conditional
+        # attendee a stale cached bundle. "no-cache" still allows conditional
         # revalidation (304s), it just forbids using a cached copy blindly.
         response = await call_next(request)
         # No-cache the static bundle AND the HTML documents that load it (/ and

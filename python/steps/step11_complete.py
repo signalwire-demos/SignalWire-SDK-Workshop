@@ -29,6 +29,7 @@ class CompleteAgent(AgentBase):
 
         self._configure_voice()
         self._configure_params()
+        self._configure_live_events()
         self._configure_contexts()
         self._register_joke_function()
         self._register_weather()
@@ -73,6 +74,23 @@ class CompleteAgent(AgentBase):
             **CAPTURE_PARAMS,
         })
 
+    # -- Debug event streaming (Live Wire) ----------------------------------
+
+    def _configure_live_events(self):
+        # The platform POSTs real-time per-turn debug events to this agent's
+        # /debug_events endpoint during the call; we forward them to the Live
+        # Wire bus so the browser-call panel can stream them over SSE.
+        self.enable_debug_events(1)
+        self.on_debug_event(self._on_debug_event)
+
+    def _on_debug_event(self, event_type, data, *args, **kwargs):
+        # Defensive: never raise into the SDK's request path.
+        try:
+            import live_events
+            live_events.BUS.emit("ai", event_type, data if isinstance(data, dict) else {})
+        except Exception as e:
+            print(f"[live_events] dropped debug event: {e}", flush=True)
+
     # -- Prompt as a contexts/steps state machine ---------------------------
     # WHY: a state machine makes the platform emit `step_change` events into
     # call_log, which powers the State Flow tree (observability) and is the
@@ -94,8 +112,10 @@ class CompleteAgent(AgentBase):
             "Over video you appear as a friendly glowing robot; play along warmly if "
             "asked about your appearance.")
         ctx.add_section("Tour rule",
-            "This is a guided tour with distinct steps. Finish the current step's "
-            "task, then move to the next step. Do not skip ahead or jump around.")
+            "This is a choose-your-own tour driven by a state machine. From the "
+            "menu, go to whichever topic the caller picks. After each topic, "
+            "return to the menu and offer what's left. When every topic is done "
+            "or the caller wants to stop, move to the recap.")
 
         def conv(name, task, criteria, nexts):
             s = ctx.add_step(name, task=task, criteria=criteria)
@@ -120,10 +140,11 @@ class CompleteAgent(AgentBase):
              "The caller has given a name (or declined).",
              ["menu"])
         conv("menu",
-             "Tell them the tour will cover the weather, a joke, the time, and a "
-             "quick calculation. Then start with the weather.",
-             "The caller knows what's coming.",
-             ["weather_ask"])
+             "Offer the menu: the weather, a dad joke, the current time, or a "
+             "quick calculation — in any order they like. If they've heard them "
+             "all or want to stop, head to the recap.",
+             "The caller picked a topic, or asked to wrap up.",
+             ["weather_ask", "joke_intro", "time_intro", "math_intro", "recap"])
 
         conv("weather_ask",
              "Ask which city they'd like the weather for.",
@@ -134,9 +155,10 @@ class CompleteAgent(AgentBase):
              "Weather has been retrieved.",
              ["get_weather"], ["weather_deliver"])
         conv("weather_deliver",
-             "Share the weather warmly in a sentence, then move on to a joke.",
+             "Share the weather warmly in a sentence, then return to the menu "
+             "and ask what they'd like next.",
              "The weather was shared.",
-             ["joke_intro"])
+             ["menu"])
 
         conv("joke_intro",
              "Offer the caller a dad joke.",
@@ -147,9 +169,10 @@ class CompleteAgent(AgentBase):
              "A joke has been told.",
              ["tell_joke"], ["joke_react"])
         conv("joke_react",
-             "React playfully to your own joke, then move on to the time.",
+             "React playfully to your own joke, then return to the menu and ask "
+             "what they'd like next.",
              "You reacted to the joke.",
-             ["time_intro"])
+             ["menu"])
 
         conv("time_intro",
              "Offer to tell the caller the current date and time.",
@@ -160,9 +183,10 @@ class CompleteAgent(AgentBase):
              "The date/time was retrieved.",
              ["get_current_time", "get_current_date"], ["time_deliver"])
         conv("time_deliver",
-             "Share the date and time, then move on to a quick calculation.",
+             "Share the date and time, then return to the menu and ask what "
+             "they'd like next.",
              "The time was shared.",
-             ["math_intro"])
+             ["menu"])
 
         conv("math_intro",
              "Offer to do a quick calculation; ask what they'd like computed.",
@@ -173,12 +197,13 @@ class CompleteAgent(AgentBase):
              "The calculation was solved.",
              ["calculate"], ["math_deliver"])
         conv("math_deliver",
-             "Share the answer, then recap the tour.",
+             "Share the answer, then return to the menu and ask what they'd "
+             "like next.",
              "The answer was shared.",
-             ["recap"])
+             ["menu"])
 
         conv("recap",
-             "Recap the tour: the weather, a joke, the time, and a calculation you did together.",
+             "Recap whichever topics you actually covered together on this call.",
              "The tour has been recapped.",
              ["wrap_up"])
         conv("wrap_up",
@@ -211,16 +236,22 @@ class CompleteAgent(AgentBase):
         try:
             resp = requests.get(
                 "https://icanhazdadjoke.com/",
-                headers={"Accept": "application/json", "User-Agent": "chicago-roadshow-2026"},
+                headers={"Accept": "application/json", "User-Agent": "signalwire-agents-sdk-workshop"},
                 timeout=5,
             )
             resp.raise_for_status()
             data = resp.json()
             joke = data.get("joke")
             if not joke:
+                import live_events
+                live_events.BUS.emit("swaig", "tell_joke", {"result": "no joke returned"})
                 return FunctionResult("I couldn't find a joke this time. Try again!").swml_change_step("joke_react")
+            import live_events
+            live_events.BUS.emit("swaig", "tell_joke", {"result": joke[:80]})
             return FunctionResult(f"Here's a dad joke: {joke}").swml_change_step("joke_react")
-        except requests.RequestException:
+        except requests.RequestException as e:
+            import live_events
+            live_events.BUS.emit("swaig", "tell_joke", {"error": str(e)[:80]})
             return FunctionResult("My joke service is taking a break. Try again in a moment!").swml_change_step("joke_react")
 
     # -- Weather (server-side SWAIG tool, runs on our server) ----------------
@@ -232,7 +263,7 @@ class CompleteAgent(AgentBase):
         # advance_to_step forces a webhook_action transition to weather_deliver,
         # making the State Flow tree show a ⚡ forced edge for this step.
         from python.steps._weather import register_weather_tool
-        register_weather_tool(self, advance_to_step="weather_deliver")
+        register_weather_tool(self, advance_to_step="weather_deliver", live_emit=True)
 
     # -- Built-in skills ----------------------------------------------------
 

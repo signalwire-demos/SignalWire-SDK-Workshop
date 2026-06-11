@@ -28,9 +28,14 @@ def test_buddy_uses_contexts_steps():
     assert steps["joke_tell"]["functions"] == ["tell_joke"]
     assert set(steps["time_fetch"]["functions"]) == {"get_current_time", "get_current_date"}
     assert steps["math_solve"]["functions"] == ["calculate"]
-    # chain integrity
+    # graph integrity: menu is a hub, topics return to it
     assert steps["greeting"]["valid_steps"] == ["get_name"]
+    assert steps["get_name"]["valid_steps"] == ["menu"]
+    assert set(steps["menu"]["valid_steps"]) == {
+        "weather_ask", "joke_intro", "time_intro", "math_intro", "recap"}
     assert steps["weather_fetch"]["valid_steps"] == ["weather_deliver"]
+    for back in ("weather_deliver", "joke_react", "time_deliver", "math_deliver"):
+        assert steps[back]["valid_steps"] == ["menu"], back
     assert steps["recap"]["valid_steps"] == ["wrap_up"]
     assert steps["wrap_up"]["valid_steps"] == []
     # conversational steps expose no business tool
@@ -162,3 +167,32 @@ def test_greeting_mentions_recording():
     steps = {s["name"]: s for s in ai["prompt"]["contexts"]["default"]["steps"]}
     text = json.dumps(steps["greeting"])
     assert "record" in text.lower()
+
+
+def test_buddy_streams_debug_events():
+    swml = _complete_swml()
+    ai = [v for s in swml["sections"]["main"] if isinstance(s, dict) for k, v in s.items() if k == "ai"][0]
+    params = ai.get("params") or {}
+    assert params.get("debug_webhook_url"), "debug_webhook_url must be set"
+    assert "/debug_events" in params["debug_webhook_url"]
+    assert params.get("debug_webhook_level", 0) >= 1
+
+
+def test_step09_has_no_debug_webhook():
+    import json
+    from python.steps.step09_polish import PolishedAgent
+    a = PolishedAgent(route="/step09")
+    swml = a._render_swml()
+    swml = json.loads(swml) if isinstance(swml, str) else swml
+    ai = [v for s in swml["sections"]["main"] if isinstance(s, dict) for k, v in s.items() if k == "ai"][0]
+    assert not (ai.get("params") or {}).get("debug_webhook_url")
+
+
+def test_debug_event_handler_feeds_live_bus():
+    import live_events
+    from python.steps.step11_complete import CompleteAgent
+    a = CompleteAgent(route="/step11")
+    before = live_events.BUS.version
+    a._on_debug_event("barge", {"content": "user interrupted"})
+    evs = live_events.BUS.since(before)
+    assert evs and evs[0]["source"] == "ai" and evs[0]["type"] == "barge"

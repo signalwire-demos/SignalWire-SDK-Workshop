@@ -9,17 +9,11 @@ from pathlib import Path
 import pytest
 
 INDEX = Path(__file__).resolve().parents[1] / "web" / "index.html"
-BUDDY_VIDEO = Path(__file__).resolve().parents[1] / "web" / "buddy-video.js"
 
 
 @pytest.fixture(scope="module")
 def html() -> str:
     return INDEX.read_text(encoding="utf-8")
-
-
-@pytest.fixture(scope="module")
-def buddy_video_js() -> str:
-    return BUDDY_VIDEO.read_text(encoding="utf-8")
 
 
 def test_no_purchase_confirmation_dialog(html):
@@ -78,76 +72,31 @@ def test_persistent_number_badge_and_call_prompts(html):
     assert "Selecting this version points your number here." in html
 
 
-def test_sdk_pinned_to_v4_and_single_call_client(html):
-    # The CDN script is pinned to an explicit v4 version (not the floating tag).
-    assert "cdn.signalwire.com/@signalwire/js" in html
-    assert "@signalwire/js@4.0.0-rc.0" in html  # explicit v4 pin
-    # The audio-only relay-client.js is no longer loaded.
-    assert "/static/relay-client.js" not in html
-    # There is a single browser-call button, not separate call + video buttons.
-    assert 'id="relay-call-btn"' not in html
-    assert 'id="buddy-call-btn"' in html
+def test_browser_call_uses_c2c_widget(html):
+    assert "sw-click-to-call" in html
+    assert "@signalwire/web-components" in html
+    assert "/api/relay/config" in html          # token still minted server-side
+    assert "sw-call-ended" in html              # feed + modal handoff wiring
+    assert 'id="live-wire"' in html
+    assert "/static/live-wire.js" in html
+    assert "renderLiveWire" in html
 
 
-def test_call_fabric_diagram_present(html):
-    # The "Bonus / two more pillars" framing is gone.
-    assert "Bonus 1" not in html
-    assert "Bonus 2" not in html
-    assert "Two more pillars beyond the AI agent" not in html
-    # The interactive pipeline diagram is present with its four nodes.
-    assert 'class="cf-pipeline"' in html
-    assert 'data-cf-node="browser"' in html
-    assert 'data-cf-node="rest"' in html
-    assert 'data-cf-node="edge"' in html
-    assert 'data-cf-node="buddy"' in html
-    assert "function revealCfNode" in html
+def test_buddy_video_fully_removed(html):
+    assert "buddy-video" not in html
+    assert "BuddyVideo" not in html
+    assert not (pathlib.Path(__file__).resolve().parent.parent / "web" / "buddy-video.js").exists()
+    assert "cf-node" not in html                # click-to-reveal diagram gone
 
 
-def test_buddy_video_emits_all_pipeline_stages(buddy_video_js):
-    # All four ordered pipeline stages must be emitted so the Call Fabric
-    # diagram lights up browser -> rest -> edge -> buddy.
-    assert 'emitStage("browser")' in buddy_video_js
-    assert 'emitStage("rest")' in buddy_video_js
-    # "edge" is emitted via the idempotent emitEdge() helper (on media.connected
-    # and as a post-start() fallback), not a bare emitStage("edge") at auth time.
-    assert 'emitStage("edge")' in buddy_video_js
-    assert "function emitEdge" in buddy_video_js
-    assert 'emitStage("buddy")' in buddy_video_js
-    # The pipeline must be cleared on call failure AND on call end so a retry
-    # never shows stale half-lit nodes (guards Fix A).
-    assert "emitStage(null)" in buddy_video_js
-
-
-def test_set_cf_stage_updates_status_line(html):
-    # setCfStage must keep the #cf-status line in sync with the lit pipeline
-    # (guards Fix C: the status line is no longer permanently stale).
-    assert "function setCfStage" in html
-    assert 'getElementById("cf-status")' in html
-    assert "Minting a secure token" in html
-    assert "Connecting media over WebRTC" in html
-    assert "Connected — talking to Buddy." in html
-
-
-def test_buddy_video_uses_v4_client_api(buddy_video_js):
-    # The call client must use the @signalwire/js v4 surface (verified live
-    # against 4.0.0-rc.0). v4 has no SignalWire.WebRTC namespace and the factory
-    # is a class requiring `new`; permissions use native getUserMedia.
-    assert "new SignalWire.SignalWire(" in buddy_video_js
-    assert "StaticCredentialProvider" in buddy_video_js
-    assert "navigator.mediaDevices.getUserMedia" in buddy_video_js
-    # v3-isms that 404/throw on v4 must be gone (only comments may mention them).
-    assert "SignalWire.WebRTC.requestPermissions({" not in buddy_video_js
-    assert "await SignalWire.SignalWire({ token" not in buddy_video_js
-    # v4 dial takes the destination as a positional arg, not a {to:...} object.
-    assert "client.dial(cfg.destination," in buddy_video_js
-
-
-def test_every_version_has_presenter_script(html):
-    # STEPS_META has 7 version objects; each must define presenterScript.
+def test_presenter_script_banner_removed(html):
+    # The 🎤 SAY presenter banner was removed (2026-06-11): no script data,
+    # no render block, no CSS class — versions stay.
     version_count = len(re.findall(r'step:\s*"Version \d+"', html))
-    presenter_count = len(re.findall(r'presenterScript:\s*"', html))
     assert version_count == 7
-    assert presenter_count == 7
+    assert "presenterScript" not in html
+    assert "presenter-script" not in html
+    assert "🎤" not in html
 
 
 def test_doc_links_are_relative_paths(html):
@@ -158,13 +107,24 @@ def test_doc_links_are_relative_paths(html):
     assert urls, "expected relative doc urls in STEPS_META"
 
 
-def test_tour_is_wired_with_doc_callout_first(html):
-    assert "tour.js" in html
-    assert "RoadshowTour" in html
-    assert "roadshow.tourSeen" in html  # localStorage gate
-    # The explicit requested first callout copy:
-    assert "click on the documentation to learn more" in html.lower()
-    assert 'id="tour-replay"' in html  # replay button present
+def test_tour_and_hint_dots_removed(html):
+    # The 4-callout coachmark tour + pink "?" hint dots were removed (2026-06-11).
+    assert "tour.js" not in html
+    assert "WorkshopTour" not in html
+    assert "sdkworkshop.tourSeen" not in html
+    assert "tour-replay" not in html
+    assert "hint-dot" not in html
+    assert not (pathlib.Path(__file__).resolve().parent.parent / "web" / "tour.js").exists()
+
+
+def test_call_cta_uses_magenta_accent(html):
+    # The call-Buddy banner uses the SAY banner's pink (rgba(247,42,114,…)),
+    # not the old blue (rgba(10,132,255,…)).
+    m = re.search(r"\.step-call-cta \{[^}]*\}", html)
+    assert m, "step-call-cta CSS missing"
+    css = m.group(0).replace(" ", "")
+    assert "247,42,114" in css
+    assert "10,132,255" not in css
 
 
 def test_postprompt_modal_present(html):
@@ -235,6 +195,7 @@ def test_no_local_renderTimeline_shadows_global(html):
 
 ADMIN = pathlib.Path(__file__).resolve().parent.parent / "web" / "admin.html"
 CHARTS_JS = pathlib.Path(__file__).resolve().parent.parent / "web" / "charts.js"
+LIVE_WIRE_JS = pathlib.Path(__file__).resolve().parent.parent / "web" / "live-wire.js"
 
 
 @pytest.fixture(scope="module")
@@ -325,3 +286,69 @@ def test_admin_has_recording_subtab(admin_html):
     assert "wavesurfer" in admin_html        # CDN tag
     assert "/static/recording.js" in admin_html
     assert "renderRecording" in admin_html
+
+
+def test_no_event_branding_in_user_facing_surfaces():
+    """The app is a city-agnostic SDK workshop: no Chicago/Roadshow/meetup
+    strings may appear in served web assets. The GitHub repo slug is allowed
+    until the repo itself is renamed."""
+    import re
+    web = pathlib.Path(__file__).resolve().parent.parent / "web"
+    banned = re.compile(r"chicago|roadshow|meetup", re.IGNORECASE)
+    allowed = "jongray00/Chicago-Roadshow-2026"
+    offenders = []
+    for f in sorted(web.glob("*.html")) + sorted(web.glob("*.js")):
+        for n, line in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+            if banned.search(line) and allowed not in line:
+                offenders.append(f"{f.name}:{n}: {line.strip()[:100]}")
+    assert not offenders, "event branding leaked:\n" + "\n".join(offenders)
+
+
+def test_live_wire_module():
+    src = LIVE_WIRE_JS.read_text(encoding="utf-8")
+    assert "renderLiveWire" in src
+    assert "injectLocal" in src
+    assert "/api/live-events" in src
+    assert "EventSource" in src
+
+
+def test_c2c_section_is_static_and_boot_once(html):
+    # The #cf-section must be a single static element outside the renderWorkshop
+    # template — so re-renders never destroy an active call widget.
+    assert '_c2cBooted' in html, "_c2cBooted boot-once flag missing"
+    # Exactly one id="cf-section" in the whole file.
+    assert html.count('id="cf-section"') == 1, "cf-section must appear exactly once"
+    # The static section must carry the hidden attribute in the markup.
+    assert '<section class="cf-section" id="cf-section" hidden' in html, \
+        "static cf-section must start hidden"
+    # The section must NOT appear inside the renderWorkshop template string.
+    # Find the renderWorkshop template (between the backtick after app.innerHTML
+    # and the closing backtick) and assert cf-section is absent from it.
+    import re
+    # Locate the renderWorkshop function body
+    rw_match = re.search(r'function renderWorkshop\(\)(.*?)^function \w', html,
+                         re.DOTALL | re.MULTILINE)
+    assert rw_match, "renderWorkshop function not found"
+    rw_body = rw_match.group(1)
+    assert 'id="cf-section"' not in rw_body, \
+        "cf-section must NOT be inside the renderWorkshop template"
+
+
+def test_live_wire_closes_previous_eventsource():
+    src = LIVE_WIRE_JS.read_text(encoding="utf-8")
+    assert "es.close()" in src, "renderLiveWire must close the previous EventSource on re-call"
+
+
+def test_finale_is_static_below_call_section_and_retriggered(html):
+    # The grand finale + workshop footer moved out of the re-rendered #app
+    # (2026-06-11): static siblings ordered call-section -> finale -> footer,
+    # revealed via the browser-call -> post-prompt-modal-close path.
+    assert html.count('id="grand-finale"') == 1
+    assert html.count('id="workshop-footer"') == 1
+    main_end = html.index("</main>")
+    assert html.index('id="grand-finale"') > main_end
+    assert html.index('id="cf-section"') < html.index('id="grand-finale"')
+    assert html.index('id="grand-finale"') < html.index('id="workshop-footer"')
+    assert "_browserCallEnded" in html
+    # showGrandFinale is invoked somewhere beyond its definition
+    assert html.count("showGrandFinale(") >= 2

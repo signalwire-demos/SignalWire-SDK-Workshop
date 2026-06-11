@@ -13,6 +13,6 @@ def test_each_case_has_args_and_string_expectation():
 
 
 def test_expect_ok_substring_match():
-    assert expect_ok("Weather in Chicago: Sunny", "Chicago") is True
-    assert expect_ok("error", "Chicago") is False
+    assert expect_ok("Weather in Denver: Sunny", "Denver") is True
+    assert expect_ok("error", "Denver") is False
     assert expect_ok("anything", "") is True   # empty needle = any text ok

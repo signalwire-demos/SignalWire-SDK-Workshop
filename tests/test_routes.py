@@ -1,5 +1,5 @@
 """
-Smoke tests for the Chicago Roadshow harness.
+Smoke tests for the SignalWire Agents SDK Workshop harness.
 
 These tests cover the harness only; they do NOT call the real SignalWire API.
 For /run/* tests, bogus creds are injected so the subprocess fails auth
@@ -91,7 +91,7 @@ def test_landing_page():
     r = requests.get(f"{BASE_URL}/", timeout=5)
     assert r.status_code == 200
     text = r.text
-    assert "Chicago Roadshow" in text or "Workshop" in text or "SignalWire" in text
+    assert "Agents SDK Workshop" in text or "SignalWire" in text
 
 
 @pytest.mark.parametrize("pillar,required_subset", [
@@ -158,7 +158,7 @@ def test_landing_has_wizard_milestones():
     assert r.status_code == 200
     text = r.text
     # Theme & state-machine signal
-    assert "chicago2026.onboardingComplete" in text, "state machine missing"
+    assert "sdkworkshop.onboardingComplete" in text, "state machine missing"
     assert "--sw-cyan" in text and "--sw-magenta" in text, "theme variables missing"
     # Wizard wiring
     assert "MILESTONES" in text and "renderMilestones" in text
@@ -168,7 +168,7 @@ def test_landing_has_wizard_milestones():
 
 
 def test_landing_has_workshop_renderer():
-    """Workshop state and the Call Fabric pipeline runtime are present."""
+    """Workshop state and the browser-call section runtime are present."""
     r = requests.get(f"{BASE_URL}/", timeout=5)
     text = r.text
     assert "renderWorkshop" in text
@@ -176,10 +176,10 @@ def test_landing_has_workshop_renderer():
     assert "renderStepSection" in text
     # The Phase-2 redesign replaced the per-pillar "Run" SSE subprocess demo
     # (runPillar / EventSource(`/run/...`)) with the interactive Call Fabric
-    # pipeline diagram driven by setCfStage. The orphaned runPillar machinery
-    # was removed; assert the live driver is present instead.
+    # pipeline diagram driven by setCfStage; that was then replaced by the
+    # sw-click-to-call widget + Live Wire feed. Neither orphaned machinery should remain.
     assert "runPillar" not in text, "orphaned pillar SSE machinery must stay removed"
-    assert "function setCfStage" in text, "Call Fabric stage driver missing"
+    assert "function setCfStage" not in text, "cf-stage driver must be removed with cf-node diagram"
 
 
 def test_landing_references_step_routes():
@@ -215,24 +215,20 @@ def test_relay_config_returns_clean_error_without_creds():
     assert "token" in data or "error" in data
 
 
-def test_buddy_video_client_js_served():
-    # buddy-video.js is the single browser-call client (relay-client.js retired).
+def test_buddy_video_js_gone():
+    # buddy-video.js is fully removed; the route must 404.
     r = requests.get(f"{BASE_URL}/static/buddy-video.js", timeout=5)
+    assert r.status_code == 404
+
+
+def test_live_wire_js_served():
+    # live-wire.js replaces buddy-video.js as the browser-call feed renderer.
+    r = requests.get(f"{BASE_URL}/static/live-wire.js", timeout=5)
     assert r.status_code == 200
-    body = r.text
-    assert "SignalWire.SignalWire" in body
-    assert ".dial(" in body
-    assert "requestPermissions" in body
-
-
-def test_static_assets_no_cache_and_unversioned():
-    # /static is served no-cache so a redeploy never hands a returning attendee a
-    # stale bundle (replaces the old ?v= query-string cache-buster on the script).
-    r = requests.get(f"{BASE_URL}/static/buddy-video.js", timeout=5)
     assert "no-cache" in r.headers.get("cache-control", "").lower()
     landing = requests.get(f"{BASE_URL}/", timeout=5).text
-    assert "/static/buddy-video.js?v=" not in landing
-    assert '<script src="/static/buddy-video.js">' in landing
+    assert "/static/live-wire.js?v=" not in landing
+    assert '/static/live-wire.js' in landing
 
 
 def test_html_documents_are_no_cache():
@@ -247,26 +243,28 @@ def test_html_documents_are_no_cache():
             f"{path} should send Cache-Control: no-cache"
 
 
-def test_landing_loads_browser_sdk_and_client():
+def test_landing_loads_widget_and_feed_client():
     r = requests.get(f"{BASE_URL}/", timeout=5)
     text = r.text
-    # SDK pinned to v4; the audio-only relay-client.js is no longer loaded.
-    assert "cdn.signalwire.com/@signalwire/js@4.0.0-rc.0" in text
+    # Old @signalwire/js v4 CDN tag is gone; web-components widget replaces it.
+    assert "@signalwire/web-components" in text
+    assert "/static/live-wire.js" in text
     assert "/static/relay-client.js" not in text
-    assert "/static/buddy-video.js" in text
-
-
-def test_landing_has_call_fabric_diagram():
-    # The two static "Bonus" cards were replaced by the interactive Call Fabric
-    # pipeline diagram with a single browser-call button.
-    r = requests.get(f"{BASE_URL}/", timeout=5)
-    text = r.text
-    assert 'id="buddy-call-btn"' in text
-    assert 'class="cf-pipeline"' in text
-    assert 'data-cf-node="browser"' in text
-    assert "function revealCfNode" in text
+    assert "/static/buddy-video.js" not in text
     # The retired audio-only relay wiring is gone.
     assert "RelayCall" not in text
+
+
+def test_landing_has_call_widget_section():
+    # The cf-node diagram is replaced by the sw-click-to-call widget + live-wire feed.
+    r = requests.get(f"{BASE_URL}/", timeout=5)
+    text = r.text
+    assert "sw-click-to-call" in text
+    assert 'id="live-wire"' in text
+    assert "renderLiveWire" in text
+    # Old cf-node pipeline markup is gone.
+    assert "cf-node" not in text
+    assert "revealCfNode" not in text
 
 
 def test_credentials_status_shape():
@@ -329,3 +327,28 @@ def test_credentials_isolated_across_sessions():
     status_a = requests.get(f"{BASE_URL}/api/credentials/status", cookies=jar_a, timeout=5).json()
     assert status_a["configured"] is True
     assert status_a["fields"]["SIGNALWIRE_SPACE"] == "a.signalwire.com"
+
+
+def test_agent_graph_endpoint():
+    r = requests.get(f"{BASE_URL}/api/agent/graph", timeout=5)
+    assert r.status_code == 200
+    d = r.json()
+    assert d["found"] is True
+    assert d["route"] == "/step11"
+    assert d["initial_step"] == "greeting"
+    assert any(s["name"] == "menu" for s in d["steps"])
+
+
+def test_agent_graph_unknown_route():
+    r = requests.get(f"{BASE_URL}/api/agent/graph?route=/nope", timeout=5)
+    assert r.status_code == 200
+    d = r.json()
+    assert d["found"] is False and d["steps"] == []
+
+
+def test_postprompt_final_includes_agent_graph():
+    r = requests.get(f"{BASE_URL}/api/postprompt/final", timeout=5)
+    assert r.status_code == 200
+    d = r.json()
+    assert "agent_graph" in d
+    assert any(s["name"] == "menu" for s in d["agent_graph"]["steps"])

@@ -108,7 +108,7 @@ export class PolishedAgent extends AgentBase {
       const resp = await fetch("https://icanhazdadjoke.com/", {
         headers: {
           Accept: "application/json",
-          "User-Agent": "chicago-roadshow-2026",
+          "User-Agent": "signalwire-agents-sdk-workshop",
         },
         signal: AbortSignal.timeout(5000),
       });

@@ -1,4 +1,4 @@
-# Chicago Roadshow 2026 - SignalWire Workshop (AI Agent + REST + RELAY)
+# SignalWire Agents SDK Workshop (AI Agent + REST + RELAY)
 
 > **Duration:** ~75 minutes | **Level:** Beginner | **No Docker, ngrok, or local setup required**
 >
@@ -212,7 +212,7 @@ The handler now calls an external API:
 def on_tell_joke(self, args, raw_data):
     resp = requests.get(
         "https://icanhazdadjoke.com/",
-        headers={"Accept": "application/json", "User-Agent": "chicago-roadshow-2026"},
+        headers={"Accept": "application/json", "User-Agent": "signalwire-agents-sdk-workshop"},
         timeout=5,
     )
     joke = resp.json().get("joke", "Why did the chicken cross the road? To get to the other side!")
