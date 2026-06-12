@@ -163,6 +163,27 @@ def test_admin_html_has_swaig_and_errors_panels():
         assert needle in html, f"admin.html missing: {needle}"
 
 
+def test_admin_swaig_grid_groups_by_name_with_test_all():
+    """Static-content guard: the SWAIG pane dedupes cards to one per function
+    name (per-route status rows inside each card) and ships a Test All sweep
+    button plus a live passing-summary chip."""
+    here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(here, "web", "admin.html"), encoding="utf-8") as f:
+        html = f.read()
+    for needle in (
+        "function groupSwaigByName",
+        "swaig-route-row",
+        'id="swaig-testall"',
+        'id="swaig-summary"',
+        "function runAllSwaig",
+        # card-run progress must survive SSE grid re-renders (state keyed by
+        # name and re-applied each render, not held on a detached button node)
+        "swaigGroupRunning",
+        "function syncSwaigGroupBtn",
+    ):
+        assert needle in html, f"admin.html missing: {needle}"
+
+
 def test_preflight_cli_offline_runs_and_reports():
     here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     proc = subprocess.run(

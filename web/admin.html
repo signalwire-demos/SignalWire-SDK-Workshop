@@ -414,7 +414,25 @@
   .swaig-kind-tool { color: #7da7ff; background: rgba(4,78,244,0.16); }
   .swaig-kind-skill { color: #40e0d0; background: rgba(64,224,208,0.12); }
   .swaig-kind-datamap { color: #b794f6; background: rgba(96,27,230,0.18); }
-  .swaig-route { font-family: var(--mono); font-size: 11.5px; color: var(--sw-cyan); word-break: break-all; }
+  .swaig-routes { display: flex; flex-direction: column; gap: 3px; }
+  .swaig-route-row {
+    display: flex; align-items: center; gap: 7px;
+    font-family: var(--mono); font-size: 11.5px; color: var(--sw-cyan); word-break: break-all;
+  }
+  .swaig-route-row .swaig-route-dot { font-size: 9px; line-height: 1; }
+  .swaig-route-row .swaig-route-lat { color: var(--sw-text-dim); }
+  .swaig-head-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .swaig-head-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--sw-text-dim);
+  }
+  .swaig-summary {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: normal;
+    text-transform: none; color: var(--sw-text); margin-left: 10px;
+  }
   .swaig-detail {
     font-family: var(--mono); font-size: 11.5px; color: var(--sw-text-dim);
     white-space: pre-wrap; word-break: break-word; min-height: 14px;
@@ -616,6 +634,10 @@
   <!-- ===== SWAIG FUNCTIONS PANE ===== -->
   <section id="pane-swaig" class="pane">
     <div class="swaig-scroll">
+      <div class="swaig-head-bar" id="swaig-head" style="display:none;">
+        <span class="swaig-head-label">Function health<span class="swaig-summary" id="swaig-summary"></span></span>
+        <button id="swaig-testall" class="btn">Test all</button>
+      </div>
       <div class="empty" id="swaig-empty">
         <div class="glyph">ƒ</div>
         <h3>No SWAIG functions registered</h3>
@@ -655,6 +677,7 @@
   var sessionFilter = null;       // session_id string when cross-linked
   var knownCallIds = {};          // for NEW-flash on freshly arrived calls
   var firstCallsLoad = true;
+  var lastSwaigFns = [];   // latest /admin/swaig records; runners look up routes here
 
   // ----- helpers -----
   function $(id) { return document.getElementById(id); }
@@ -1152,72 +1175,207 @@
   }
 
   // ----- render: SWAIG function health -----
+  // The store keys records by (route, name): the same function name registered
+  // on several agents is several implementations. The grid shows ONE card per
+  // name with a status row per route, so 16 records read as ~6 cards.
+  function groupSwaigByName(fns) {
+    var groups = {};
+    fns.forEach(function (f) {
+      var n = f.name || "unknown";
+      (groups[n] = groups[n] || []).push(f);
+    });
+    return Object.keys(groups).sort().map(function (n) {
+      return {
+        name: n,
+        records: groups[n].slice().sort(function (a, b) {
+          return (a.route || "").localeCompare(b.route || "");
+        })
+      };
+    });
+  }
+
+  function swaigDot(status) {
+    return status === "ok" ? "🟢" : (status === "failing" ? "🔴" : "⚪");
+  }
+
+  function swaigAggStatus(records) {
+    var anyFail = false, anyUntested = false;
+    records.forEach(function (r) {
+      if (r.status === "failing") anyFail = true;
+      else if (r.status !== "ok") anyUntested = true;
+    });
+    return anyFail ? "failing" : (anyUntested ? "untested" : "ok");
+  }
+
   function renderSwaig(fns) {
     fns = Array.isArray(fns) ? fns : [];
-    var fails = fns.filter(function (f) { return f.status === "failing"; }).length;
+    lastSwaigFns = fns;
+    var fails = 0, passing = 0;
+    fns.forEach(function (f) {
+      if (f.status === "failing") fails += 1;
+      else if (f.status === "ok") passing += 1;
+    });
+    var untested = fns.length - passing - fails;
     $("count-swaig").textContent = String(fails);
     var grid = $("swaig-grid");
     var empty = $("swaig-empty");
+    var head = $("swaig-head");
     if (fns.length === 0) {
       grid.style.display = "none";
+      head.style.display = "none";
       empty.style.display = "flex";
       grid.innerHTML = "";
       return;
     }
     empty.style.display = "none";
+    head.style.display = "flex";
     grid.style.display = "grid";
-    // Group by route so the same function name on different agents reads as
-    // distinct implementations (three tell_jokes are three different things).
-    var sorted = fns.slice().sort(function (a, b) {
-      return (a.route || "").localeCompare(b.route || "") ||
-             (a.name || "").localeCompare(b.name || "");
-    });
+    var summary = passing + "/" + fns.length + " passing";
+    if (fails) summary += " · " + fails + " failing";
+    if (untested) summary += " · " + untested + " untested";
+    $("swaig-summary").textContent = summary;
     var html = "";
-    sorted.forEach(function (f) {
-      var status = f.status || "untested";
-      var dot = status === "ok" ? "🟢" : (status === "failing" ? "🔴" : "⚪");
-      var lat = (f.last_latency_ms === null || f.last_latency_ms === undefined)
-        ? "" : (" · " + esc(String(f.last_latency_ms)) + "ms");
+    groupSwaigByName(fns).forEach(function (g) {
+      var status = swaigAggStatus(g.records);
+      var first = g.records[0];
       // kind badge: "tool" = custom define_tool handler, "skill · datetime" =
       // registered by an SDK skill, "datamap" = serverless (runs on SignalWire)
-      var kind = esc(f.kind || "tool") + (f.skill ? " · " + esc(f.skill) : "");
+      var kind = esc(first.kind || "tool") + (first.skill ? " · " + esc(first.skill) : "");
+      var rows = "";
+      g.records.forEach(function (r) {
+        var lat = (r.last_latency_ms === null || r.last_latency_ms === undefined)
+          ? "" : ('<span class="swaig-route-lat"> · ' + esc(String(r.last_latency_ms)) + "ms</span>");
+        rows +=
+          '<div class="swaig-route-row">' +
+            '<span class="swaig-route-dot">' + swaigDot(r.status || "untested") + "</span>" +
+            "<span>" + esc(r.route || "—") + lat + "</span>" +
+          "</div>";
+      });
+      // Detail line: a failing route's message wins; otherwise the latest run.
+      var detailRec = null;
+      g.records.forEach(function (r) {
+        if (r.status === "failing" && !(detailRec && detailRec.status === "failing")) detailRec = r;
+      });
+      if (!detailRec) {
+        g.records.forEach(function (r) {
+          if (r.last_run_at && (!detailRec || r.last_run_at > detailRec.last_run_at)) detailRec = r;
+        });
+      }
+      var detail = "";
+      if (detailRec && detailRec.last_detail) {
+        detail = (detailRec.status === "failing" ? esc(detailRec.route || "") + ": " : "") +
+                 esc(detailRec.last_detail);
+      }
       html +=
         '<div class="swaig-card status-' + esc(status) + '">' +
           '<div class="swaig-card-head">' +
-            '<span class="swaig-dot">' + dot + "</span>" +
-            "<strong>" + esc(f.name || "unknown") + "</strong>" +
-            '<span class="swaig-kind swaig-kind-' + esc(f.kind || "tool") + '">' + kind + "</span>" +
+            '<span class="swaig-dot">' + swaigDot(status) + "</span>" +
+            "<strong>" + esc(g.name) + "</strong>" +
+            '<span class="swaig-kind swaig-kind-' + esc(first.kind || "tool") + '">' + kind + "</span>" +
           "</div>" +
-          '<div class="swaig-route">' + esc(f.route || "—") + lat + "</div>" +
-          '<div class="swaig-detail">' + esc(f.last_detail || "") + "</div>" +
-          '<button class="btn run-swaig" data-fn="' + esc(f.name || "") +
-            '" data-route="' + esc(f.route || "") + '">Run test</button>' +
+          '<div class="swaig-routes">' + rows + "</div>" +
+          '<div class="swaig-detail">' + detail + "</div>" +
+          '<button class="btn run-swaig" data-fn="' + esc(g.name) + '">Run test</button>' +
         "</div>";
     });
     grid.innerHTML = html;
     Array.prototype.forEach.call(grid.querySelectorAll(".run-swaig"), function (b) {
       b.addEventListener("click", function () {
-        runSwaig(b.getAttribute("data-fn"), b.getAttribute("data-route"), b);
+        runSwaigGroup(b.getAttribute("data-fn"));
       });
     });
+    Object.keys(swaigGroupRunning).forEach(syncSwaigGroupBtn);
   }
 
-  function runSwaig(name, route, btn) {
-    btn.disabled = true;
-    var orig = btn.textContent;
-    btn.textContent = "Running…";
-    fetch("/admin/swaig/test", {
+  function testSwaigPair(name, route) {
+    return fetch("/admin/swaig/test", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ function: name, route: route || null })
-    }).then(function (r) { return r.json(); }).then(function (res) {
-      btn.textContent = res.ok
-        ? ("✓ " + esc(String(res.latency_ms)) + "ms")
-        : "✗ failed";
-      // the SSE "swaig" event refreshes the card; restore the label after a beat
-      setTimeout(function () { btn.textContent = orig; btn.disabled = false; }, 2500);
-    }).catch(function () { btn.textContent = orig; btn.disabled = false; });
+    }).then(function (r) { return r.json(); })
+      .then(function (res) { return !!(res && res.ok); })
+      .catch(function () { return false; });
   }
+
+  // Card button: test every route registered under this function name.
+  // Each result fires the SSE "swaig" event, which rebuilds the grid and
+  // detaches whatever button the runner started with — so progress is keyed
+  // by name in swaigGroupRunning and re-applied to the live button on every
+  // render instead of being written to a (possibly dead) element reference.
+  var swaigGroupRunning = {};   // name -> current button label while running
+
+  function swaigGroupBtn(name) {
+    var btns = $("swaig-grid").querySelectorAll(".run-swaig");
+    for (var i = 0; i < btns.length; i++) {
+      if (btns[i].getAttribute("data-fn") === name) return btns[i];
+    }
+    return null;
+  }
+
+  function syncSwaigGroupBtn(name) {
+    var btn = swaigGroupBtn(name);
+    if (btn && swaigGroupRunning[name]) {
+      btn.disabled = true;
+      btn.textContent = swaigGroupRunning[name];
+    }
+  }
+
+  function runSwaigGroup(name) {
+    var records = lastSwaigFns.filter(function (f) { return (f.name || "unknown") === name; });
+    if (!records.length || swaigGroupRunning[name]) return;
+    var failed = 0;
+    function setLabel(label) {
+      swaigGroupRunning[name] = label;
+      syncSwaigGroupBtn(name);
+    }
+    function step(i) {
+      if (i >= records.length) {
+        setLabel(failed ? ("✗ " + failed + " failed") : ("✓ " + records.length + "/" + records.length));
+        setTimeout(function () {
+          delete swaigGroupRunning[name];
+          var btn = swaigGroupBtn(name);
+          if (btn) { btn.textContent = "Run test"; btn.disabled = false; }
+        }, 2500);
+        return;
+      }
+      setLabel("Running " + (i + 1) + "/" + records.length + "…");
+      testSwaigPair(name, records[i].route).then(function (ok) {
+        if (!ok) failed += 1;
+        step(i + 1);
+      });
+    }
+    step(0);
+  }
+
+  // Head-bar button: sweep every (name, route) record, 4 at a time. Cards and
+  // the summary chip refresh live via the SSE "swaig" event as results land.
+  function runAllSwaig() {
+    var btn = $("swaig-testall");
+    var pairs = lastSwaigFns.map(function (f) { return { name: f.name || "unknown", route: f.route }; });
+    if (!pairs.length || btn.disabled) return;
+    btn.disabled = true;
+    var total = pairs.length, started = 0, finished = 0, failed = 0;
+    function update() { btn.textContent = "Testing " + finished + "/" + total + "…"; }
+    function next() {
+      if (started >= total) return;
+      var p = pairs[started];
+      started += 1;
+      testSwaigPair(p.name, p.route).then(function (ok) {
+        finished += 1;
+        if (!ok) failed += 1;
+        if (finished >= total) {
+          btn.textContent = failed ? ("✗ " + failed + " failed") : ("✓ all " + total + " passing");
+          setTimeout(function () { btn.textContent = "Test all"; btn.disabled = false; }, 3000);
+        } else {
+          update();
+          next();
+        }
+      });
+    }
+    update();
+    for (var i = 0; i < 4 && i < total; i++) next();
+  }
+  $("swaig-testall").addEventListener("click", runAllSwaig);
 
   // ----- render: errors (newest-first) -----
   function renderErrors(errs) {
