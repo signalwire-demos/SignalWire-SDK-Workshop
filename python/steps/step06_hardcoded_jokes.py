@@ -55,6 +55,11 @@ class JokeAgent(AgentBase):
             ],
         )
 
+        # Carrier caller-ID names are location data, not names ("ARIZONA") -
+        # shared guard so Buddy never addresses the caller by it.
+        from python.steps._caller_identity import add_caller_identity_guard
+        add_caller_identity_guard(self)
+
         # The AI decides when to call this based on the description
         self.define_tool(
             name="tell_joke",

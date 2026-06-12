@@ -124,6 +124,10 @@ class CompleteAgent(AgentBase):
             "a topic, briefly offer one thing they haven't tried yet. Happily "
             "repeat a topic if asked. When the caller is done, or has tried "
             "everything, move to the wrap-up.")
+        # Carrier caller-ID names are location data, not names ("ARIZONA") -
+        # same guard the flat-prompt agents add via add_caller_identity_guard.
+        from python.steps._caller_identity import CALLER_ID_GUIDELINE
+        ctx.add_section("Caller Identity", CALLER_ID_GUIDELINE)
 
         topics = ("weather", "joke", "time", "math")
 

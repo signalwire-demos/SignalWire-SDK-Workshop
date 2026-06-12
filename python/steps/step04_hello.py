@@ -33,6 +33,12 @@ class HelloAgent(AgentBase):
             "Keep your responses short since this is a phone call.",
         )
 
+        # Carrier caller-ID names are location data, not names (an unlisted
+        # Arizona cell arrives as "ARIZONA") - shared guard so Buddy never
+        # addresses the caller by it.
+        from python.steps._caller_identity import add_caller_identity_guard
+        add_caller_identity_guard(self)
+
         # After each call, the AI generates a summary
         self.set_post_prompt(
             "Summarize this conversation in 2-3 sentences. "
