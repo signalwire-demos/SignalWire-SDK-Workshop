@@ -91,11 +91,25 @@ class SessionStore:
             for sid in [s for s, r in self._sessions.items() if r.get("last_seen", 0) < cutoff]:
                 self._sessions.pop(sid, None)
 
+    @staticmethod
+    def _strip_token(rec):
+        """Copy of a session record without the API token.
+
+        Replit publishing snapshots the whole project folder (gitignore
+        does not apply), and its security scan blocks the build if a real
+        token sits in .workshop_sessions.json. Project ID, space, and setup
+        state are fine to keep; only the token is a secret.
+        """
+        creds = {k: v for k, v in rec.get("creds", {}).items()
+                 if k != "SIGNALWIRE_TOKEN"}
+        return {**rec, "creds": creds}
+
     def save(self):
         if not self._path:
             return
         with self._lock:
-            snapshot = json.dumps(self._sessions)
+            snapshot = json.dumps({sid: self._strip_token(rec)
+                                   for sid, rec in self._sessions.items()})
         try:
             with open(self._path, "w", encoding="utf-8") as f:
                 f.write(snapshot)
@@ -113,4 +127,8 @@ class SessionStore:
             return
         if isinstance(data, dict):
             with self._lock:
-                self._sessions = data
+                # _strip_token also scrubs tokens from files written by
+                # older builds, so a poisoned file self-cleans on boot.
+                self._sessions = {sid: self._strip_token(rec)
+                                  for sid, rec in data.items()
+                                  if isinstance(rec, dict)}
