@@ -55,6 +55,10 @@ class CompleteAgent(AgentBase):
             "forecast", "Fahrenheit", "Celsius",
             "time", "date", "math", "calculate",
         ])
+        # The TTS reads "live" as /lɪv/ ("liv"), but Buddy means /laɪv/
+        # ("live demo", "live API"). Respell it for the synthesizer only;
+        # word-bounded so "delivery" and "lives" are untouched.
+        self.add_pronunciation(r"\blive\b", "lyve", ignore_case=True)
 
     # -- AI parameters ------------------------------------------------------
 
