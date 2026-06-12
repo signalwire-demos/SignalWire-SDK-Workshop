@@ -1369,7 +1369,9 @@
   .demo-card-emoji { font-size: 26px; line-height: 1; }
   .demo-card-name { font-size: 15px; font-weight: 700; color: var(--sw-text-bright); }
   .demo-card-desc { font-size: 12.5px; color: var(--sw-text-dim); line-height: 1.45; flex: 1; }
-  .demo-card-cta { font-size: 12.5px; font-weight: 600; color: var(--sw-magenta); margin-top: 4px; }
+  .demo-card-cta { display: block; font-size: 12.5px; font-weight: 600; color: var(--sw-magenta); margin-top: 4px; }
+  .demo-card-cta:hover { text-decoration: underline; }
+  .demo-card-cta + .demo-card-cta { margin-top: 2px; }
   .finale-foot { text-align: center; margin-top: 38px; font-size: 15px; color: var(--sw-text); }
   @media (max-width: 768px) {
     .finale-grid { grid-template-columns: 1fr; }
@@ -1691,8 +1693,8 @@ const STEPS_META = [
     whatsNew: "Calling an external REST API from a custom function handler",
     capabilities: ["Chat", "Jokes (API)"],
     newCapabilities: ["Jokes (API)"],
-    concepts: ["External API calls", "Error handling", "API_NINJAS_KEY"],
-    requiredKeys: ["API_NINJAS_KEY"],
+    concepts: ["External API calls", "Error handling", "Keyless API (icanhazdadjoke)"],
+    requiredKeys: [],
     docs: [
       { label: "Function parameters", url: "/server-sdks/guides/parameters" },
       { label: "Defining functions", url: "/server-sdks/guides/defining-functions" },
@@ -1727,8 +1729,8 @@ const STEPS_META = [
     whatsNew: "DataMap: declare an API call and SignalWire executes it. Your server never handles the weather request.",
     capabilities: ["Chat", "Jokes (API)", "Weather"],
     newCapabilities: ["Weather"],
-    concepts: ["DataMap", "register_swaig_function()", "WEATHER_API_KEY"],
-    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"],
+    concepts: ["DataMap", "define_tool()", "Keyless API (Open-Meteo)"],
+    requiredKeys: [],
     docs: [
       { label: "DataMap guide", url: "/server-sdks/guides/data-map" },
       { label: "DataMap reference", url: "/server-sdks/reference/python/agents/data-map" },
@@ -1765,7 +1767,7 @@ const STEPS_META = [
     capabilities: ["Chat", "Jokes (API)", "Weather"],
     newCapabilities: [],
     concepts: ["set_params()", "add_hints()", "end_of_speech_timeout", "attention_timeout"],
-    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"],
+    requiredKeys: [],
     docs: [
       { label: "AI parameters", url: "/server-sdks/guides/ai-parameters" },
       { label: "Hints", url: "/server-sdks/guides/hints" },
@@ -1800,7 +1802,7 @@ const STEPS_META = [
     capabilities: ["Chat", "Jokes (API)", "Weather", "Date/Time", "Math"],
     newCapabilities: ["Date/Time", "Math"],
     concepts: ["add_skill(\"datetime\")", "add_skill(\"math\")"],
-    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"],
+    requiredKeys: [],
     docs: [
       { label: "Understanding skills", url: "/server-sdks/guides/understanding-skills" },
       { label: "Built-in skills", url: "/server-sdks/guides/builtin-skills" },
@@ -1837,7 +1839,7 @@ const STEPS_META = [
     capabilities: ["Chat", "Jokes (API)", "Weather", "Date/Time", "Math"],
     newCapabilities: [],
     concepts: ["Code organization", "Production patterns"],
-    requiredKeys: ["API_NINJAS_KEY", "WEATHER_API_KEY"],
+    requiredKeys: [],
     docs: [
       { label: "Patterns", url: "/server-sdks/reference/python/agents/prefabs" },
       { label: "Custom skills", url: "/server-sdks/guides/custom" },
@@ -2299,27 +2301,33 @@ function pulseActiveStep() {
 /* =========================================================================
  *  Grand finale — fires once the in-browser RELAY call ends (refs.onEnded).
  * ========================================================================= */
+/* Live links come from the org README's demo table (github.com/signalwire-demos);
+ * Sigmond lives in the signalwire/digital_employees repo with its own live site. */
 const FEATURED_DEMOS = [
-  { name: "Santa", desc: "AI-powered Santa Claus voice assistant.", repo: "https://github.com/signalwire-demos/santa", emoji: "🎅" },
-  { name: "Blackjack", desc: "Voice-controlled blackjack dealer.", repo: "https://github.com/signalwire-demos/blackjack", emoji: "🃏" },
-  { name: "Cinebot", desc: "Movie recommendation AI assistant.", repo: "https://github.com/signalwire-demos/cinebot", emoji: "🎬" },
-  { name: "Example Agent", desc: "Starter template for SignalWire AI agents.", repo: "https://github.com/signalwire-demos/example", emoji: "🧩" },
-  { name: "Bobby's Table", desc: "Restaurant reservation voice assistant.", repo: "https://github.com/signalwire-demos/bobbystable", emoji: "🍽️" },
-  { name: "Holy Guacamole", desc: "Food-ordering AI assistant.", repo: "https://github.com/signalwire-demos/holyguacamole", emoji: "🥑" },
-  { name: "Cabby", desc: "AI taxi dispatcher with booking, SMS confirmations & dashboard.", repo: "https://github.com/signalwire-demos/cabby", emoji: "🚕" },
+  { name: "Sigmond", desc: "SignalWire's digital employee: a video AI agent you can talk to right now.", repo: "https://github.com/signalwire/digital_employees/tree/main/serverless/sigmond", live: "https://ai.signalwire.com/", emoji: "🤖" },
+  { name: "Santa", desc: "AI-powered Santa Claus voice assistant.", repo: "https://github.com/signalwire-demos/santa", live: "https://santa.signalwire.io", emoji: "🎅" },
+  { name: "Blackjack", desc: "Voice-controlled blackjack dealer.", repo: "https://github.com/signalwire-demos/blackjack", live: "https://blackjack.signalwire.io", emoji: "🃏" },
+  { name: "Cinebot", desc: "Movie recommendation AI assistant.", repo: "https://github.com/signalwire-demos/cinebot", live: "https://cinebot.signalwire.io", emoji: "🎬" },
+  { name: "Example Agent", desc: "Starter template for SignalWire AI agents.", repo: "https://github.com/signalwire-demos/example", live: "https://example.signalwire.io", emoji: "🧩" },
+  { name: "Bobby's Table", desc: "Restaurant reservation voice assistant.", repo: "https://github.com/signalwire-demos/bobbystable", live: "https://bobbystable.signalwire.io", emoji: "🍽️" },
+  { name: "Holy Guacamole", desc: "Food-ordering AI assistant.", repo: "https://github.com/signalwire-demos/holyguacamole", live: "https://holyguacamole.signalwire.io", emoji: "🥑" },
+  { name: "Cabby", desc: "AI taxi dispatcher with booking, SMS confirmations & dashboard.", repo: "https://github.com/signalwire-demos/cabby", live: "https://cabby.signalwire.io", emoji: "🚕" },
 ];
 
 function renderFinaleDemos() {
   const host = document.getElementById("finale-demos-grid");
   if (!host || host.dataset.rendered) return;
   host.dataset.rendered = "1";
+  // The card is a <div> (not an <a>) because it holds two separate links;
+  // nesting anchors is invalid HTML.
   host.innerHTML = FEATURED_DEMOS.map(d => `
-    <a class="demo-card" href="${d.repo}" target="_blank" rel="noopener noreferrer">
+    <div class="demo-card">
       <div class="demo-card-emoji" aria-hidden="true">${d.emoji}</div>
       <div class="demo-card-name">${escapeHtml(d.name)}</div>
       <div class="demo-card-desc">${escapeHtml(d.desc)}</div>
-      <div class="demo-card-cta">View on GitHub →</div>
-    </a>`).join("");
+      <a class="demo-card-cta" href="${d.repo}" target="_blank" rel="noopener noreferrer">View on GitHub →</a>
+      <a class="demo-card-cta" href="${d.live}" target="_blank" rel="noopener noreferrer">Try it live →</a>
+    </div>`).join("");
 }
 
 let finaleShown = false;
