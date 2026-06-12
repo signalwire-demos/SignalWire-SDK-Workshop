@@ -8,8 +8,6 @@ normalize_creds() before storage.
 """
 import re
 
-import requests
-
 SPACE_HELP = ("Enter your Space URL as it appears in your dashboard, like "
               "'demo.signalwire.com' (the https:// prefix is fine too).")
 
@@ -57,26 +55,3 @@ def normalize_creds(creds: dict):
             changes.append(f"{key}: stripped surrounding whitespace")
         normalized[key] = value
     return normalized, changes
-
-
-def verify_creds(creds: dict, timeout=6) -> dict:
-    """Live-check creds against the space with one cheap authenticated GET.
-
-    Returns {"status": "ok" | "auth_failed" | "unreachable", "detail": str}.
-    Never raises: callers decide what each status means for their flow.
-    """
-    space = creds.get("SIGNALWIRE_SPACE", "")
-    auth = (creds.get("SIGNALWIRE_PROJECT_ID", ""), creds.get("SIGNALWIRE_TOKEN", ""))
-    try:
-        resp = requests.get(f"https://{space}/api/fabric/addresses",
-                            params={"page_size": 1}, auth=auth,
-                            headers={"Accept": "application/json"}, timeout=timeout)
-    except requests.RequestException as e:
-        return {"status": "unreachable",
-                "detail": f"could not reach https://{space}: {e.__class__.__name__}"}
-    if resp.status_code in (401, 403):
-        return {"status": "auth_failed",
-                "detail": f"https://{space} rejected the Project ID / token (HTTP {resp.status_code})"}
-    # Any other response means the space exists and answered an authenticated
-    # API call; 5xx here is SignalWire-side and should not block sign-in.
-    return {"status": "ok", "detail": f"HTTP {resp.status_code}"}

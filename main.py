@@ -876,8 +876,6 @@ async def set_credentials(request: Request):
         incoming, changes = creds_normalize.normalize_creds(
             {k: body[k] for k in _CRED_KEYS if k in body})
     except ValueError as e:
-        error_store.STORE.record(source="credentials",
-                                 message=f"rejected SIGNALWIRE_SPACE: {body.get('SIGNALWIRE_SPACE', '')!r}")
         return JSONResponse({"error": str(e)}, status_code=400)
     for note in changes:
         print(f"[creds] {note}", flush=True)
@@ -889,21 +887,6 @@ async def set_credentials(request: Request):
             candidate[k] = value
         else:
             candidate.pop(k, None)
-
-    # verify:true (sent by the wizard) live-checks before storing, so a typo'd
-    # space or a rejected token fails AT SIGN-IN with a message the attendee
-    # can act on, instead of as a silent failure minutes later.
-    if body.get("verify") and all(candidate.get(k) for k in _CRED_KEYS):
-        verdict = await asyncio.to_thread(creds_normalize.verify_creds, candidate)
-        if verdict["status"] != "ok":
-            error_store.STORE.record(source="credentials",
-                                     message=f"verification {verdict['status']}",
-                                     detail=verdict["detail"])
-            friendly = (f"Could not sign in: {verdict['detail']}. Check your Space URL."
-                        if verdict["status"] == "unreachable"
-                        else f"Could not sign in: {verdict['detail']}. Check your Project ID and API token.")
-            return JSONResponse({"error": friendly, "verification": verdict}, status_code=422)
-
     rec["creds"] = candidate
     if all(rec["creds"].get(k) for k in _CRED_KEYS):
         _SESSIONS.mark_signed_in(request.state.session_id)

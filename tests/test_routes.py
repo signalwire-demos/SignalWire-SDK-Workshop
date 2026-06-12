@@ -360,24 +360,19 @@ def test_credentials_invalid_space_rejected_with_friendly_error():
     assert status["configured"] is False
 
 
-def test_credentials_verify_flag_blocks_unreachable_space():
-    # With verify:true the server live-checks the creds before storing. A
-    # nonexistent space host must come back 422 with a friendly error and the
-    # session must stay unconfigured. (Only a DNS lookup: *.invalid never
-    # resolves, per RFC 2606, so this is deterministic offline and online.)
+def test_credentials_never_live_verified_at_signin():
+    # Sign-in must NOT live-check creds against SignalWire: the obvious probe
+    # endpoints reject project Basic auth (fabric/addresses returns 401 for
+    # VALID creds), so any verifier blocks real logins. Storing creds with an
+    # unreachable space must succeed; later API calls surface real failures.
     r = requests.post(f"{BASE_URL}/api/credentials", json={
         "SIGNALWIRE_PROJECT_ID": "verify-project",
         "SIGNALWIRE_TOKEN": "verify-token",
         "SIGNALWIRE_SPACE": "no-such-space.invalid",
-        "verify": True,
-    }, timeout=30)
-    assert r.status_code == 422
-    body = r.json()
-    assert "error" in body
-    assert body["verification"]["status"] == "unreachable"
-    jar = _session_cookies(r)
-    status = requests.get(f"{BASE_URL}/api/credentials/status", cookies=jar, timeout=5).json()
-    assert status["configured"] is False
+        "verify": True,  # legacy flag from cached clients: must be ignored
+    }, timeout=10)
+    assert r.status_code == 200
+    assert r.json()["configured"] is True
 
 
 def test_agent_graph_endpoint():

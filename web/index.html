@@ -2763,7 +2763,6 @@ async function submitCredentials() {
     SIGNALWIRE_PROJECT_ID: project,
     SIGNALWIRE_TOKEN: token,
     SIGNALWIRE_SPACE: space,
-    verify: true,  // live-check against the Space so typos fail here, with a message
   }, { label: "store credentials" });
   if (!r.ok || !r.data?.configured) {
     wizard.pending = false;
