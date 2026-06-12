@@ -82,11 +82,13 @@ def fetch_weather(city):
 def register_weather_tool(agent, advance_to_step=None, live_emit=False):
     """Register get_weather as a server-side SWAIG function on `agent`.
 
-    advance_to_step: if set, the handler will force a step change to that step
-    after fetching weather (used by step11; step09 omits this arg so the flat
-    agent is unaffected).
+    advance_to_step: if set, the handler forces a step change to that step
+    after fetching weather (SwaigFunctionResult.swml_change_step). No workshop
+    agent passes it anymore — step11's topic step delivers the result in-step —
+    but the capability is kept (and unit-tested) as a reference for forcing
+    governed transitions from a tool handler.
     live_emit: if True, emits a live_events.BUS event after each fetch (used by
-    step11 only; step08/09 callers leave this False so they emit nothing).
+    step11 only; step08/09/10 callers leave this False so they emit nothing).
     """
     def handler(args, raw_data):
         from signalwire_agents import SwaigFunctionResult

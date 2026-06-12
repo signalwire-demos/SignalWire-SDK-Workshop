@@ -16,31 +16,23 @@ def test_buddy_uses_contexts_steps():
     swml = _complete_swml()
     ai = [v for s in swml["sections"]["main"] if isinstance(s, dict) for k, v in s.items() if k == "ai"][0]
     steps = {s["name"]: s for s in ai["prompt"]["contexts"]["default"]["steps"]}
-    expected = {"greeting", "get_name", "menu",
-                "weather_ask", "weather_fetch", "weather_deliver",
-                "joke_intro", "joke_tell", "joke_react",
-                "time_intro", "time_fetch", "time_deliver",
-                "math_intro", "math_solve", "math_deliver",
-                "recap", "wrap_up"}
-    assert set(steps) == expected
-    # tool scoping
-    assert steps["weather_fetch"]["functions"] == ["get_weather"]
-    assert steps["joke_tell"]["functions"] == ["tell_joke"]
-    assert set(steps["time_fetch"]["functions"]) == {"get_current_time", "get_current_date"}
-    assert steps["math_solve"]["functions"] == ["calculate"]
-    # graph integrity: menu is a hub, topics return to it
-    assert steps["greeting"]["valid_steps"] == ["get_name"]
-    assert steps["get_name"]["valid_steps"] == ["menu"]
-    assert set(steps["menu"]["valid_steps"]) == {
-        "weather_ask", "joke_intro", "time_intro", "math_intro", "recap"}
-    assert steps["weather_fetch"]["valid_steps"] == ["weather_deliver"]
-    for back in ("weather_deliver", "joke_react", "time_deliver", "math_deliver"):
-        assert steps[back]["valid_steps"] == ["menu"], back
-    assert steps["recap"]["valid_steps"] == ["wrap_up"]
+    topics = {"weather", "joke", "time", "math"}
+    assert set(steps) == {"greeting", "wrap_up"} | topics
+    # tool scoping: each topic step exposes exactly its own tool(s)
+    assert steps["weather"]["functions"] == ["get_weather"]
+    assert steps["joke"]["functions"] == ["tell_joke"]
+    assert set(steps["time"]["functions"]) == {"get_current_time", "get_current_date"}
+    assert steps["math"]["functions"] == ["calculate"]
+    # mesh navigation: greeting reaches every topic and the wrap-up directly;
+    # every topic reaches every OTHER topic and the wrap-up (no hub menu)
+    assert set(steps["greeting"]["valid_steps"]) == topics | {"wrap_up"}
+    for t in topics:
+        assert set(steps[t]["valid_steps"]) == (topics - {t}) | {"wrap_up"}, t
     assert steps["wrap_up"]["valid_steps"] == []
     # conversational steps expose no business tool
     # set_functions("none") renders as "functions": "none" in the SWML
-    assert "functions" not in steps["greeting"] or steps["greeting"]["functions"] in ([], None, "none")
+    for conv in ("greeting", "wrap_up"):
+        assert "functions" not in steps[conv] or steps[conv]["functions"] in ([], None, "none")
 
 
 def test_post_prompt_requests_json():
@@ -104,13 +96,14 @@ def test_weather_tool_forces_step_when_configured():
         def define_tool(self, **kw): self.tool = kw
 
     # WITH advance_to_step: a change_step action must be present
+    # (no workshop agent passes this anymore; kept as a reference capability)
     cap = _Cap()
-    register_weather_tool(cap, advance_to_step="weather_deliver")
+    register_weather_tool(cap, advance_to_step="some_step")
     res = cap.tool["handler"]({"city": "Chicago"}, {})
     actions = res.action  # SwaigFunctionResult.action is a plain list of dicts
-    assert any(isinstance(a, dict) and a.get("change_step") == "weather_deliver" for a in actions)
+    assert any(isinstance(a, dict) and a.get("change_step") == "some_step" for a in actions)
 
-    # WITHOUT advance_to_step (step09 path): no change_step action at all
+    # WITHOUT advance_to_step (the path every workshop agent uses): no change_step action at all
     cap2 = _Cap()
     register_weather_tool(cap2)
     res2 = cap2.tool["handler"]({"city": "Chicago"}, {})
@@ -118,12 +111,14 @@ def test_weather_tool_forces_step_when_configured():
     assert not any(isinstance(a, dict) and "change_step" in a for a in actions2)
 
 
-def test_joke_tool_forces_joke_react():
+def test_joke_tool_has_no_forced_step():
+    # Delivery happens inside the joke step now; the handler must NOT force
+    # a step change (the old joke_react micro-step is gone).
     from python.steps.step11_complete import CompleteAgent
     a = CompleteAgent(route="/step11")
     res = a.on_tell_joke({}, {})
     actions = res.action  # SwaigFunctionResult.action is a plain list of dicts
-    assert any(isinstance(x, dict) and x.get("change_step") == "joke_react" for x in actions)
+    assert not any(isinstance(x, dict) and "change_step" in x for x in actions)
 
 
 def test_transcript_excludes_system_log():

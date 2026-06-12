@@ -382,7 +382,7 @@ def test_agent_graph_endpoint():
     assert d["found"] is True
     assert d["route"] == "/step11"
     assert d["initial_step"] == "greeting"
-    assert any(s["name"] == "menu" for s in d["steps"])
+    assert any(s["name"] == "weather" for s in d["steps"])
 
 
 def test_agent_graph_unknown_route():
@@ -397,4 +397,4 @@ def test_postprompt_final_includes_agent_graph():
     assert r.status_code == 200
     d = r.json()
     assert "agent_graph" in d
-    assert any(s["name"] == "menu" for s in d["agent_graph"]["steps"])
+    assert any(s["name"] == "weather" for s in d["agent_graph"]["steps"])

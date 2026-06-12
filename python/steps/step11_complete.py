@@ -4,12 +4,14 @@ Step 11: Complete Agent
 The final polished version combining all four capabilities with
 clean organization using _configure_*() and _register_*() methods.
 
-This is the same agent you'd build step by step, organized into
-a clean production-ready pattern.
+The prompt is a contexts/steps state machine in the shape the SignalWire
+docs and blessed demos recommend: a handful of MEANINGFUL steps (one per
+topic), each scoping exactly the tool it needs, with direct topic-to-topic
+navigation so the caller is never railroaded through a menu.
 
 Capabilities:
   1. Dad jokes     - custom function (define_tool, runs on your server)
-  2. Weather       - DataMap (serverless, runs on SignalWire)
+  2. Weather       - server-side SWAIG tool (Open-Meteo, keyless)
   3. Date/time     - built-in skill (one line)
   4. Math          - built-in skill (one line)
 """
@@ -51,6 +53,7 @@ class CompleteAgent(AgentBase):
         self.add_hints([
             "Buddy", "weather", "joke", "temperature",
             "forecast", "Fahrenheit", "Celsius",
+            "time", "date", "math", "calculate",
         ])
 
     # -- AI parameters ------------------------------------------------------
@@ -94,8 +97,12 @@ class CompleteAgent(AgentBase):
     # -- Prompt as a contexts/steps state machine ---------------------------
     # WHY: a state machine makes the platform emit `step_change` events into
     # call_log, which powers the State Flow tree (observability) and is the
-    # live demonstration of System-Directed AI. Buddy's tools are unchanged;
-    # each topic step just scopes which tool the AI may call.
+    # live demonstration of System-Directed AI: each topic step exposes only
+    # its own tool. Step granularity follows the blessed demos (one step per
+    # phase, like holyguacamole's 5-step order flow): ask + tool call +
+    # delivery happen inside one topic step, and every topic connects
+    # directly to every other topic, so the caller is never bounced through
+    # a menu hub.
 
     def _configure_contexts(self):
         contexts = self.define_contexts()
@@ -104,112 +111,96 @@ class CompleteAgent(AgentBase):
         # Global persona — applies across every step.
         ctx.add_section("Personality",
             "You are Buddy, a cheerful, witty AI phone assistant who loves dad "
-            "jokes. You are giving the caller a short guided tour of what you can do.")
+            "jokes. You're showing the caller what a SignalWire agent can do.")
         ctx.add_section("Voice Style",
-            "Phone conversation: 1-2 sentences per turn, warm and natural, react to "
-            "the caller, and keep the tour moving briskly from one stop to the next.")
+            "Phone conversation: 1-2 sentences per turn, warm and natural. "
+            "React to the caller like a person would; never read out lists.")
         ctx.add_section("Physical Description",
             "Over video you appear as a friendly glowing robot; play along warmly if "
             "asked about your appearance.")
-        ctx.add_section("Tour rule",
-            "This is a choose-your-own tour driven by a state machine. From the "
-            "menu, go to whichever topic the caller picks. After each topic, "
-            "return to the menu and offer what's left. When every topic is done "
-            "or the caller wants to stop, move to the recap.")
+        ctx.add_section("Conversation Guide",
+            "Follow the caller's lead; never force an order of topics. If they "
+            "ask for something you can do, go straight to it. After finishing "
+            "a topic, briefly offer one thing they haven't tried yet. Happily "
+            "repeat a topic if asked. When the caller is done, or has tried "
+            "everything, move to the wrap-up.")
 
-        def conv(name, task, criteria, nexts):
-            s = ctx.add_step(name, task=task, criteria=criteria)
-            s.set_functions("none")          # expose no business tools; navigation only
-            s.set_valid_steps(nexts)
-            return s
+        topics = ("weather", "joke", "time", "math")
 
-        def tool(name, task, criteria, fns, nexts):
-            s = ctx.add_step(name, task=task, criteria=criteria)
-            s.set_functions(fns)
-            s.set_valid_steps(nexts)
-            return s
+        def reachable_from(name):
+            # every OTHER topic plus the wrap-up
+            return [t for t in topics if t != name] + ["wrap_up"]
 
-        conv("greeting",
-             "Welcome the caller warmly, mention this demo call is recorded for "
-             "the workshop, and tell them you'll give a quick guided tour of "
-             "what you can do.",
-             "The caller has been welcomed and knows a tour is starting.",
-             ["get_name"])
-        conv("get_name",
-             "Ask the caller's first name, then greet them by it.",
-             "The caller has given a name (or declined).",
-             ["menu"])
-        conv("menu",
-             "Offer the menu: the weather, a dad joke, the current time, or a "
-             "quick calculation — in any order they like. If they've heard them "
-             "all or want to stop, head to the recap.",
-             "The caller picked a topic, or asked to wrap up.",
-             ["weather_ask", "joke_intro", "time_intro", "math_intro", "recap"])
+        ctx.add_step("greeting",
+            task=("Welcome the caller warmly, mention this demo call is "
+                  "recorded for the workshop, and ask their first name."),
+            bullets=[
+                "Greet them by name once they share it (declining is fine).",
+                "Offer what you can do in one natural sentence: live weather "
+                "for any city, a dad joke, the current date and time, or a "
+                "quick calculation.",
+                "Go straight to whichever topic the caller picks.",
+            ],
+            criteria="The caller has been welcomed and picked a first topic "
+                     "(or asked to wrap up).",
+            functions="none",
+            valid_steps=list(topics) + ["wrap_up"])
 
-        conv("weather_ask",
-             "Ask which city they'd like the weather for.",
-             "The caller has named a city, or declined.",
-             ["weather_fetch"])
-        tool("weather_fetch",
-             "Call get_weather for the city the caller named.",
-             "Weather has been retrieved.",
-             ["get_weather"], ["weather_deliver"])
-        conv("weather_deliver",
-             "Share the weather warmly in a sentence, then return to the menu "
-             "and ask what they'd like next.",
-             "The weather was shared.",
-             ["menu"])
+        ctx.add_step("weather",
+            task="Get the caller live weather using get_weather.",
+            bullets=[
+                "If the caller already named a city, call get_weather right "
+                "away; don't ask again.",
+                "Otherwise ask which city they'd like.",
+                "Share the result warmly in one sentence, then offer a topic "
+                "they haven't tried yet.",
+            ],
+            criteria="The caller has heard the weather for their city.",
+            functions=["get_weather"],
+            valid_steps=reachable_from("weather"))
 
-        conv("joke_intro",
-             "Offer the caller a dad joke.",
-             "The caller is ready for a joke, or you can simply proceed.",
-             ["joke_tell"])
-        tool("joke_tell",
-             "Tell the caller a joke using tell_joke.",
-             "A joke has been told.",
-             ["tell_joke"], ["joke_react"])
-        conv("joke_react",
-             "React playfully to your own joke, then return to the menu and ask "
-             "what they'd like next.",
-             "You reacted to the joke.",
-             ["menu"])
+        ctx.add_step("joke",
+            task="Tell the caller a dad joke using tell_joke.",
+            bullets=[
+                "Call tell_joke, deliver the joke with flair, and react "
+                "playfully to your own punchline.",
+                "If they want another, call tell_joke again.",
+                "Then offer a topic they haven't tried yet.",
+            ],
+            criteria="The caller has heard a joke and your reaction to it.",
+            functions=["tell_joke"],
+            valid_steps=reachable_from("joke"))
 
-        conv("time_intro",
-             "Offer to tell the caller the current date and time.",
-             "The caller is ready for the time, or you can simply proceed.",
-             ["time_fetch"])
-        tool("time_fetch",
-             "Get the current date and time.",
-             "The date/time was retrieved.",
-             ["get_current_time", "get_current_date"], ["time_deliver"])
-        conv("time_deliver",
-             "Share the date and time, then return to the menu and ask what "
-             "they'd like next.",
-             "The time was shared.",
-             ["menu"])
+        ctx.add_step("time",
+            task="Share the current date and/or time.",
+            bullets=[
+                "Use get_current_time and get_current_date as needed; if the "
+                "caller asked for a specific timezone, honor it.",
+                "Share it conversationally, then offer a topic they haven't "
+                "tried yet.",
+            ],
+            criteria="The caller has heard the date or time they asked about.",
+            functions=["get_current_time", "get_current_date"],
+            valid_steps=reachable_from("time"))
 
-        conv("math_intro",
-             "Offer to do a quick calculation; ask what they'd like computed.",
-             "The caller has given something to calculate, or declined.",
-             ["math_solve"])
-        tool("math_solve",
-             "Solve the caller's calculation using calculate.",
-             "The calculation was solved.",
-             ["calculate"], ["math_deliver"])
-        conv("math_deliver",
-             "Share the answer, then return to the menu and ask what they'd "
-             "like next.",
-             "The answer was shared.",
-             ["menu"])
+        ctx.add_step("math",
+            task="Solve the caller's calculation using calculate.",
+            bullets=[
+                "If they haven't given one yet, ask what they'd like computed.",
+                "Call calculate, share the answer plainly, then offer a topic "
+                "they haven't tried yet.",
+            ],
+            criteria="The caller has heard the answer to their calculation.",
+            functions=["calculate"],
+            valid_steps=reachable_from("math"))
 
-        conv("recap",
-             "Recap whichever topics you actually covered together on this call.",
-             "The tour has been recapped.",
-             ["wrap_up"])
-        conv("wrap_up",
-             "Warmly thank the caller, invite them to call back anytime, and say goodbye.",
-             "The caller has been thanked and the call is ending.",
-             [])
+        ctx.add_step("wrap_up",
+            task=("Recap whichever topics you actually covered together, "
+                  "thank the caller, invite them to call back anytime, and "
+                  "say goodbye."),
+            criteria="The caller has been thanked and the call is ending.",
+            functions="none",
+            valid_steps=[])
 
     # -- Dad jokes (custom function, runs on our server) --------------------
 
@@ -245,14 +236,14 @@ class CompleteAgent(AgentBase):
             if not joke:
                 import live_events
                 live_events.BUS.emit("swaig", "tell_joke", {"result": "no joke returned"})
-                return FunctionResult("I couldn't find a joke this time. Try again!").swml_change_step("joke_react")
+                return FunctionResult("I couldn't find a joke this time. Try again!")
             import live_events
             live_events.BUS.emit("swaig", "tell_joke", {"result": joke[:80]})
-            return FunctionResult(f"Here's a dad joke: {joke}").swml_change_step("joke_react")
+            return FunctionResult(f"Here's a dad joke: {joke}")
         except requests.RequestException as e:
             import live_events
             live_events.BUS.emit("swaig", "tell_joke", {"error": str(e)[:80]})
-            return FunctionResult("My joke service is taking a break. Try again in a moment!").swml_change_step("joke_react")
+            return FunctionResult("My joke service is taking a break. Try again in a moment!")
 
     # -- Weather (server-side SWAIG tool, runs on our server) ----------------
 
@@ -260,10 +251,10 @@ class CompleteAgent(AgentBase):
         # Server-side define_tool, NOT a serverless DataMap: a real workshop call
         # proved SignalWire's DataMap engine left every ${...} empty for this
         # function. Fetching + formatting here is deterministic. See _weather.py.
-        # advance_to_step forces a webhook_action transition to weather_deliver,
-        # making the State Flow tree show a ⚡ forced edge for this step.
+        # No advance_to_step: the weather step delivers the result in-step, so
+        # no forced transition is needed.
         from python.steps._weather import register_weather_tool
-        register_weather_tool(self, advance_to_step="weather_deliver", live_emit=True)
+        register_weather_tool(self, live_emit=True)
 
     # -- Built-in skills ----------------------------------------------------
 
