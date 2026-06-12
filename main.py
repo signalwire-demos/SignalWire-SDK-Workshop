@@ -145,7 +145,7 @@ STEPS = [
     ("/step04", HelloAgent,          "Step 4  - Hello Agent"),
     ("/step06", HardcodedJokeAgent,  "Step 6  - Hardcoded Jokes"),
     ("/step07", ApiJokeAgent,        "Step 7  - Live API Jokes"),
-    ("/step08", WeatherJokeAgent,    "Step 8  - Weather + Jokes (DataMap)"),
+    ("/step08", WeatherJokeAgent,    "Step 8  - Weather + Jokes"),
     ("/step09", PolishedAgent,       "Step 9  - Polished Agent"),
     ("/step10", SkillsAgent,         "Step 10 - Agent with Skills"),
     ("/step11", CompleteAgent,       "Step 11 - Complete Agent"),
@@ -201,13 +201,30 @@ import error_store
 import creds_normalize
 from swaig_cases import CASES, expect_ok
 
+def _fn_kind(fobj):
+    """Classify a registry entry: ('datamap'|'skill'|'tool', skill_name|None).
+
+    A dict entry is a serverless DataMap. A handler bound to a SkillBase
+    instance was registered by an SDK skill (datetime, math); anything else is
+    a custom define_tool function.
+    """
+    from signalwire_agents.core.skill_base import SkillBase
+    if isinstance(fobj, dict):
+        return "datamap", None
+    owner = getattr(getattr(fobj, "handler", None), "__self__", None)
+    if isinstance(owner, SkillBase):
+        return "skill", getattr(owner, "SKILL_NAME", None) or type(owner).__name__
+    return "tool", None
+
+
+# Every (route, function) pair gets its own health row: tell_joke alone has
+# three different implementations (/step06 hardcoded, /step07 live API,
+# /step11 state-machine), and each must be visible and testable on its own.
 for _route, _agent in registered_agents.items():
     _reg = getattr(getattr(_agent, "_tool_registry", None), "_swaig_functions", {}) or {}
     for _fname, _fobj in _reg.items():
-        function_health.STORE.register(
-            _fname, route=_route,
-            kind=("datamap" if isinstance(_fobj, dict) else "tool"),
-        )
+        _kind, _skill = _fn_kind(_fobj)
+        function_health.STORE.register(_fname, route=_route, kind=_kind, skill=_skill)
 
 # ---------------------------------------------------------------------------
 # Config endpoint - landing page fetches auth credentials dynamically
@@ -316,10 +333,13 @@ def _swaig_result_failed(raw):
     return False
 
 
-def run_swaig_case(func_name):
+def run_swaig_case(func_name, route=None):
     """Invoke one SWAIG function against its swaig_cases entry and record health.
 
-    Every workshop function runs in-process, so this always dispatches via
+    `route` selects WHICH agent's implementation runs (tell_joke alone has three
+    different implementations). Without a route, the first owning agent is used
+    (back-compat for callers that predate per-route rows). Every workshop
+    function runs in-process, so this always dispatches via
     agent._execute_swaig_function(...). Returns a verdict dict the /admin "Run
     test" button renders: {"ok", "result", "latency_ms"}.
     """
@@ -327,19 +347,29 @@ def run_swaig_case(func_name):
     args = case.get("args", {}) if case else {}
     expect = case.get("expect", "") if case else ""
 
-    _route, agent = _owning_agent(func_name)
-    if agent is None:
-        # No owning agent: do NOT record_result (that would setdefault a phantom
-        # entry into the function list and persist it). Just log the error.
-        error_store.STORE.record(source="swaig-test", message=f"unknown function: {func_name}")
-        return {"ok": False, "result": f"function '{func_name}' not registered", "latency_ms": None}
+    if route:
+        agent = registered_agents.get(route)
+        reg = getattr(getattr(agent, "_tool_registry", None), "_swaig_functions", None) if agent else None
+        if not reg or func_name not in reg:
+            error_store.STORE.record(source="swaig-test",
+                                     message=f"unknown function: {func_name} on {route}")
+            return {"ok": False, "result": f"function '{func_name}' not registered on {route}",
+                    "latency_ms": None}
+    else:
+        route, agent = _owning_agent(func_name)
+        if agent is None:
+            # No owning agent: do NOT record_result (that would setdefault a phantom
+            # entry into the function list and persist it). Just log the error.
+            error_store.STORE.record(source="swaig-test", message=f"unknown function: {func_name}")
+            return {"ok": False, "result": f"function '{func_name}' not registered", "latency_ms": None}
 
     # Defensive: a dict registry entry would be a serverless DataMap (runs on
     # SignalWire, not here). None remain today, but keep the branch honest.
     reg_entry = agent._tool_registry._swaig_functions.get(func_name)
     if isinstance(reg_entry, dict):
         detail = "DataMap (runs on SignalWire)"
-        function_health.STORE.record_result(func_name, ok=True, detail=detail, latency_ms=None)
+        function_health.STORE.record_result(func_name, ok=True, detail=detail,
+                                            latency_ms=None, route=route)
         return {"ok": True, "result": detail, "latency_ms": None}
 
     t0 = _time.perf_counter()
@@ -352,12 +382,14 @@ def run_swaig_case(func_name):
         # a crashing handler would be wrongly marked ok.
         failed = _swaig_result_failed(raw)
         ok = (not failed) and bool(text) and (not expect or expect_ok(text, expect))
-        function_health.STORE.record_result(func_name, ok=ok, detail=text or "", latency_ms=latency_ms)
+        function_health.STORE.record_result(func_name, ok=ok, detail=text or "",
+                                            latency_ms=latency_ms, route=route)
         return {"ok": ok, "result": text, "latency_ms": latency_ms}
     except Exception as e:  # noqa: BLE001 - a failing test must never crash the server
         latency_ms = round((_time.perf_counter() - t0) * 1000, 1)
         msg = f"{e.__class__.__name__}: {e}"
-        function_health.STORE.record_result(func_name, ok=False, detail=msg, latency_ms=latency_ms)
+        function_health.STORE.record_result(func_name, ok=False, detail=msg,
+                                            latency_ms=latency_ms, route=route)
         error_store.STORE.record(source="swaig-test", message=f"{func_name}: {e}")
         return {"ok": False, "result": msg, "latency_ms": latency_ms}
 
@@ -513,7 +545,7 @@ async def admin_swaig_test(request: Request):
     name = (body or {}).get("function")
     if not name:
         return JSONResponse({"error": "function name required"}, status_code=400)
-    verdict = await asyncio.to_thread(run_swaig_case, name)
+    verdict = await asyncio.to_thread(run_swaig_case, name, (body or {}).get("route"))
     return JSONResponse(verdict)
 
 

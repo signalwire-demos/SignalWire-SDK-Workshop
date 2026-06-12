@@ -2,8 +2,8 @@
 """Pre-flight: run every SWAIG function's shared test case before a workshop.
 
 Usage:
-  python scripts/swaig_preflight.py              # run all functions
-  python scripts/swaig_preflight.py --offline-only  # skip network functions (get_weather)
+  python scripts/swaig_preflight.py              # run all (route, function) pairs
+  python scripts/swaig_preflight.py --offline-only  # skip network functions
 
 Exits non-zero if any function fails. For deep single-function debugging, use the
 Agents SDK CLI directly, e.g.:  swaig-test main.py --exec tell_joke
@@ -11,7 +11,16 @@ Agents SDK CLI directly, e.g.:  swaig-test main.py --exec tell_joke
 import sys
 sys.path.insert(0, ".")
 
-NETWORK_FUNCS = {"get_weather"}  # hits a live weather API
+
+def _is_network(name, route):
+    """Functions that hit live external APIs (skipped under --offline-only).
+
+    get_weather always calls Open-Meteo. tell_joke calls icanhazdadjoke.com on
+    every route except /step06, the hardcoded-list version.
+    """
+    if name == "get_weather":
+        return True
+    return name == "tell_joke" and route != "/step06"
 
 
 def main_cli():
@@ -23,31 +32,35 @@ def main_cli():
     # this process. STORE.load() can replay stale entries from a prior run's
     # .workshop_function_health.json; those phantoms have no owning agent and
     # must not produce spurious FAILs at workshop time.
-    names = [
-        f["name"]
+    targets = [
+        (f["route"], f["name"], f.get("kind", "tool"))
         for f in main.function_health.STORE.all()
-        if main._owning_agent(f["name"])[1] is not None
+        if f.get("route") in main.registered_agents
+        and f["name"] in getattr(main.registered_agents[f["route"]]._tool_registry,
+                                 "_swaig_functions", {})
     ]
-    if not names:
+    if not targets:
         print("No SWAIG functions registered.")
         sys.exit(1)
 
-    failures = 0
-    print(f"{'FUNCTION':<20}{'RESULT':<8}{'ms':<7}DETAIL")
-    print("-" * 72)
-    for name in names:
-        if offline and name in NETWORK_FUNCS:
-            print(f"{name:<20}{'SKIP':<8}{'-':<7}skipped (--offline-only)")
+    failures = skipped = 0
+    print(f"{'ROUTE':<10}{'FUNCTION':<20}{'KIND':<8}{'RESULT':<8}{'ms':<7}DETAIL")
+    print("-" * 84)
+    for route, name, kind in targets:
+        if offline and _is_network(name, route):
+            skipped += 1
+            print(f"{route:<10}{name:<20}{kind:<8}{'SKIP':<8}{'-':<7}skipped (--offline-only)")
             continue
-        r = main.run_swaig_case(name)
+        r = main.run_swaig_case(name, route)
         ok = r.get("ok")
         if not ok:
             failures += 1
         ms = r.get("latency_ms")
-        detail = str(r.get("result", ""))[:44].replace("\n", " ")
-        print(f"{name:<20}{('PASS' if ok else 'FAIL'):<8}{(str(ms) if ms is not None else '-'):<7}{detail}")
-    print("-" * 72)
-    tested = len(names) - (len(NETWORK_FUNCS & set(names)) if offline else 0)
+        detail = str(r.get("result", ""))[:38].replace("\n", " ")
+        print(f"{route:<10}{name:<20}{kind:<8}{('PASS' if ok else 'FAIL'):<8}"
+              f"{(str(ms) if ms is not None else '-'):<7}{detail}")
+    print("-" * 84)
+    tested = len(targets) - skipped
     print(f"{tested - failures}/{tested} passed" + ("  (network functions skipped)" if offline else ""))
     sys.exit(1 if failures else 0)
 

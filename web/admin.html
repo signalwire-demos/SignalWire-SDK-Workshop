@@ -410,6 +410,10 @@
     text-transform: uppercase; color: var(--sw-text-dim);
     padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.05);
   }
+  /* kind badges: custom tool (blue), SDK skill (turquoise), DataMap (purple) */
+  .swaig-kind-tool { color: #7da7ff; background: rgba(4,78,244,0.16); }
+  .swaig-kind-skill { color: #40e0d0; background: rgba(64,224,208,0.12); }
+  .swaig-kind-datamap { color: #b794f6; background: rgba(96,27,230,0.18); }
   .swaig-route { font-family: var(--mono); font-size: 11.5px; color: var(--sw-cyan); word-break: break-all; }
   .swaig-detail {
     font-family: var(--mono); font-size: 11.5px; color: var(--sw-text-dim);
@@ -1162,38 +1166,50 @@
     }
     empty.style.display = "none";
     grid.style.display = "grid";
+    // Group by route so the same function name on different agents reads as
+    // distinct implementations (three tell_jokes are three different things).
+    var sorted = fns.slice().sort(function (a, b) {
+      return (a.route || "").localeCompare(b.route || "") ||
+             (a.name || "").localeCompare(b.name || "");
+    });
     var html = "";
-    fns.forEach(function (f) {
+    sorted.forEach(function (f) {
       var status = f.status || "untested";
       var dot = status === "ok" ? "🟢" : (status === "failing" ? "🔴" : "⚪");
       var lat = (f.last_latency_ms === null || f.last_latency_ms === undefined)
         ? "" : (" · " + esc(String(f.last_latency_ms)) + "ms");
+      // kind badge: "tool" = custom define_tool handler, "skill · datetime" =
+      // registered by an SDK skill, "datamap" = serverless (runs on SignalWire)
+      var kind = esc(f.kind || "tool") + (f.skill ? " · " + esc(f.skill) : "");
       html +=
         '<div class="swaig-card status-' + esc(status) + '">' +
           '<div class="swaig-card-head">' +
             '<span class="swaig-dot">' + dot + "</span>" +
             "<strong>" + esc(f.name || "unknown") + "</strong>" +
-            '<span class="swaig-kind">' + esc(f.kind || "tool") + "</span>" +
+            '<span class="swaig-kind swaig-kind-' + esc(f.kind || "tool") + '">' + kind + "</span>" +
           "</div>" +
           '<div class="swaig-route">' + esc(f.route || "—") + lat + "</div>" +
           '<div class="swaig-detail">' + esc(f.last_detail || "") + "</div>" +
-          '<button class="btn run-swaig" data-fn="' + esc(f.name || "") + '">Run test</button>' +
+          '<button class="btn run-swaig" data-fn="' + esc(f.name || "") +
+            '" data-route="' + esc(f.route || "") + '">Run test</button>' +
         "</div>";
     });
     grid.innerHTML = html;
     Array.prototype.forEach.call(grid.querySelectorAll(".run-swaig"), function (b) {
-      b.addEventListener("click", function () { runSwaig(b.getAttribute("data-fn"), b); });
+      b.addEventListener("click", function () {
+        runSwaig(b.getAttribute("data-fn"), b.getAttribute("data-route"), b);
+      });
     });
   }
 
-  function runSwaig(name, btn) {
+  function runSwaig(name, route, btn) {
     btn.disabled = true;
     var orig = btn.textContent;
     btn.textContent = "Running…";
     fetch("/admin/swaig/test", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ function: name })
+      body: JSON.stringify({ function: name, route: route || null })
     }).then(function (r) { return r.json(); }).then(function (res) {
       btn.textContent = res.ok
         ? ("✓ " + esc(String(res.latency_ms)) + "ms")

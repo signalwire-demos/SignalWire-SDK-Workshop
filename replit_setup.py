@@ -8,10 +8,10 @@ and reports the status of optional API keys.
 import os
 
 
-OPTIONAL_SECRETS = [
-    ("WEATHER_API_KEY", "weatherapi.com - needed for weather (step 8+)"),
-    ("API_NINJAS_KEY",  "api-ninjas.com  - needed for live jokes (step 7+)"),
-]
+# Every workshop function uses keyless APIs (icanhazdadjoke.com for jokes,
+# Open-Meteo for weather), so no third-party API secrets are required.
+# SignalWire credentials are entered per-attendee in the browser wizard.
+OPTIONAL_SECRETS = []
 
 AUTH_USER_DEFAULT = "workshop"
 AUTH_PASS_DEFAULT = "password"
@@ -55,13 +55,16 @@ def startup():
     print("  Buddy Workshop - SignalWire AI Phone Agent")
     print("=" * 60)
 
-    print("\nOptional API keys (add via Replit Secrets tab):")
-    for var, desc in OPTIONAL_SECRETS:
-        val = os.getenv(var, "")
-        if val:
-            masked = "*" * max(0, len(val) - 4) + val[-4:]
-            print(f"  [ok] {var} = {masked}")
-        else:
-            print(f"  [--] {var} - {desc}")
+    if OPTIONAL_SECRETS:
+        print("\nOptional API keys (add via Replit Secrets tab):")
+        for var, desc in OPTIONAL_SECRETS:
+            val = os.getenv(var, "")
+            if val:
+                masked = "*" * max(0, len(val) - 4) + val[-4:]
+                print(f"  [ok] {var} = {masked}")
+            else:
+                print(f"  [--] {var} - {desc}")
+    else:
+        print("\nNo third-party API keys required (all workshop APIs are keyless).")
 
     return base_url, auth_user, auth_pass
