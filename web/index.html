@@ -2653,7 +2653,7 @@ function renderMilestoneNumber() {
       <p class="wizard-helper">Different number? <a href="#" id="wiz-buy-instead">Search and purchase a new one →</a></p>`;
   } else if (searched && searched.length > 0) {
     body = `
-      <p class="lead">No phone numbers on your project yet. Here are three available US local numbers. Pick one to purchase. ${sdkBadge("SDK · client.phone_numbers.create")}</p>
+      <p class="lead">Here ${searched.length === 1 ? 'is an available US local number' : `are ${searched.length} available US local numbers`}${wizard.searchedAreaCode ? ` in area code <strong>${escapeHtml(wizard.searchedAreaCode)}</strong>` : ''}. Pick one to purchase. ${sdkBadge("SDK · client.phone_numbers.create")}</p>
       <div class="number-grid">
         ${searched.map(n => `
           <button class="number-card available" data-buy-number="${escapeHtml(n.phone_number)}">
@@ -2665,7 +2665,7 @@ function renderMilestoneNumber() {
       <p class="wizard-helper">Purchasing a number will add a small monthly charge to your SignalWire account (typically ~$1/mo). <a href="#" id="wiz-search-again">Search a different area code →</a></p>`;
   } else if (searched && searched.length === 0) {
     body = `
-      <p class="lead">No available numbers found${wizard.searchedAreaCode ? ` for area code <strong>${escapeHtml(wizard.searchedAreaCode)}</strong>` : ''}. Try a different area code, or grab any available US number.</p>
+      <p class="lead">SignalWire has no numbers in stock${wizard.searchedAreaCode ? ` for area code <strong>${escapeHtml(wizard.searchedAreaCode)}</strong>` : ''} right now — purchasable inventory varies by area code and changes often. Try a nearby area code, or grab any available US number.</p>
       ${renderSearchForm()}
       <p class="wizard-helper"><a href="#" id="wiz-search-any">Show any available US number →</a></p>`;
   } else {
