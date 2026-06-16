@@ -1,6 +1,6 @@
 """
-Step 8: Weather DataMap + Jokes
--------------------------------
+Weather DataMap + Jokes
+-----------------------
 Add weather lookups using DataMap - a serverless approach where
 SignalWire calls the wttr.in weather API directly, not through your server.
 

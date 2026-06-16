@@ -1,6 +1,6 @@
 """
-Step 4: Hello Agent
--------------------
+Hello Agent
+-----------
 The simplest possible agent - just enough to prove everything works.
 Call your number and have a basic conversation with Buddy.
 

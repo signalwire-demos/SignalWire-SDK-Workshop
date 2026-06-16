@@ -1,6 +1,6 @@
 """
-Step 11: Complete Agent
------------------------
+Complete Agent
+--------------
 The final polished version combining all four capabilities with
 clean organization using _configure_*() and _register_*() methods.
 

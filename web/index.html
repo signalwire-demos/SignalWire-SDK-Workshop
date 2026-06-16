@@ -866,7 +866,7 @@
     color: var(--sw-cyan, #40E0D0); text-transform: uppercase;
   }
   .ac-pre {
-    margin: 0; padding: 10px 0; overflow: auto; max-height: 460px; line-height: 1.55;
+    margin: 0; padding: 10px 0; overflow: auto; max-height: 520px; line-height: 1.55;
     font-family: 'JetBrains Mono','SF Mono',monospace; font-size: 12.5px; color: #d4d4d8;
   }
   .ac-line {
@@ -884,14 +884,17 @@
   }
   .ac-gutter { display: inline-block; width: 1.4em; flex: 0 0 auto; }
   .ac-marker {
-    width: 1.4em; height: 1.4em; flex: 0 0 auto; border-radius: 50%; border: 0;
-    cursor: pointer; background: var(--sw-blue, #044EF4); color: #fff;
-    font-size: 11px; line-height: 1.4em; padding: 0;
-    transition: background .15s ease;
+    width: 1.4em; height: 1.4em; flex: 0 0 auto; border: 0; padding: 0;
+    cursor: pointer; background: transparent; transition: opacity .15s ease;
   }
-  .ac-marker:hover, .ac-marker:focus-visible {
-    background: var(--sw-magenta, #F72A72); outline: none;
+  .ac-marker::before {
+    content: ""; display: block; width: 6px; height: 6px; margin: 0 auto;
+    border-radius: 50%; background: var(--sw-blue, #044EF4);
   }
+  .ac-marker:hover::before, .ac-marker:focus-visible::before {
+    background: var(--sw-magenta, #F72A72);
+  }
+  .ac-marker:focus-visible { outline: none; }
   .ac-code {
     white-space: pre;
     font-family: 'JetBrains Mono','SF Mono',monospace;
@@ -1677,42 +1680,65 @@ const STEPS_META = [
     codeSpotlight: {
       lang: "step04_hello.py",
       power: "Buddy wakes up: a voice, a personality, a working phone agent.",
-      lines: [
-        { t: "from signalwire_agents import AgentBase", callout: 1 },
-        { t: "" },
-        { t: "class HelloAgent(AgentBase):", new: true, callout: 2 },
-        { t: "    def __init__(self, route=\"/\"):" },
-        { t: "        super().__init__(name=\"hello-agent\", route=route)" },
-        { t: "" },
-        { t: "        # \"rime.spore\" is a warm, friendly TTS voice" },
-        { t: "        self.add_language(", new: true, callout: 3 },
-        { t: "            \"English\", \"en-US\", \"rime.spore\"," },
-        { t: "            speech_fillers=[\"Um\", \"Well\"]," },
-        { t: "        )" },
-        { t: "" },
-        { t: "        # The AI's personality and instructions" },
-        { t: "        self.prompt_add_section(", new: true, callout: 4 },
-        { t: "            \"Role\"," },
-        { t: "            \"You are a friendly assistant named Buddy. \"" },
-        { t: "            \"You greet callers warmly and keep replies short.\"," },
-        { t: "        )" },
-        { t: "" },
-        { t: "        # After each call, the AI generates a summary" },
-        { t: "        self.set_post_prompt(", new: true, callout: 5 },
-        { t: "            \"Summarize this conversation in 2-3 sentences.\"," },
-        { t: "        )" },
-        { t: "" },
-        { t: "    def on_summary(self, summary, raw_data):", new: true, callout: 6 },
-        { t: "        from python.steps._summary_capture import record_call" },
-        { t: "        record_call(self, raw_data)" },
-      ],
+      fullCode: `"""
+Hello Agent
+-----------
+The simplest possible agent - just enough to prove everything works.
+Call your number and have a basic conversation with Buddy.
+
+Concepts:
+  - AgentBase: the foundation class for every agent
+  - add_language(): speech recognition + TTS voice
+  - prompt_add_section(): personality and instructions
+  - set_post_prompt() + on_summary(): save call data for debugging
+"""
+
+from signalwire_agents import AgentBase
+
+
+class HelloAgent(AgentBase):
+    def __init__(self, route="/"):
+        super().__init__(name="hello-agent", route=route)
+
+        # "rime.spore" is a warm, friendly TTS voice
+        self.add_language(
+            "English", "en-US", "rime.spore",
+            speech_fillers=["Um", "Well"],
+        )
+
+        # The AI's personality and instructions
+        self.prompt_add_section(
+            "Role",
+            "You are a friendly assistant named Buddy. "
+            "You greet callers warmly, ask how their day is going, "
+            "and have a brief pleasant conversation. "
+            "Keep your responses short since this is a phone call.",
+        )
+
+        # Carrier caller-ID names are location data, not names (an unlisted
+        # Arizona cell arrives as "ARIZONA") - shared guard so Buddy never
+        # addresses the caller by it.
+        from python.steps._caller_identity import add_caller_identity_guard
+        add_caller_identity_guard(self)
+
+        # After each call, the AI generates a summary
+        self.set_post_prompt(
+            "Summarize this conversation in 2-3 sentences. "
+            "Include what the caller wanted and how the conversation went.",
+        )
+
+        from python.steps._postprompt_params import CAPTURE_PARAMS
+        self.set_params({**CAPTURE_PARAMS})
+
+    def on_summary(self, summary, raw_data):
+        from python.steps._summary_capture import record_call
+        record_call(self, raw_data)
+`,
+      newAnchors: ["self.add_language(", "self.prompt_add_section(", "self.set_post_prompt("],
       callouts: [
-        { id: 1, title: "AgentBase", body: "The one import you build on. Every agent is a Python class that extends it; everything else is a method you call." },
-        { id: 2, title: "Your agent is a class", body: "Subclass AgentBase and configure it in __init__. That is the whole shape of a SignalWire agent." },
-        { id: 3, title: "add_language() = voice + ears", body: "Picks the TTS voice (rime.spore) and speech recognition. Swap the voice string and Buddy sounds like someone else." },
-        { id: 4, title: "prompt_add_section() = personality", body: "Plain-English instructions ARE the behavior. This text is Buddy's personality; edit it and you have changed the agent." },
-        { id: 5, title: "set_post_prompt() = after the call", body: "Asks the AI to summarize the call when it ends. That summary is the data you will see in the dashboard, with no extra capture code." },
-        { id: 6, title: "on_summary() = your hook", body: "Runs when that summary arrives so you can store it; here it hands off to record_call for the workshop dashboard." },
+        { id: 1, anchor: "import AgentBase", title: "AgentBase", body: "The class every agent extends; you configure it in __init__." },
+        { id: 2, anchor: "self.add_language(", title: "add_language()", body: "Sets Buddy's TTS voice and speech recognition." },
+        { id: 3, anchor: "self.prompt_add_section(", title: "prompt_add_section()", body: "Plain-English instructions that ARE Buddy's personality." },
       ],
       buddy: "prompt_add_section is my personality. Change that text and you change me.",
     },
@@ -1739,48 +1765,100 @@ const STEPS_META = [
     codeSpotlight: {
       lang: "step06_hardcoded_jokes.py",
       power: "Buddy gets his first tool: a function the AI can call mid-call.",
-      lines: [
-        { t: "import random" },
-        { t: "from signalwire_agents import AgentBase, SwaigFunctionResult as FunctionResult", new: true, callout: 1 },
-        { t: "" },
-        { t: "JOKES = [", new: true },
-        { t: "    \"Why do programmers prefer dark mode? Because light attracts bugs.\"," },
-        { t: "    \"What do you call a fake noodle? An impasta.\"," },
-        { t: "    # …" },
-        { t: "]" },
-        { t: "" },
-        { t: "class JokeAgent(AgentBase):" },
-        { t: "    def __init__(self, route=\"/\"):" },
-        { t: "        super().__init__(name=\"joke-agent-hardcoded\", route=route)" },
-        { t: "" },
-        { t: "        self.add_language(" },
-        { t: "            \"English\", \"en-US\", \"rime.spore\"," },
-        { t: "            speech_fillers=[\"Um\", \"Well\"]," },
-        { t: "            function_fillers=[\"Let me think of a good one...\"],", new: true, callout: 2 },
-        { t: "        )" },
-        { t: "        # …" },
-        { t: "        # The AI decides when to call this based on the description" },
-        { t: "        self.define_tool(", new: true, callout: 3 },
-        { t: "            name=\"tell_joke\"," },
-        { t: "            description=(", new: true, callout: 4 },
-        { t: "                \"Tell the caller a funny joke. Use this whenever \"" },
-        { t: "                \"someone asks for a joke or humor.\"" },
-        { t: "            )," },
-        { t: "            parameters={\"type\": \"object\", \"properties\": {}},", new: true, callout: 5 },
-        { t: "            handler=self.on_tell_joke," },
-        { t: "        )" },
-        { t: "" },
-        { t: "    def on_tell_joke(self, args, raw_data):", new: true, callout: 6 },
-        { t: "        joke = random.choice(JOKES)" },
-        { t: "        return FunctionResult(f\"Here's a joke: {joke}\")" },
-      ],
+      fullCode: `"""
+Hardcoded Jokes
+---------------
+Your first SWAIG function - teaching the AI to tell jokes
+from a hardcoded list.
+
+New concepts:
+  - FunctionResult: return data from a SWAIG function
+  - define_tool(): register a function the AI can call
+  - description: tells the AI *when* to use the function (critical!)
+  - parameters: what info the AI extracts from conversation
+  - function_fillers: phrases spoken while your function runs
+"""
+
+import random
+from signalwire_agents import AgentBase, SwaigFunctionResult as FunctionResult
+
+
+JOKES = [
+    "Why do programmers prefer dark mode? Because light attracts bugs.",
+    "I told my wife she was drawing her eyebrows too high. She looked surprised.",
+    "What do you call a fake noodle? An impasta.",
+    "Why don't scientists trust atoms? Because they make up everything.",
+    "I'm reading a book about anti-gravity. It's impossible to put down.",
+    "What did the ocean say to the beach? Nothing, it just waved.",
+    "Why did the scarecrow win an award? He was outstanding in his field.",
+    "I used to hate facial hair, but then it grew on me.",
+]
+
+
+class JokeAgent(AgentBase):
+    def __init__(self, route="/"):
+        super().__init__(name="joke-agent-hardcoded", route=route)
+
+        self.add_language(
+            "English", "en-US", "rime.spore",
+            speech_fillers=["Um", "Well"],
+            function_fillers=["Let me think of a good one..."],
+        )
+
+        self.prompt_add_section(
+            "Role",
+            "You are a friendly assistant named Buddy. "
+            "You love telling jokes and making people laugh. "
+            "Keep your responses short since this is a phone call.",
+        )
+
+        self.prompt_add_section(
+            "Guidelines",
+            body="Follow these guidelines:",
+            bullets=[
+                "When someone asks for a joke, use the tell_joke function",
+                "After telling a joke, pause for a reaction before offering another",
+                "Be enthusiastic and have fun with it",
+            ],
+        )
+
+        # Carrier caller-ID names are location data, not names ("ARIZONA") -
+        # shared guard so Buddy never addresses the caller by it.
+        from python.steps._caller_identity import add_caller_identity_guard
+        add_caller_identity_guard(self)
+
+        # The AI decides when to call this based on the description
+        self.define_tool(
+            name="tell_joke",
+            description=(
+                "Tell the caller a funny joke. Use this whenever "
+                "someone asks for a joke or humor."
+            ),
+            parameters={"type": "object", "properties": {}},
+            handler=self.on_tell_joke,
+        )
+
+        self.set_post_prompt(
+            "Summarize this conversation in 2-3 sentences. "
+            "Note which jokes were told and how the caller reacted.",
+        )
+
+        from python.steps._postprompt_params import CAPTURE_PARAMS
+        self.set_params({**CAPTURE_PARAMS})
+
+    def on_tell_joke(self, args, raw_data):
+        joke = random.choice(JOKES)
+        return FunctionResult(f"Here's a joke: {joke}")
+
+    def on_summary(self, summary, raw_data):
+        from python.steps._summary_capture import record_call
+        record_call(self, raw_data)
+`,
+      newAnchors: ["JOKES = [", "self.define_tool(", "def on_tell_joke", "SwaigFunctionResult"],
       callouts: [
-        { id: 1, title: "FunctionResult", body: "The return type for a tool. Whatever you wrap in it becomes what Buddy says out loud. SignalWire calls these tools SWAIG functions." },
-        { id: 2, title: "function_fillers", body: "Phrases Buddy speaks while your code runs, so a caller never sits in silence waiting on your function." },
-        { id: 3, title: "define_tool() = a new ability", body: "Registers a function the AI can call on its own. You write the Python; the AI picks the moment to use it. No phone menus, no training." },
-        { id: 4, title: "description = WHEN to call it", body: "This is the critical part. The AI reads this text to decide when to invoke the tool, so write it like instructions to a coworker." },
-        { id: 5, title: "parameters", body: "A JSON schema of what the AI should extract from the conversation. Empty here because a joke needs no arguments." },
-        { id: 6, title: "on_tell_joke() = your handler", body: "Your own Python, running on your server. It picks a joke and returns a FunctionResult for Buddy to read aloud." },
+        { id: 1, anchor: "self.define_tool(", title: "define_tool()", body: "Registers a function the AI can choose to call." },
+        { id: 2, anchor: "description=", title: "description", body: "Tells the AI when to call the function. This is the critical part." },
+        { id: 3, anchor: "def on_tell_joke", title: "on_tell_joke", body: "Your handler runs and returns the result the AI speaks." },
       ],
       buddy: "define_tool() hands me a new ability. I use it whenever a caller asks.",
     },
@@ -1807,41 +1885,96 @@ const STEPS_META = [
     codeSpotlight: {
       lang: "step07_api_jokes.py",
       power: "Same tool, real data: the handler now calls a live API.",
-      lines: [
-        { t: "import requests", new: true, callout: 1 },
-        { t: "from signalwire_agents import AgentBase, SwaigFunctionResult as FunctionResult" },
-        { t: "" },
-        { t: "        self.define_tool(" },
-        { t: "            name=\"tell_joke\"," },
-        { t: "            description=(" },
-        { t: "                \"Tell the caller a funny dad joke. Use this whenever \"", new: true, callout: 2 },
-        { t: "                \"someone asks for a joke, humor, or to be entertained.\"" },
-        { t: "            )," },
-        { t: "            parameters={\"type\": \"object\", \"properties\": {}}," },
-        { t: "            handler=self.on_tell_joke," },
-        { t: "        )" },
-        { t: "" },
-        { t: "    def on_tell_joke(self, args, raw_data):" },
-        { t: "        try:", new: true, callout: 3 },
-        { t: "            resp = requests.get(", new: true, callout: 4 },
-        { t: "                \"https://icanhazdadjoke.com/\"," },
-        { t: "                headers={\"Accept\": \"application/json\", ...}," },
-        { t: "                timeout=5," },
-        { t: "            )" },
-        { t: "            resp.raise_for_status()", new: true, callout: 5 },
-        { t: "            data = resp.json()" },
-        { t: "            joke = data.get(\"joke\")" },
-        { t: "            return FunctionResult(f\"Here's a dad joke: {joke}\")" },
-        { t: "        except requests.RequestException:", new: true, callout: 6 },
-        { t: "            return FunctionResult(\"My joke service is taking a break. Try again in a moment!\")" },
-      ],
+      fullCode: `"""
+Live API Jokes
+--------------
+Replace hardcoded jokes with fresh ones from icanhazdadjoke.com.
+Every call returns a different joke.
+
+New concepts:
+  - Calling external APIs from a SWAIG function handler
+  - Graceful error handling when APIs fail
+"""
+
+import requests
+from signalwire_agents import AgentBase, SwaigFunctionResult as FunctionResult
+
+
+class JokeAgent(AgentBase):
+    def __init__(self, route="/"):
+        super().__init__(name="joke-agent-api", route=route)
+
+        self.add_language(
+            "English", "en-US", "rime.spore",
+            speech_fillers=["Um", "Well"],
+            function_fillers=["Let me think of a good one..."],
+        )
+
+        self.prompt_add_section(
+            "Role",
+            "You are a friendly assistant named Buddy. "
+            "You love telling jokes and making people laugh. "
+            "Keep your responses short since this is a phone call.",
+        )
+
+        self.prompt_add_section(
+            "Guidelines",
+            body="Follow these guidelines:",
+            bullets=[
+                "When someone asks for a joke, use the tell_joke function",
+                "After telling a joke, pause for a reaction before offering another",
+                "Be enthusiastic and have fun with it",
+            ],
+        )
+
+        # Carrier caller-ID names are location data, not names ("ARIZONA") -
+        # shared guard so Buddy never addresses the caller by it.
+        from python.steps._caller_identity import add_caller_identity_guard
+        add_caller_identity_guard(self)
+
+        self.define_tool(
+            name="tell_joke",
+            description=(
+                "Tell the caller a funny dad joke. Use this whenever "
+                "someone asks for a joke, humor, or to be entertained."
+            ),
+            parameters={"type": "object", "properties": {}},
+            handler=self.on_tell_joke,
+        )
+
+        self.set_post_prompt(
+            "Summarize this conversation in 2-3 sentences. "
+            "Note which jokes were told and how the caller reacted.",
+        )
+
+        from python.steps._postprompt_params import CAPTURE_PARAMS
+        self.set_params({**CAPTURE_PARAMS})
+
+    def on_tell_joke(self, args, raw_data):
+        # WHY: removes the API Ninjas key dependency so attendees skip a prereq.
+        try:
+            resp = requests.get(
+                "https://icanhazdadjoke.com/",
+                headers={"Accept": "application/json", "User-Agent": "signalwire-agents-sdk-workshop"},
+                timeout=5,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            joke = data.get("joke")
+            if not joke:
+                return FunctionResult("I couldn't find a joke this time. Try again!")
+            return FunctionResult(f"Here's a dad joke: {joke}")
+        except requests.RequestException:
+            return FunctionResult("My joke service is taking a break. Try again in a moment!")
+
+    def on_summary(self, summary, raw_data):
+        from python.steps._summary_capture import record_call
+        record_call(self, raw_data)
+`,
+      newAnchors: ["import requests", "requests.get(", "except requests.RequestException"],
       callouts: [
-        { id: 1, title: "import requests", body: "Your handler is plain Python on your server, so it can reach any API, database, or system. Here it pulls a fresh joke from the internet." },
-        { id: 2, title: "Same function, tweaked", body: "The tool is unchanged from step 6. Only the description shifts to \"dad joke\" and the handler body changes. The AI never knows the difference." },
-        { id: 3, title: "try/except", body: "Live calls can fail, so the whole fetch is wrapped. A network blip should never crash Buddy mid-call." },
-        { id: 4, title: "requests.get() with a 5s timeout", body: "Calls the icanhazdadjoke API for a brand-new joke every time. The timeout keeps a slow API from hanging the call." },
-        { id: 5, title: "raise_for_status()", body: "Turns an HTTP error code (like a 500) into an exception so the except branch can handle it instead of returning garbage." },
-        { id: 6, title: "Graceful fallback", body: "If anything goes wrong, Buddy says a friendly line out loud instead of failing silently. Always give the caller something to hear." },
+        { id: 1, anchor: "requests.get(", title: "Live API call", body: "The same tool now fetches a fresh joke from a real API." },
+        { id: 2, anchor: "except requests.RequestException", title: "Graceful fallback", body: "If the API fails, Buddy says a friendly line instead of breaking." },
       ],
       buddy: "Same tool, but now I fetch a brand-new joke from the internet.",
     },
@@ -1871,33 +2004,30 @@ const STEPS_META = [
         { t: "        self.add_language(" },
         { t: "            \"English\", \"en-US\", \"rime.spore\"," },
         { t: "            speech_fillers=[\"Um\", \"Well\"]," },
-        { t: "            function_fillers=[", new: true, callout: 1 },
+        { t: "            function_fillers=[", new: true },
         { t: "                \"Let me check on that...\"," },
         { t: "                \"One moment...\"," },
         { t: "            ]," },
         { t: "        )" },
         { t: "        # …" },
         { t: "        self._register_joke_function()" },
-        { t: "        self._register_weather()", new: true, callout: 2 },
+        { t: "        self._register_weather()", new: true },
         { t: "" },
-        { t: "    def _register_weather(self):", new: true, callout: 3 },
+        { t: "    def _register_weather(self):", new: true },
         { t: "        # Server-side define_tool, NOT a serverless DataMap: a real workshop call" },
-        { t: "        # proved SignalWire's DataMap engine left every ${...} empty for this", callout: 4 },
-        { t: "        # function. Fetching + formatting here is deterministic. See _weather.py." },
+        { t: "        # proved SignalWire's DataMap engine left every ${...} empty for this", callout: 1 },
+        { t: "        # function. Fetching + formatting here is deterministic. See _weather.py.", callout: 2 },
         { t: "        from python.steps._weather import register_weather_tool" },
-        { t: "        register_weather_tool(self)", new: true, callout: 5 },
+        { t: "        register_weather_tool(self)", new: true },
         { t: "" },
         { t: "    # _weather.py: get_weather takes a parameter the AI fills in" },
-        { t: "    \"city\": {\"type\": \"string\",", new: true, callout: 6 },
+        { t: "    \"city\": {\"type\": \"string\",", new: true, callout: 3 },
         { t: "        \"description\": \"The city to get weather for\"}" },
       ],
       callouts: [
-        { id: 1, title: "Multiple function_fillers", body: "Weather lookups take a beat, so Buddy has a few phrases to rotate through while your server fetches the data. Variety keeps it natural." },
-        { id: 2, title: "A second capability", body: "One more registration call and Buddy can do two things. Each ability is its own small _register_* helper, so the agent stays readable as it grows." },
-        { id: 3, title: "Why split into _register_* helpers", body: "Each capability's wiring lives in its own clearly named method. This is the production pattern that scales as you add tools." },
-        { id: 4, title: "DataMap vs define_tool", body: "DataMap lets you declare an API and SignalWire runs it serverlessly, no server of yours involved. define_tool runs on YOUR server." },
-        { id: 5, title: "Why server-side here", body: "A real workshop call showed DataMap leaving every ${...} empty for this lookup. Fetching and formatting on your server is deterministic." },
-        { id: 6, title: "A tool with a parameter", body: "Buddy's first tool that takes an argument. The AI extracts the city from conversation and hands it to your handler; you never parse speech yourself." },
+        { id: 1, title: "DataMap vs define_tool", body: "define_tool runs on YOUR server, while a DataMap runs serverlessly on SignalWire with no server of yours." },
+        { id: 2, title: "Why server-side here", body: "A real workshop call showed DataMap leaving every value empty, so fetching on your server is deterministic." },
+        { id: 3, title: "A tool with a parameter", body: "The AI extracts the city from conversation and hands it to your handler, so you never parse speech yourself." },
       ],
       buddy: "Name any city and I grab real weather. The AI fills in the city argument for me.",
     },
@@ -1929,7 +2059,7 @@ const STEPS_META = [
         { t: "        self.add_language(" },
         { t: "            \"English\", \"en-US\", \"rime.spore\"," },
         { t: "            speech_fillers=[\"Um\", \"Well\", \"So\"]," },
-        { t: "            function_fillers=[", new: true, callout: 1 },
+        { t: "            function_fillers=[", new: true },
         { t: "                \"Let me check on that for you...\"," },
         { t: "                \"One moment while I look that up...\"," },
         { t: "                \"Hang on a sec...\"," },
@@ -1937,33 +2067,29 @@ const STEPS_META = [
         { t: "        )" },
         { t: "" },
         { t: "        # Timing parameters for natural conversation" },
-        { t: "        self.set_params({", new: true, callout: 2 },
-        { t: "            \"end_of_speech_timeout\": 600,     # 600ms pause before responding", new: true, callout: 3 },
-        { t: "            \"attention_timeout\": 15000,        # Re-engage after 15s silence", new: true, callout: 4 },
+        { t: "        self.set_params({", new: true, callout: 1 },
+        { t: "            \"end_of_speech_timeout\": 600,     # 600ms pause before responding", new: true },
+        { t: "            \"attention_timeout\": 15000,        # Re-engage after 15s silence", new: true },
         { t: "            \"attention_timeout_prompt\":" },
         { t: "                \"Are you still there? I can help with weather, jokes, or math!\"," },
         { t: "        })" },
         { t: "" },
         { t: "        # Help speech recognizer with tricky words" },
-        { t: "        self.add_hints([\"Buddy\", \"weather\", \"joke\", \"temperature\", \"forecast\"])", new: true, callout: 5 },
+        { t: "        self.add_hints([\"Buddy\", \"weather\", \"joke\", \"temperature\", \"forecast\"])", new: true, callout: 2 },
         { t: "" },
         { t: "        # Richer, structured personality" },
-        { t: "        self.prompt_add_section(", new: true, callout: 6 },
+        { t: "        self.prompt_add_section(", new: true, callout: 3 },
         { t: "            \"Personality\"," },
         { t: "            \"You are Buddy, a cheerful and witty AI phone assistant. ...\"," },
         { t: "        )" },
         { t: "        # …" },
-        { t: "        self.prompt_add_section(\"Voice Style\", ...)", callout: 7 },
+        { t: "        self.prompt_add_section(\"Voice Style\", ...)" },
         { t: "        self.prompt_add_section(\"Capabilities\", ...)" },
       ],
       callouts: [
-        { id: 1, title: "More fillers, more natural", body: "Several phrases per category mean Buddy never repeats the same stall line. Small touch, big difference in how human he feels." },
-        { id: 2, title: "set_params() = behavior dials", body: "Tunes how the conversation flows. This is where Buddy stops sounding like a robot and starts feeling like a phone call." },
-        { id: 3, title: "end_of_speech_timeout: 600ms", body: "How long a pause counts as \"done talking\" before Buddy replies. Too short and he interrupts; too long and he feels slow." },
-        { id: 4, title: "attention_timeout: 15s", body: "If the caller goes quiet for 15 seconds, Buddy speaks the re-engage prompt to check back in instead of waiting forever." },
-        { id: 5, title: "add_hints() = sharper ears", body: "Biases the speech recognizer toward words it might otherwise mishear, like \"Buddy\" and \"forecast\", so it transcribes them correctly." },
-        { id: 6, title: "Structured prompt sections", body: "Splitting the personality into named sections (Personality, Voice Style, Capabilities) gives the AI clearer, more consistent guidance." },
-        { id: 7, title: "Same capabilities, better UX", body: "No new tools here. Every change in this step is about tuning timing, listening, and tone for a smoother conversation." },
+        { id: 1, title: "set_params() = behavior dials", body: "Tunes timing like the end-of-speech pause and attention timeout so the call feels natural instead of robotic." },
+        { id: 2, title: "add_hints() = sharper ears", body: "Biases the speech recognizer toward words it might otherwise mishear, like \"Buddy\" and \"forecast\"." },
+        { id: 3, title: "Structured prompt sections", body: "Splitting the personality into named sections gives the AI clearer, more consistent guidance." },
       ],
       buddy: "set_params is my dials. This is where I stop sounding like a robot.",
     },
@@ -2005,7 +2131,7 @@ const STEPS_META = [
         { t: "            bullets=[" },
         { t: "                \"Weather: current conditions for any city worldwide\"," },
         { t: "                \"Jokes: endless supply of dad jokes, always fresh\"," },
-        { t: "                \"Date and time: current time in any timezone\",", new: true, callout: 2 },
+        { t: "                \"Date and time: current time in any timezone\",", new: true },
         { t: "                \"Math: calculations, percentages, conversions\",", new: true },
         { t: "            ]," },
         { t: "        )" },
@@ -2014,14 +2140,12 @@ const STEPS_META = [
         { t: "        self._register_weather()" },
         { t: "" },
         { t: "        # NEW: Built-in skills - one line each, zero configuration" },
-        { t: "        self.add_skill(\"datetime\", {\"default_timezone\": \"America/New_York\"})", new: true, callout: 3 },
-        { t: "        self.add_skill(\"math\")", new: true, callout: 4 },
+        { t: "        self.add_skill(\"datetime\", {\"default_timezone\": \"America/New_York\"})", new: true, callout: 2 },
+        { t: "        self.add_skill(\"math\")", new: true },
       ],
       callouts: [
-        { id: 1, title: "Three ways to add a capability", body: "A custom define_tool (your server), a serverless DataMap (SignalWire runs it), or a built-in skill (one line). Reach for the lightest one that fits." },
-        { id: 2, title: "Tell the AI about the new powers", body: "Adding the skill is half the work; the Capabilities section tells Buddy these abilities exist so he offers them to callers." },
-        { id: 3, title: "add_skill(\"datetime\")", body: "One line gives Buddy the current time in any timezone, with no handler to write. The config dict sets the default timezone." },
-        { id: 4, title: "add_skill(\"math\")", body: "Same idea: instant calculations, tips, and conversions with zero extra code. Skills run on SignalWire, not your server." },
+        { id: 1, title: "Three ways to add a capability", body: "A custom define_tool runs on your server, a DataMap runs serverlessly on SignalWire, and a skill is one line." },
+        { id: 2, title: "add_skill() = one line", body: "One line gives Buddy a whole new ability, like the time in any timezone, with no handler to write." },
       ],
       buddy: "add_skill() is the cheat code. One line, one whole new ability.",
     },
@@ -2049,29 +2173,29 @@ const STEPS_META = [
       lang: "step11_complete.py",
       power: "The prompt becomes a state machine that scopes tools per step.",
       lines: [
-        { t: "    def _configure_contexts(self):", new: true, callout: 1 },
-        { t: "        contexts = self.define_contexts()", new: true, callout: 2 },
+        { t: "    def _configure_contexts(self):", new: true },
+        { t: "        contexts = self.define_contexts()", new: true, callout: 1 },
         { t: "        ctx = contexts.add_context(\"default\")", new: true },
         { t: "" },
         { t: "        # Global persona - applies across every step." },
         { t: "        ctx.add_section(\"Personality\",", new: true },
         { t: "            \"You are Buddy, a cheerful, witty AI phone assistant...\")" },
         { t: "        # …" },
-        { t: "        topics = (\"weather\", \"joke\", \"time\", \"math\")", new: true, callout: 3 },
+        { t: "        topics = (\"weather\", \"joke\", \"time\", \"math\")", new: true, callout: 2 },
         { t: "" },
         { t: "        def reachable_from(name):" },
         { t: "            # every OTHER topic plus the wrap-up" },
         { t: "            return [t for t in topics if t != name] + [\"wrap_up\"]" },
         { t: "" },
-        { t: "        ctx.add_step(\"greeting\",", new: true, callout: 4 },
+        { t: "        ctx.add_step(\"greeting\",", new: true },
         { t: "            task=\"Welcome the caller warmly... and ask their first name.\"," },
-        { t: "            criteria=\"The caller has been welcomed and picked a first topic.\",", callout: 6 },
-        { t: "            functions=\"none\",", callout: 7 },
+        { t: "            criteria=\"The caller has been welcomed and picked a first topic.\"," },
+        { t: "            functions=\"none\"," },
         { t: "            valid_steps=list(topics) + [\"wrap_up\"])" },
         { t: "" },
         { t: "        ctx.add_step(\"weather\"," },
         { t: "            task=\"Get the caller live weather using get_weather.\"," },
-        { t: "            functions=[\"get_weather\"],", new: true, callout: 5 },
+        { t: "            functions=[\"get_weather\"],", new: true, callout: 3 },
         { t: "            valid_steps=reachable_from(\"weather\"))" },
         { t: "        # …  (joke, time, math steps follow the same shape)" },
         { t: "        ctx.add_step(\"wrap_up\"," },
@@ -2080,13 +2204,9 @@ const STEPS_META = [
         { t: "            valid_steps=[])" },
       ],
       callouts: [
-        { id: 1, title: "Contexts and steps = production shape", body: "Each capability's wiring lives in its own _configure_* / _register_* method. The agent stays readable no matter how much it grows." },
-        { id: 2, title: "define_contexts() = a state machine", body: "Turns Buddy's flat prompt into a governed state machine. Instead of one big prompt, each topic becomes a step the platform tracks." },
-        { id: 3, title: "valid_steps = the topic mesh", body: "Every topic can reach every other topic directly (plus wrap-up). No central menu hub, so the caller is never railroaded through options." },
-        { id: 4, title: "add_step() = one governed state", body: "Each step has its own task and bullets describing what Buddy does there. The greeting step welcomes the caller and routes them to a topic." },
-        { id: 5, title: "functions= is System-Directed AI", body: "Each step exposes ONLY its own tool to the model. In the weather step the AI can call get_weather and nothing else. The platform enforces the scoping, not the prompt." },
-        { id: 6, title: "criteria = when to advance", body: "Plain-English conditions for when Buddy may move on from this step, so transitions happen at the right moment instead of mid-task." },
-        { id: 7, title: "step_change lights up the dashboard", body: "functions=\"none\" means no tools in greeting or wrap-up. Each move emits a step_change event, which powers the State Flow tree and Live Wire feed." },
+        { id: 1, title: "define_contexts() = a state machine", body: "Turns Buddy's flat prompt into a governed state machine where each topic becomes a step the platform tracks." },
+        { id: 2, title: "valid_steps = the topic mesh", body: "Every topic can reach every other topic directly plus wrap-up, so the caller is never railroaded through a menu." },
+        { id: 3, title: "functions= is System-Directed AI", body: "Each step exposes only its own tool to the model, and the platform enforces the scoping instead of the prompt." },
       ],
       buddy: "Same four tricks, but now a state machine scopes my tools per step. The platform, not the prompt, enforces it.",
     },
@@ -3428,23 +3548,70 @@ function hlPy(t) {
   return s || " ";
 }
 
+// Full-file variant: render the entire real step file, anchoring each callout
+// to the first line that contains its `anchor` substring. Reuses the SAME
+// wrapper markup as renderAnnotatedCode's excerpt path so the delegated click
+// handler (wireAnnotatedCode, keyed off data-ac-callout / data-ac-line) and
+// the CSS need no changes.
+function renderFullCodeBox(step) {
+  const cs = step.codeSpotlight;
+  const callouts = cs.callouts || [];
+  const newAnchors = cs.newAnchors || [];
+  let lines = cs.fullCode.split("\n");
+  if (lines.length && lines[lines.length - 1] === "") lines.pop();
+  const used = {};
+  const codeHtml = lines.map(line => {
+    // first callout whose anchor is a non-empty substring of this line
+    let cid = null;
+    for (const c of callouts) {
+      if (c.anchor && !used[c.id] && line.indexOf(c.anchor) !== -1) { cid = c.id; used[c.id] = true; break; }
+    }
+    const isNew = newAnchors.some(a => a && line.indexOf(a) !== -1);
+    const marker = cid != null
+      ? `<button type="button" class="ac-marker" data-ac-callout="${cid}" data-ac-step="${escapeHtml(step.route)}" aria-label="Callout ${cid}: ${escapeHtml((callouts.find(c => c.id === cid) || {}).title || "")}"></button>`
+      : `<span class="ac-gutter"></span>`;
+    const cls = ["ac-line", isNew ? "is-new" : "", cid != null ? "has-callout" : ""].filter(Boolean).join(" ");
+    return `<span class="${cls}"${cid != null ? ` data-ac-line="${cid}"` : ""}>${marker}<code class="ac-code">${hlPy(line)}</code></span>`;
+  }).join("\n");
+  const calloutBtns = callouts.map(c =>
+    `<button type="button" class="ac-callout" data-ac-callout="${c.id}" data-ac-step="${escapeHtml(step.route)}">
+       <span class="ac-callout-text"><strong>${escapeHtml(c.title)}</strong> ${escapeHtml(c.body)}</span>
+     </button>`).join("");
+  return `
+    <div class="annotated-code" data-ac-route="${escapeHtml(step.route)}">
+      <div class="powerup-code ac-codewrap">
+        <div class="powerup-code-head">
+          <span class="powerup-dot"></span><span class="powerup-dot"></span><span class="powerup-dot"></span>
+          <span class="powerup-lang">${escapeHtml(cs.lang)}</span>
+          <span class="ac-newtag">✨ new this step</span>
+        </div>
+        <pre class="powerup-pre ac-pre">${codeHtml}</pre>
+      </div>
+      <div class="ac-callouts">
+        <div class="ac-callouts-label">The important parts — tap to highlight</div>
+        ${calloutBtns}
+        ${cs.buddy ? `<div class="buddy-quote"><span class="buddy-quote-icon">💬</span><span>${escapeHtml(cs.buddy)}</span></div>` : ""}
+      </div>
+    </div>`;
+}
+
 function renderAnnotatedCode(step) {
   const cs = step.codeSpotlight;
   if (!cs) return "";
+  if (cs.fullCode) return renderFullCodeBox(step);
   const byId = {};
   (cs.callouts || []).forEach(c => { byId[c.id] = c; });
   const code = cs.lines.map((l, i) => {
     const isNew = l.new === true;
     const cid = (l.callout != null && byId[l.callout]) ? l.callout : null;
     const marker = cid != null
-      ? `<button type="button" class="ac-marker" data-ac-callout="${cid}" data-ac-step="${escapeHtml(step.route)}" aria-label="Callout ${cid}: ${escapeHtml(byId[cid].title)}">${circledNum(cid)}</button>`
+      ? `<button type="button" class="ac-marker" data-ac-callout="${cid}" data-ac-step="${escapeHtml(step.route)}" aria-label="Callout ${cid}: ${escapeHtml(byId[cid].title)}"></button>`
       : `<span class="ac-gutter"></span>`;
     const cls = ["ac-line", isNew ? "is-new" : "", cid != null ? "has-callout" : ""].filter(Boolean).join(" ");
     return `<span class="${cls}"${cid != null ? ` data-ac-line="${cid}"` : ""}>${marker}<code class="ac-code">${hlPy(l.t)}</code></span>`;
   }).join("\n");
   const callouts = (cs.callouts || []).map(c =>
     `<button type="button" class="ac-callout" data-ac-callout="${c.id}" data-ac-step="${escapeHtml(step.route)}">
-       <span class="ac-callout-num">${circledNum(c.id)}</span>
        <span class="ac-callout-text"><strong>${escapeHtml(c.title)}</strong> ${escapeHtml(c.body)}</span>
      </button>`).join("");
   return `

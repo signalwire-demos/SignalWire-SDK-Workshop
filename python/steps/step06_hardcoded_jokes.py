@@ -1,6 +1,6 @@
 """
-Step 6: Hardcoded Jokes
------------------------
+Hardcoded Jokes
+---------------
 Your first SWAIG function - teaching the AI to tell jokes
 from a hardcoded list.
 

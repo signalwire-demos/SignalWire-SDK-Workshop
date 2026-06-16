@@ -1,6 +1,6 @@
 """
-Step 10: Built-in Skills
-------------------------
+Built-in Skills
+---------------
 Add date/time and math capabilities with just two lines of code.
 Skills are pre-built capabilities that ship with the SDK.
 

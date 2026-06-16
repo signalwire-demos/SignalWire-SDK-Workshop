@@ -385,6 +385,10 @@ def test_workshop_top_band_collapsed(html):
 def test_steps_meta_copy_budgets(html):
     import re
     block = html[html.index("const STEPS_META"):html.index("PILLAR_CARDS")]
+    # The writing rules apply to card/callout COPY, not to the verbatim Python
+    # we embed for the early agents. Strip fullCode template literals first so a
+    # real source line that happens to contain "just"/"—" isn't penalized.
+    block = re.sub(r"fullCode:\s*`[\s\S]*?`", "", block)
     assert "—" not in block, "em-dashes are banned in card copy"
     assert not re.search(r"\bjust\b", block), "'just' is banned in card copy"
     for m in re.finditer(r'desc: "([^"]+)"', block):
@@ -409,9 +413,44 @@ def test_build_along_removed(html):
 
 
 def test_every_step_has_callouts(html):
-    # all 7 steps carry a callouts array, and the code excerpts grew well past the old ~41 lines
+    # all 7 steps carry a callouts array. Early steps now embed the full real
+    # file (fullCode) instead of a curated `{ t: ... }` excerpt, so the line
+    # count is lower; the intent is "every step still has substantial code".
     assert html.count("callouts:") >= 7
-    assert html.count("{ t:") >= 150
+    assert html.count("{ t:") >= 80
+
+
+def _steps_meta_block(html: str) -> str:
+    return html[html.index("const STEPS_META"):html.index("PILLAR_CARDS")]
+
+
+def test_callouts_trimmed(html):
+    # Every callouts array carries between 2 and 4 entries: enough to teach the
+    # key ideas, few enough not to overwhelm.
+    block = _steps_meta_block(html)
+    arrays = re.findall(r"callouts:\s*\[(.*?)\]", block, re.DOTALL)
+    assert len(arrays) >= 7, "expected a callouts array per step"
+    for arr in arrays:
+        n = len(re.findall(r"\{\s*id:", arr))
+        assert 2 <= n <= 4, f"callouts array has {n} entries (want 2-4): {arr[:120]}"
+
+
+def test_early_agents_embed_full_file(html):
+    # Versions 1-3 embed the real step file verbatim via `fullCode`, not a
+    # hand-curated excerpt. Drift guard: a few real lines must be present.
+    assert html.count("fullCode:") >= 3
+    steps_dir = pathlib.Path(__file__).resolve().parent.parent / "python" / "steps"
+    s4 = (steps_dir / "step04_hello.py").read_text(encoding="utf-8")
+    s6 = (steps_dir / "step06_hardcoded_jokes.py").read_text(encoding="utf-8")
+    s7 = (steps_dir / "step07_api_jokes.py").read_text(encoding="utf-8")
+    # sanity: the real files still contain the lines we anchor on
+    assert "class HelloAgent(AgentBase):" in s4
+    assert "JOKES = [" in s6 and "self.define_tool(" in s6
+    assert "import requests" in s7 and "icanhazdadjoke.com" in s7
+    # and those lines made it into the embedded HTML verbatim
+    assert "class HelloAgent(AgentBase):" in html
+    assert "JOKES = [" in html and "self.define_tool(" in html
+    assert "import requests" in html and "icanhazdadjoke.com" in html
 
 
 def test_reduced_motion_block_present(html):

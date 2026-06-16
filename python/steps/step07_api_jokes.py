@@ -1,6 +1,6 @@
 """
-Step 7: Live API Jokes
-----------------------
+Live API Jokes
+--------------
 Replace hardcoded jokes with fresh ones from icanhazdadjoke.com.
 Every call returns a different joke.
 

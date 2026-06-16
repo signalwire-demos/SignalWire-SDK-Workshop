@@ -1,6 +1,6 @@
 """
-Step 9: Polish and Personality
-------------------------------
+Polish and Personality
+----------------------
 Same capabilities (weather + jokes), but with a much better
 conversation experience. Personality, timing, speech hints.
 
