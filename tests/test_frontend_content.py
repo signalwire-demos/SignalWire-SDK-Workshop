@@ -290,16 +290,14 @@ def test_admin_has_recording_subtab(admin_html):
 
 def test_no_event_branding_in_user_facing_surfaces():
     """The app is a city-agnostic SDK workshop: no Chicago/Roadshow/meetup
-    strings may appear in served web assets. The GitHub repo slug is allowed
-    until the repo itself is renamed."""
+    strings may appear in served web assets."""
     import re
     web = pathlib.Path(__file__).resolve().parent.parent / "web"
     banned = re.compile(r"chicago|roadshow|meetup", re.IGNORECASE)
-    allowed = "jongray00/Chicago-Roadshow-2026"
     offenders = []
     for f in sorted(web.glob("*.html")) + sorted(web.glob("*.js")):
         for n, line in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
-            if banned.search(line) and allowed not in line:
+            if banned.search(line):
                 offenders.append(f"{f.name}:{n}: {line.strip()[:100]}")
     assert not offenders, "event branding leaked:\n" + "\n".join(offenders)
 

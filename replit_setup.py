@@ -23,18 +23,28 @@ def startup():
     Returns (base_url, auth_user, auth_password).
     """
     # 1. Set the public URL for webhook generation.
-    # Precedence: an explicit SWML_PROXY_URL_BASE override, then the live
-    # per-repl dev domain (REPLIT_DEV_DOMAIN — auto-set, unique per repl, and
-    # reachable now), then a published-deployment fallback. Preferring the dev
-    # domain means the workshop works for the author AND every fork without
-    # editing code, instead of pointing at one hardcoded *.replit.app.
-    DEPLOY_URL = "https://chicago-roadshow-2026.replit.app"
+    # Precedence:
+    #   1. explicit SWML_PROXY_URL_BASE override (forks / custom domains)
+    #   2. PUBLISHED DEPLOYMENT -> the stable *.replit.app deploy URL. A VM
+    #      deployment may still have REPLIT_DEV_DOMAIN set, but that
+    #      *.worf.replit.dev host is alive only while the editor is open. If it
+    #      leaks into the webhook URLs baked into SWML, every SignalWire
+    #      callback (post_prompt, SWAIG, debug_events) 404s once the editor
+    #      closes. So in a deployment we ALWAYS pin the public deploy URL.
+    #   3. dev (editor) -> the per-repl dev domain, reachable now.
+    #   4. fallback -> the deploy URL.
+    DEPLOY_URL = "https://signalwire-workshop.replit.app"
     override = os.getenv("SWML_PROXY_URL_BASE")
+    is_deployment = bool(os.getenv("REPLIT_DEPLOYMENT"))
     dev_domain = os.getenv("REPLIT_DEV_DOMAIN")
 
     if override:
         base_url = override
         print(f"Using SWML_PROXY_URL_BASE from env: {base_url}")
+    elif is_deployment:
+        base_url = DEPLOY_URL
+        os.environ["SWML_PROXY_URL_BASE"] = base_url
+        print(f"Published deployment - pinning public deploy URL: {base_url}")
     elif dev_domain:
         base_url = f"https://{dev_domain}"
         os.environ["SWML_PROXY_URL_BASE"] = base_url
@@ -52,7 +62,7 @@ def startup():
 
     # 3. Report optional secrets
     print("\n" + "=" * 60)
-    print("  Buddy Workshop - SignalWire AI Phone Agent")
+    print("  SignalWire SDK Workshop - AI Phone Agent")
     print("=" * 60)
 
     if OPTIONAL_SECRETS:

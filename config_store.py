@@ -70,6 +70,13 @@ class ConfigStore:
         host = (base or "").split("://", 1)[-1].split("/", 1)[0].split(":", 1)[0]
         if "." not in host:
             return False
+        # Reject transient Replit dev domains (*.replit.dev / *.worf.replit.dev):
+        # they are reachable only while the editor is open, so persisting one as
+        # the public base bakes a URL into SWML that 404s every post_prompt /
+        # SWAIG callback once it goes offline. The stable *.replit.app deploy URL
+        # is pinned in replit_setup.startup() instead.
+        if host.endswith(".replit.dev"):
+            return False
         with self._lock:
             if not base or self._data.get("detected_base") == base:
                 return False

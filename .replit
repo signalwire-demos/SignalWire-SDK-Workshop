@@ -1,6 +1,6 @@
 run = "python main.py"
 entrypoint = "main.py"
-modules = ["python-3.11"]
+modules = ["nodejs-20", "python-3.11"]
 
 [env]
 PYTHONUNBUFFERED = "1"
@@ -8,6 +8,18 @@ PYTHONUNBUFFERED = "1"
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 5097
+externalPort = 3000
+
+[[ports]]
+localPort = 5098
+externalPort = 3001
+
+[[ports]]
+localPort = 5099
+externalPort = 3002
 
 # reserved_vm: a single always-on, persistent instance. This app keeps per-session
 # credentials, captured calls, and the admin feed as in-memory + local-JSON state in
