@@ -42,6 +42,21 @@ def search_available(creds, area_code=None, limit: int = 3) -> list[dict]:
     return [{"phone_number": n.get("e164") or n.get("number"), "friendly_name": "", "locality": n.get("city") or "", "region": n.get("region") or ""} for n in found.get("data", [])]
 
 
+def search_available_with_fallback(creds, area_code=None, limit: int = 8, _search=None):
+    """Search available numbers; if an area-code search is empty, broaden to any
+    US local number so the wizard never dead-ends (many area codes are genuinely
+    out of SignalWire stock). Returns (numbers, fell_back) where fell_back is
+    True when results came from the broadened (no-area-code) retry.
+    `_search` is injectable for tests; defaults to the live search_available."""
+    search = _search or search_available
+    nums = search(creds, area_code, limit)
+    if area_code and not nums:
+        broadened = search(creds, None, limit)
+        if broadened:
+            return broadened, True
+    return nums, False
+
+
 def _timed(api: str, op: str, fn, trace: list):
     """Run fn(), append {api, op, ms} to trace. Returns fn's return value."""
     t0 = time.monotonic()

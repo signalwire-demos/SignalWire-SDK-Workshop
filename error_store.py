@@ -8,10 +8,13 @@ import os
 import threading
 import time
 
+import storage
+
 
 class ErrorStore:
     def __init__(self, path=None, cap=200):
         self._path = path
+        self._backend = storage.resolve(path)
         self._cap = cap
         self._items = []  # newest-first
         self._lock = threading.Lock()
@@ -40,24 +43,22 @@ class ErrorStore:
         self.save()
 
     def save(self):
-        if not self._path:
+        if not self._backend:
             return
         with self._lock:
             snapshot = json.dumps(self._items)
-        try:
-            with open(self._path, "w", encoding="utf-8") as f:
-                f.write(snapshot)
-        except OSError as e:
-            print(f"[error_store] save failed: {e}", flush=True)
+        self._backend.write(snapshot)
 
     def load(self):
-        if not self._path or not os.path.exists(self._path):
+        if not self._backend:
+            return
+        raw = self._backend.read()
+        if raw is None:
             return
         try:
-            with open(self._path, encoding="utf-8") as f:
-                data = json.load(f)
-        except (OSError, ValueError) as e:
-            print(f"[error_store] ignoring unreadable file: {e}", flush=True)
+            data = json.loads(raw)
+        except ValueError as e:
+            print(f"[error_store] ignoring unreadable data: {e}", flush=True)
             return
         if isinstance(data, list):
             with self._lock:

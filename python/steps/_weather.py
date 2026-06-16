@@ -97,11 +97,13 @@ def register_weather_tool(agent, advance_to_step=None, live_emit=False):
             out = fetch_weather(city)
             if live_emit:
                 import live_events
-                live_events.BUS.emit("swaig", "get_weather", {"city": city, "result": out[:80]})
+                live_events.BUS.emit("swaig", "get_weather", {"city": city, "result": out[:80]},
+                                     session_id=live_events.session_id_from_global_data(raw_data))
         except Exception as e:
             if live_emit:
                 import live_events
-                live_events.BUS.emit("swaig", "get_weather", {"city": city, "error": str(e)[:80]})
+                live_events.BUS.emit("swaig", "get_weather", {"city": city, "error": str(e)[:80]},
+                                     session_id=live_events.session_id_from_global_data(raw_data))
             raise
         result = SwaigFunctionResult(out)
         if advance_to_step:

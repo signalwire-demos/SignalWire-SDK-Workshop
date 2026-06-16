@@ -20,6 +20,13 @@ import requests
 from signalwire_agents import AgentBase, SwaigFunctionResult as FunctionResult
 
 
+def _session_id_from_raw(raw_data):
+    """The workshop session id stamped into global_data at SWML render, used to
+    scope Live Wire events emitted from SWAIG handlers (which carry no call_info)."""
+    import live_events
+    return live_events.session_id_from_global_data(raw_data)
+
+
 class CompleteAgent(AgentBase):
     def __init__(self, route="/"):
         # record_call=True makes the rendered SWML start a background stereo
@@ -243,14 +250,17 @@ class CompleteAgent(AgentBase):
             joke = data.get("joke")
             if not joke:
                 import live_events
-                live_events.BUS.emit("swaig", "tell_joke", {"result": "no joke returned"})
+                live_events.BUS.emit("swaig", "tell_joke", {"result": "no joke returned"},
+                                     session_id=_session_id_from_raw(raw_data))
                 return FunctionResult("I couldn't find a joke this time. Try again!")
             import live_events
-            live_events.BUS.emit("swaig", "tell_joke", {"result": joke[:80]})
+            live_events.BUS.emit("swaig", "tell_joke", {"result": joke[:80]},
+                                 session_id=_session_id_from_raw(raw_data))
             return FunctionResult(f"Here's a dad joke: {joke}")
         except requests.RequestException as e:
             import live_events
-            live_events.BUS.emit("swaig", "tell_joke", {"error": str(e)[:80]})
+            live_events.BUS.emit("swaig", "tell_joke", {"error": str(e)[:80]},
+                                 session_id=_session_id_from_raw(raw_data))
             return FunctionResult("My joke service is taking a break. Try again in a moment!")
 
     # -- Weather (server-side SWAIG tool, runs on our server) ----------------

@@ -6,10 +6,11 @@ isolated from every other browser. Persisted to a private-disk JSON so a server
 restart does not log everyone out. Thread-safe for uvicorn's worker threads.
 """
 import json
-import os
 import secrets
 import threading
 import time
+
+import storage
 
 DEFAULT_TTL_SECONDS = 12 * 60 * 60
 
@@ -26,6 +27,7 @@ def _empty_record() -> dict:
 class SessionStore:
     def __init__(self, path=None):
         self._path = path
+        self._backend = storage.resolve(path)
         self._sessions = {}
         self._lock = threading.Lock()
         self.version = 0
@@ -105,30 +107,28 @@ class SessionStore:
         return {**rec, "creds": creds}
 
     def save(self):
-        if not self._path:
+        if not self._backend:
             return
         with self._lock:
             snapshot = json.dumps({sid: self._strip_token(rec)
                                    for sid, rec in self._sessions.items()})
-        try:
-            with open(self._path, "w", encoding="utf-8") as f:
-                f.write(snapshot)
-        except OSError as e:
-            print(f"[session_store] save failed: {e}", flush=True)
+        self._backend.write(snapshot)
 
     def load(self):
-        if not self._path or not os.path.exists(self._path):
+        if not self._backend:
+            return
+        raw = self._backend.read()
+        if raw is None:
             return
         try:
-            with open(self._path, encoding="utf-8") as f:
-                data = json.load(f)
-        except (OSError, ValueError) as e:
-            print(f"[session_store] ignoring unreadable sessions file: {e}", flush=True)
+            data = json.loads(raw)
+        except ValueError as e:
+            print(f"[session_store] ignoring unreadable sessions data: {e}", flush=True)
             return
         if isinstance(data, dict):
             with self._lock:
-                # _strip_token also scrubs tokens from files written by
-                # older builds, so a poisoned file self-cleans on boot.
+                # _strip_token also scrubs tokens from data written by older
+                # builds, so a poisoned blob self-cleans on boot.
                 self._sessions = {sid: self._strip_token(rec)
                                   for sid, rec in data.items()
                                   if isinstance(rec, dict)}

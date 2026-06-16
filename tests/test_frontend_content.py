@@ -391,3 +391,30 @@ def test_steps_meta_copy_budgets(html):
     assert not re.search(r"\bjust\b", block), "'just' is banned in card copy"
     for m in re.finditer(r'desc: "([^"]+)"', block):
         assert len(m.group(1).split()) <= 16, f"lead too long: {m.group(1)}"
+
+
+def test_annotated_code_present(html):
+    assert "function renderAnnotatedCode" in html
+    assert "function wireAnnotatedCode" in html
+    assert "renderAnnotatedCode(step" in html          # called from renderStepSection
+    assert "annotated-code" in html and "ac-callout" in html and "ac-marker" in html
+    assert ".spotlight" in html
+
+
+def test_build_along_removed(html):
+    # the game mechanic is gone
+    assert "renderCodeBuildAlong" not in html
+    assert "wireBuildAlong" not in html
+    assert "ba-level" not in html
+    assert "state.buildAlong" not in html
+    assert "sdkworkshop.buildAlong" not in html
+
+
+def test_every_step_has_callouts(html):
+    # all 7 steps carry a callouts array, and the code excerpts grew well past the old ~41 lines
+    assert html.count("callouts:") >= 7
+    assert html.count("{ t:") >= 150
+
+
+def test_reduced_motion_block_present(html):
+    assert "prefers-reduced-motion" in html

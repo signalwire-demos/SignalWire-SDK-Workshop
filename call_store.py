@@ -6,9 +6,10 @@ new records by polling — robust across the SDK's sync/async/thread boundaries.
 """
 import json
 import math
-import os
 import threading
 import time
+
+import storage
 
 # Pluggable correlation hook. main.py installs a resolver that maps a raw
 # post-prompt payload to the originating session {space, project_id, session_id}.
@@ -520,6 +521,7 @@ def normalize_post_prompt(agent_name, agent_route, raw_data):
 class CallStore:
     def __init__(self, path=None):
         self._path = path
+        self._backend = storage.resolve(path)
         self._calls = []          # newest-first
         self._ids = set()
         self._lock = threading.Lock()
@@ -548,24 +550,22 @@ class CallStore:
         self.save()
 
     def save(self):
-        if not self._path:
+        if not self._backend:
             return
         with self._lock:
             snapshot = json.dumps(self._calls)
-        try:
-            with open(self._path, "w", encoding="utf-8") as f:
-                f.write(snapshot)
-        except OSError as e:
-            print(f"[call_store] save failed: {e}", flush=True)
+        self._backend.write(snapshot)
 
     def load(self):
-        if not self._path or not os.path.exists(self._path):
+        if not self._backend:
+            return
+        raw = self._backend.read()
+        if raw is None:
             return
         try:
-            with open(self._path, encoding="utf-8") as f:
-                data = json.load(f)
-        except (OSError, ValueError) as e:
-            print(f"[call_store] ignoring unreadable calls file: {e}", flush=True)
+            data = json.loads(raw)
+        except ValueError as e:
+            print(f"[call_store] ignoring unreadable calls data: {e}", flush=True)
             return
         if isinstance(data, list):
             with self._lock:

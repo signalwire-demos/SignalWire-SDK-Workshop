@@ -15,6 +15,8 @@ import json
 import os
 import threading
 
+import storage
+
 DEFAULT_AUTH_USER = "workshop"
 DEFAULT_AUTH_PASSWORD = "password"
 
@@ -22,6 +24,7 @@ DEFAULT_AUTH_PASSWORD = "password"
 class ConfigStore:
     def __init__(self, path=None):
         self._path = path
+        self._backend = storage.resolve(path)
         self._lock = threading.Lock()
         # None means "not overridden" -> fall through to detected/env/default.
         self._data = {
@@ -33,12 +36,14 @@ class ConfigStore:
 
     # ----- persistence -----
     def load(self):
-        if not self._path or not os.path.exists(self._path):
+        if not self._backend:
+            return
+        raw = self._backend.read()
+        if raw is None:
             return
         try:
-            with open(self._path, encoding="utf-8") as f:
-                data = json.load(f)
-        except (OSError, ValueError) as e:
+            data = json.loads(raw)
+        except ValueError as e:
             print(f"[config_store] ignoring unreadable config: {e}", flush=True)
             return
         if isinstance(data, dict):
@@ -48,15 +53,11 @@ class ConfigStore:
                         self._data[k] = data[k]
 
     def save(self):
-        if not self._path:
+        if not self._backend:
             return
         with self._lock:
             snapshot = json.dumps(self._data)
-        try:
-            with open(self._path, "w", encoding="utf-8") as f:
-                f.write(snapshot)
-        except OSError as e:
-            print(f"[config_store] save failed: {e}", flush=True)
+        self._backend.write(snapshot)
 
     # ----- auto-detection -----
     def set_detected_base(self, base):

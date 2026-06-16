@@ -119,6 +119,29 @@ def _resolve_session_for_call(raw_data):
 
 call_store.set_session_resolver(_resolve_session_for_call)
 
+
+def _resolve_live_event_session(call_info):
+    """Map a Live Wire debug-event call_info to its attendee session.
+
+    Live debug payloads carry call_info.project_id (not global_data), so we
+    correlate the same way post-prompt does: the attendee using that project.
+    Defensive — returns None on any miss and never raises.
+    """
+    try:
+        pid = call_info.get("project_id") if isinstance(call_info, dict) else None
+        if not pid:
+            return None
+        for row in _SESSIONS.admin_snapshot():
+            if row.get("project_id") == pid:
+                return row["session_id"]
+    except Exception:
+        return None
+    return None
+
+
+import live_events as _live_events
+_live_events.set_session_resolver(_resolve_live_event_session)
+
 # Detect public URL and report secret status (no longer blocks on missing creds)
 base_url, auth_user, auth_pass = startup()
 
@@ -142,13 +165,13 @@ from python.steps.step11_complete import CompleteAgent
 # ---------------------------------------------------------------------------
 
 STEPS = [
-    ("/step04", HelloAgent,          "Step 4  - Hello Agent"),
-    ("/step06", HardcodedJokeAgent,  "Step 6  - Hardcoded Jokes"),
-    ("/step07", ApiJokeAgent,        "Step 7  - Live API Jokes"),
-    ("/step08", WeatherJokeAgent,    "Step 8  - Weather + Jokes"),
-    ("/step09", PolishedAgent,       "Step 9  - Polished Agent"),
-    ("/step10", SkillsAgent,         "Step 10 - Agent with Skills"),
-    ("/step11", CompleteAgent,       "Step 11 - Complete Agent"),
+    ("/step04", HelloAgent,          "Version 1 - Hello Agent"),
+    ("/step06", HardcodedJokeAgent,  "Version 2 - Hardcoded Jokes"),
+    ("/step07", ApiJokeAgent,        "Version 3 - Live API Jokes"),
+    ("/step08", WeatherJokeAgent,    "Version 4 - Weather + Jokes"),
+    ("/step09", PolishedAgent,       "Version 5 - Polished Agent"),
+    ("/step10", SkillsAgent,         "Version 6 - Agent with Skills"),
+    ("/step11", CompleteAgent,       "Version 7 - Complete Agent"),
 ]
 
 server = AgentServer(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
@@ -603,29 +626,31 @@ async def admin_stream(request: Request):
 
 @server.app.get("/api/live-events")
 async def live_events_stream(request: Request):
-    """Public SSE feed for the Live Wire panel (browser-call section).
+    """Per-session SSE feed for the Live Wire panel (browser-call section).
 
-    SECURITY: this endpoint is unauthenticated, so events are reduced to the
-    server-built summary fields only. Raw `data` stays in the bus (debug
-    payload shapes are unvetted and webhook URLs can embed basic-auth creds).
+    SECURITY: unauthenticated endpoint, so events are reduced to server-built
+    summary fields only AND scoped to the requesting browser's session. An
+    attendee sees only their own call; the presenter's demo no longer leaks
+    into everyone's panel. Events with no resolvable session are not streamed.
     """
     import live_events as _le
+
+    sid = getattr(getattr(request, "state", None), "session_id", None)
 
     def _public(e):
         return {k: e[k] for k in ("seq", "ts", "source", "type", "summary")}
 
     async def gen():
-        last = 0
-        # replay a short tail so a freshly-opened panel shows recent context
-        for e in _le.BUS.since(0)[-20:]:
-            last = e["seq"]
+        # replay a short per-session tail so a freshly-opened panel has context,
+        # and advance the cursor past everything already buffered (race-free)
+        replay, last = _le.BUS.drain(0, session_id=sid)
+        for e in replay[-20:]:
             yield f"event: live\ndata: {_json.dumps([_public(e)])}\n\n"
         while True:
             if await request.is_disconnected():
                 return
-            if _le.BUS.version > last:
-                evs = _le.BUS.since(last)
-                last = evs[-1]["seq"]
+            evs, last = _le.BUS.drain(last, session_id=sid)
+            if evs:
                 yield f"event: live\ndata: {_json.dumps([_public(e) for e in evs])}\n\n"
             yield ": keepalive\n\n"
             await asyncio.sleep(0.5)
@@ -984,10 +1009,11 @@ async def setup_search(request: Request):
     area_code = body.get("area_code")
     if area_code and not str(area_code).isdigit():
         return JSONResponse({"error": "area_code must be digits"}, status_code=400)
-    from python.provisioning import search_available
+    from python.provisioning import search_available_with_fallback
     try:
-        nums = await asyncio.to_thread(search_available, creds, str(area_code) if area_code else None, 3)
-        return JSONResponse({"numbers": nums, "area_code": area_code or None})
+        nums, fell_back = await asyncio.to_thread(
+            search_available_with_fallback, creds, str(area_code) if area_code else None, 8)
+        return JSONResponse({"numbers": nums, "area_code": area_code or None, "fell_back": fell_back})
     except Exception as e:  # noqa: BLE001
         return JSONResponse({"error": f"{e.__class__.__name__}: {e}"}, status_code=502)
 

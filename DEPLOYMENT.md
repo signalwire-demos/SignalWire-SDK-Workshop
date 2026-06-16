@@ -52,12 +52,16 @@ from env — see `.env.example`.)
 
 ## 3. State & persistence
 
-State is local JSON on the VM's disk:
-`.workshop_sessions.json`, `.workshop_calls.json`, `.agent_handler_cache.json`.
+State persists durably across redeploys. In a Replit deployment (when
+`REPLIT_DB_URL` is present) the stores — sessions, calls, config, errors,
+function health — write to the **Replit Key-Value DB** under `workshop:*` keys,
+which survives redeploys and restarts. Locally (no `REPLIT_DB_URL`) the same
+data is kept in the `.workshop_*.json` files for dev/test.
 
-- It **persists for the life of the deployment** on a Reserved VM.
-- **A redeploy resets it** — sessions and the `/admin` call history are wiped.
-  Don't redeploy mid-workshop. Deploy, verify, then leave it running.
+- A redeploy no longer wipes `/admin` history.
+- Raw SignalWire API tokens are still never persisted (only a masked tail).
+- To clear data, delete the `workshop:*` keys in the Replit DB pane (or the
+  local `.workshop_*.json` files in dev).
 
 ## 4. Weather
 

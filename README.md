@@ -31,21 +31,26 @@ phrases to try, and links into the SignalWire docs.
 Every version runs simultaneously on its own route. Re-point your number (one
 click in the wizard) to hear the difference between versions.
 
+> The `/stepNN` route and `stepNN_*.py` file names are historical (some
+> versions were merged during development), so they skip numbers; the
+> **Version 1–7** labels below are the build-journey order you follow. The
+> route numbers and the version numbers intentionally differ.
+
 | Route | Version | What it adds |
 |-------|---------|--------------|
-| `/step04` | Hello Agent | The smallest possible agent: a voice, a personality prompt, a post-prompt summary |
-| `/step06` | Hardcoded Jokes | First SWAIG function (`define_tool`): the AI decides when to call your code |
-| `/step07` | Live API Jokes | The same function backed by a real external API (icanhazdadjoke.com) |
-| `/step08` | Weather + Jokes | A second tool with parameters: live weather for any city via Open-Meteo |
-| `/step09` | Polished Agent | Personality, speech hints, fillers, and timeout tuning |
-| `/step10` | Agent with Skills | Built-in skills: date/time and math in one line each |
-| `/step11` | Complete Agent | Production shape: see below |
+| `/step04` | Version 1 — Hello Agent | The smallest possible agent: a voice, a personality prompt, a post-prompt summary |
+| `/step06` | Version 2 — Hardcoded Jokes | First SWAIG function (`define_tool`): the AI decides when to call your code |
+| `/step07` | Version 3 — Live API Jokes | The same function backed by a real external API (icanhazdadjoke.com) |
+| `/step08` | Version 4 — Weather + Jokes | A second tool with parameters: live weather for any city via Open-Meteo |
+| `/step09` | Version 5 — Polished Agent | Personality, speech hints, fillers, and timeout tuning |
+| `/step10` | Version 6 — Agent with Skills | Built-in skills: date/time and math in one line each |
+| `/step11` | Version 7 — Complete Agent | Production shape: see below |
 
 All weather lookups run as server-side SWAIG tools (keyless Open-Meteo, no
 prerequisites). DataMap, the serverless alternative, is explained in the step 8
 source for comparison.
 
-### The final agent (`/step11`)
+### The final agent (Version 7, `/step11`)
 
 The complete agent demonstrates what the SDK recommends for real deployments:
 

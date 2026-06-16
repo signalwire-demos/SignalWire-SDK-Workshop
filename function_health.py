@@ -15,6 +15,8 @@ import os
 import threading
 import time
 
+import storage
+
 
 def _key(route, name):
     return f"{route or ''}:{name}"
@@ -23,6 +25,7 @@ def _key(route, name):
 class FunctionHealth:
     def __init__(self, path=None):
         self._path = path
+        self._backend = storage.resolve(path)
         self._fns = {}  # (route, name) key -> record
         self._lock = threading.Lock()
         self.version = 0
@@ -59,24 +62,22 @@ class FunctionHealth:
             return [dict(v) for v in self._fns.values()]
 
     def save(self):
-        if not self._path:
+        if not self._backend:
             return
         with self._lock:
             snapshot = json.dumps(list(self._fns.values()))
-        try:
-            with open(self._path, "w", encoding="utf-8") as f:
-                f.write(snapshot)
-        except OSError as e:
-            print(f"[function_health] save failed: {e}", flush=True)
+        self._backend.write(snapshot)
 
     def load(self):
-        if not self._path or not os.path.exists(self._path):
+        if not self._backend:
+            return
+        raw = self._backend.read()
+        if raw is None:
             return
         try:
-            with open(self._path, encoding="utf-8") as f:
-                data = json.load(f)
-        except (OSError, ValueError) as e:
-            print(f"[function_health] ignoring unreadable file: {e}", flush=True)
+            data = json.loads(raw)
+        except ValueError as e:
+            print(f"[function_health] ignoring unreadable data: {e}", flush=True)
             return
         if isinstance(data, list):
             with self._lock:
