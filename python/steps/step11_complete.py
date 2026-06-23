@@ -57,6 +57,22 @@ class CompleteAgent(AgentBase):
                 "Hang on just a sec...",
             ],
         )
+        # next_step is the internal function the platform invokes when the
+        # model moves between topic steps. Giving it its own fillers means the
+        # platform speaks DURING the transition, so the model is not tempted to
+        # cover the gap with a yielding "let me check, please hold" narration of
+        # its own (which ends the turn and stalls until the caller speaks again).
+        # Topic-agnostic on purpose: the destination step's tool (for example
+        # get_weather) owns the topic-specific "checking the forecast" line.
+        self.set_internal_fillers({
+            "next_step": {
+                "en-US": [
+                    "Sure thing, one moment...",
+                    "Of course, on it...",
+                    "Got it, let's do that...",
+                ],
+            },
+        })
         self.add_hints([
             "Buddy", "weather", "joke", "temperature",
             "forecast", "Fahrenheit", "Celsius",
@@ -154,7 +170,11 @@ class CompleteAgent(AgentBase):
                 "Offer what you can do in one natural sentence: live weather "
                 "for any city, a dad joke, the current date and time, or a "
                 "quick calculation.",
-                "Go straight to whichever topic the caller picks.",
+                "The moment the caller names a topic (weather, a joke, the "
+                "date or time, or a calculation), move to that topic right "
+                "away, without announcing that you are about to check, fetch, "
+                "or look anything up, and without asking them to hold. The "
+                "topic step itself does the work and answers them.",
             ],
             criteria="The caller has been welcomed and picked a first topic "
                      "(or asked to wrap up).",
@@ -164,8 +184,9 @@ class CompleteAgent(AgentBase):
         ctx.add_step("weather",
             task="Get the caller live weather using get_weather.",
             bullets=[
-                "If the caller already named a city, call get_weather right "
-                "away; don't ask again.",
+                "If the caller already named a city, call get_weather the "
+                "moment you enter this step; do not ask again and do not speak "
+                "first. The function fillers cover the brief wait.",
                 "Otherwise ask which city they'd like.",
                 "Share the result warmly in one sentence, then offer a topic "
                 "they haven't tried yet.",
